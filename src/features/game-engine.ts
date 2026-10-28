@@ -12,6 +12,15 @@ const SCENES: Record<SceneName, Scene> = {
   overworld: overworldScene,
 };
 
+// Caps how much game time a single frame can advance. Without this, any stall
+// in the rAF cadence (a GC pause, a brief main-thread hitch, the tab getting
+// throttled) produces one abnormally large `dt` — and since movement is
+// `speed * dt`, that one frame teleports the player however far they'd have
+// walked over the whole stall, instead of just rendering a dropped frame.
+// Capping it trades that jump for brief slow motion, which reads as a stutter
+// instead of a skip.
+const MAX_DT = 1 / 20; // never simulate slower than 20fps-equivalent of game time per frame
+
 function enterScene(from: SceneName, to: SceneName) {
   const showDuration = SCENES[from].fadeOut ?? 0;
   const hideDuration = SCENES[to].fadeIn ?? 0;
@@ -85,7 +94,13 @@ export class GameEngine {
   // `this.tick = this.tick.bind(this);`
   private tick = (time: number) => {
     this.gameLoopId = requestAnimationFrame(this.tick);
-    const dt = (time - this.lastTime) / 1000; // delta time in seconds
+    // const dt = (time - this.lastTime) / 1000; // delta time in seconds
+    // ^ classic game-loop bug: uncapped dt. Any rAF stall (GC pause, a main-thread
+    // hitch, tab throttling) produces one abnormally large dt here, and since
+    // movement is `speed * dt`, that single frame teleports the player however far
+    // they'd have walked over the whole stall — reads as "pause, then jump forward."
+    // Capping it below trades that jump for brief slow motion instead.
+    const dt = Math.min((time - this.lastTime) / 1000, MAX_DT); // delta time in seconds, capped against rAF stalls
     this.lastTime = time;
 
     const scene = SCENES[GAME_STATE.sceneName];
