@@ -1,6 +1,8 @@
+import { TRIGGER_OVERWORLD } from "@/constants/triggers/overworld";
 import { GAME_STATE, img } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
+import { checkTriggerZones, TriggerZone, type TriggerHandlers } from "@/features/zone";
 import { playIrisReveal } from "@/lib/iris-reveal";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -23,6 +25,15 @@ const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, sca
 /** This map's own static/animated decor — drawn after the background, before the player. */
 const decor: Sprite[] = [smallFountainA, smallFountainB, bigFountainA, bigFountainB];
 
+const TRIGGER_HANDLERS: TriggerHandlers = {
+  home: {
+    onEnter: () => {
+      GAME_STATE.sceneName = "home";
+      GAME_STATE.movementLocked = true;
+    },
+  },
+};
+
 export const overworldScene: Scene = {
   fadeIn: 1,
   fadeOut: 1,
@@ -36,6 +47,19 @@ export const overworldScene: Scene = {
     placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
     placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
     placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
+
+    GAME_STATE.triggerZones = TRIGGER_OVERWORLD.map(
+      (t) =>
+        new TriggerZone({
+          name: t.name,
+          position: {
+            x: t.x,
+            y: t.y,
+          },
+          width: t.width,
+          height: t.height,
+        }),
+    );
 
     if (GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = false;
@@ -55,7 +79,8 @@ export const overworldScene: Scene = {
 
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
 
-    movePlayer(dt);
+    const playerBox = movePlayer(dt);
+    if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
   },
 
   draw(ctx) {

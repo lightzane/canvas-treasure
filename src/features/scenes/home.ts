@@ -40,6 +40,7 @@ export const homeScene: Scene = {
           height: c.height,
         }),
     );
+
     GAME_STATE.triggerZones = TRIGGER_HOME.map(
       (t) =>
         new TriggerZone({
@@ -52,7 +53,17 @@ export const homeScene: Scene = {
           height: t.height,
         }),
     );
-    placeAtTile({ sprite: GAME_STATE.player, tile: [3, 14] });
+
+    let spawnLocation: [number, number] = [13, 19];
+
+    if (GAME_STATE.sequence.intro) {
+      spawnLocation = [3, 14];
+      homeScene.fadeIn = 0.5;
+    } else {
+      GAME_STATE.player.face("a");
+    }
+
+    placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
     GAME_STATE.movementLocked = false;
   },
 
