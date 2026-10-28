@@ -70,6 +70,7 @@ export const homeScene: Scene = {
     // placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] }); // DO NOT DELETE
     placeAtTile({ sprite: GAME_STATE.mama, tile: [4, 5] });
     placeAtTile({ sprite: parcel, tile: [8, 4] });
+    GAME_STATE.boundaries.push(new Zone(GAME_STATE.mama.collisionBox)); // blocks walking through mama — must run after she's placed, so the box matches her actual spawn position
     GAME_STATE.movementLocked = false;
   },
 
