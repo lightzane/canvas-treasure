@@ -74,8 +74,8 @@ export const overworldScene: Scene = {
         }),
     );
 
-    if (GAME_STATE.sequence.intro) {
-      GAME_STATE.sequence.intro = false;
+    if (!GAME_STATE.sequence.intro) {
+      GAME_STATE.sequence.intro = true;
       playIrisReveal({
         duration: 3,
         delay: 1, // matches home's fadeOut (1s) so it starts as the fade-in begins, not during the fade-out

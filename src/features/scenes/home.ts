@@ -26,8 +26,17 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
     onEnter: () => {
       GAME_STATE.movementLocked = true;
 
-      if (!GAME_STATE.sequence.bag.get("parcel")) {
+      if (!GAME_STATE.sequence.mama_parcel) {
         DIALOGUE.show({ text: "MAMA: Cheng! Nasan ka?", color: "red" });
+        DIALOGUE.onComplete = () => {
+          GAME_STATE.movementLocked = false;
+        };
+        return; // no parcel yet — stay home
+      }
+
+      // still didn't get parcel
+      else if (!GAME_STATE.sequence.bag.get("parcel")) {
+        DIALOGUE.show({ text: "MAMA: Cheng! Paki kuha nitong parcel.", color: "red" });
         DIALOGUE.onComplete = () => {
           GAME_STATE.movementLocked = false;
         };
@@ -39,7 +48,7 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
   },
   mama_parcel: {
     onEnter: () => {
-      if (GAME_STATE.sequence.bag.get("parcel")) return;
+      if (GAME_STATE.sequence.bag.get("parcel") || GAME_STATE.sequence.mama_parcel) return;
 
       GAME_STATE.movementLocked = true;
       GAME_STATE.mama.face("s");
@@ -53,13 +62,24 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
           color: "red",
         });
         DIALOGUE.effect(() => playAttentionBounce(parcel, { hops: 3 }), 2);
-
         DIALOGUE.queue(`
             Invitation daw yan.
             Nareceive rin ng ibang mga kapitbahay.    
         `);
+        DIALOGUE.queue(`Pero di naman yan tulad ng natanggap nila na invitation.`);
+        DIALOGUE.effect(() => {
+          GAME_STATE.mama.face("d");
+          playExclamation(GAME_STATE.mama, { hold: 2 });
+        }, 2);
+        DIALOGUE.queue(`Paki tingin naman ng parcel.`);
 
-        DIALOGUE.onComplete = () => (GAME_STATE.movementLocked = false);
+        DIALOGUE.onComplete = () => {
+          GAME_STATE.movementLocked = false;
+          playAttentionBounce(parcel, { hops: "infinite", duration: 0.25 });
+          GAME_STATE.sequence.mama_parcel = true;
+
+          gsap.delayedCall(2, () => GAME_STATE.mama.face("w"));
+        };
       });
     },
   },
@@ -98,7 +118,7 @@ export const homeScene: Scene = {
 
     let spawnLocation: [number, number] = [13, 19];
 
-    if (GAME_STATE.sequence.intro) {
+    if (!GAME_STATE.sequence.intro) {
       spawnLocation = [3, 14];
       homeScene.fadeIn = 0.5;
       GAME_STATE.mama.face("w");

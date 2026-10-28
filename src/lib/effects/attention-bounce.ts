@@ -6,12 +6,17 @@ export interface AttentionBounceOptions {
   height?: number;
   /** Seconds for one leg (up, or down) of the hop. @default 0.15 */
   duration?: number;
-  /** How many up-and-down hops. @default 1 */
-  hops?: number;
+  /** How many up-and-down hops, or "infinite" to keep hopping until `.stop()` is called. @default 1 */
+  hops?: number | "infinite";
   /** Seconds to wait before starting. */
   delay?: number;
-  /** Runs once every hop has finished. */
+  /** Runs once every hop has finished. Never fires for `hops: "infinite"` — nothing to stop it is called from outside. */
   onComplete?: () => void;
+}
+
+export interface AttentionBounceHandle {
+  /** Cancels the bounce — mid-delay, mid-hop, or mid-infinite-loop — and snaps the sprite back to its original position. */
+  stop: () => void;
 }
 
 /**
@@ -23,28 +28,41 @@ export interface AttentionBounceOptions {
  *
  * @example playAttentionBounce(npc);
  * @example playAttentionBounce(npc, { hops: 2, height: 20 });
+ * @example
+ * const bounce = playAttentionBounce(npc, { hops: "infinite" });
+ * // ...later, e.g. right before dialogue starts...
+ * bounce.stop();
  */
-export function playAttentionBounce(sprite: Sprite, options: AttentionBounceOptions = {}) {
+export function playAttentionBounce(
+  sprite: Sprite,
+  options: AttentionBounceOptions = {},
+): AttentionBounceHandle {
   const { height = 12, duration = 0.15, hops = 1, delay = 0, onComplete } = options;
-
-  if (delay > 0) {
-    gsap.delayedCall(delay, () =>
-      playAttentionBounce(sprite, { height, duration, hops, onComplete }),
-    );
-    return;
-  }
-
   const baseY = sprite.position.y;
 
-  gsap.to(sprite.position, {
-    y: baseY - height,
-    duration,
-    ease: "power1.out",
-    yoyo: true,
-    repeat: hops * 2 - 1, // each hop is an up-leg + a yoyo'd down-leg
-    onComplete: () => {
-      sprite.position.y = baseY; // guards against float drift from repeated yoyo tweens
-      onComplete?.();
+  let active: gsap.core.Tween | null = null;
+
+  const start = () => {
+    active = gsap.to(sprite.position, {
+      y: baseY - height,
+      duration,
+      ease: "power1.out",
+      yoyo: true,
+      repeat: hops === "infinite" ? -1 : hops * 2 - 1, // each hop is an up-leg + a yoyo'd down-leg
+      onComplete: () => {
+        sprite.position.y = baseY; // guards against float drift from repeated yoyo tweens
+        onComplete?.();
+      },
+    });
+  };
+
+  if (delay > 0) active = gsap.delayedCall(delay, start);
+  else start();
+
+  return {
+    stop: () => {
+      active?.kill();
+      sprite.position.y = baseY;
     },
-  });
+  };
 }

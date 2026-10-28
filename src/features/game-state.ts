@@ -65,9 +65,10 @@ export const GAME_STATE = {
   sceneName: "home" as SceneName,
   /** Seconds the current scene has been active — used by scenes with a `duration`. */
   sceneElapsed: 0,
-  /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = ongoing sequence. */
+  /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
-    intro: true,
+    intro: false,
+    mama_parcel: false,
     bag: new Map<string, number>([["parcel", 0]]),
   },
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */

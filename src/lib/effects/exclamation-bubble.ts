@@ -3,7 +3,7 @@ import { toScreen } from "@/lib/canvas/screen";
 import gsap from "gsap";
 
 export interface ExclamationBubbleOptions {
-  /** Square size, in px. @default 28 */
+  /** Square size, in px. @default 32 */
   size?: number;
   /** Gap between the sprite's head and the bottom of the bubble, in px. @default 10 */
   margin?: number;
@@ -13,7 +13,7 @@ export interface ExclamationBubbleOptions {
   stroke?: string;
   /** "!" glyph color. @default "red" */
   color?: string;
-  /** Seconds the bubble stays fully visible before fading out. @default 0.6 */
+  /** Seconds the bubble stays fully visible before fading out. @default 0.9 */
   hold?: number;
   /** Seconds to wait before popping in. */
   delay?: number;
@@ -34,12 +34,12 @@ export interface ExclamationBubbleOptions {
  */
 export function playExclamation(target: Sprite, options: ExclamationBubbleOptions = {}) {
   const {
-    size = 28,
+    size = 32,
     margin = 10,
     fill = "#fff",
     stroke = "black",
     color = "red",
-    hold = 0.6,
+    hold = 0.9,
     delay = 0,
     onComplete,
   } = options;
@@ -70,7 +70,7 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
   el.style.color = color;
   el.style.fontFamily = '"Oxanium", system-ui';
   el.style.fontWeight = "700";
-  el.style.fontSize = "20px";
+  el.style.fontSize = "24px";
   el.style.pointerEvents = "none";
   el.style.zIndex = "9999";
   el.style.transformOrigin = "center bottom"; // pops up from the point just above the head
@@ -90,7 +90,7 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
         onComplete?.();
       },
     })
-    .to(state, { scale: 1.2, duration: 0.12, ease: "back.out(3)", onUpdate: applyTransform }) // quick overshoot pop
+    .to(state, { scale: 1.8, duration: 0.12, ease: "back.out(3)", onUpdate: applyTransform }) // quick overshoot pop
     .to(state, { scale: 1, duration: 0.08, ease: "power1.in", onUpdate: applyTransform })
     .to(
       state,
