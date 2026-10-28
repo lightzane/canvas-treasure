@@ -32,59 +32,8 @@ function scheduleMamaFaceNorth() {
 }
 
 const TRIGGER_HANDLERS: TriggerHandlers = {
-  exit: {
-    onEnter: () => {
-      if (!GAME_STATE.sequence.mama_parcel) {
-        DIALOGUE.show({ text: "MAMA: Cheng! Nasan ka?", color: "red" });
-        return; // no parcel yet — stay home
-      }
-
-      if (!GAME_STATE.bag.get("parcel")) {
-        DIALOGUE.show({ text: "MAMA: Cheng! Paki kuha nitong parcel.", color: "red" });
-        return; // no parcel yet — stay home
-      }
-
-      GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
-      GAME_STATE.sceneName = "overworld";
-    },
-  },
-  mama_parcel: {
-    onEnter: () => {
-      if (GAME_STATE.bag.get("parcel") || GAME_STATE.sequence.mama_parcel) return;
-
-      GAME_STATE.movementLocked = true; // covers the pre-dialogue beat below; DIALOGUE.show() keeps it locked once the conversation itself starts
-      GAME_STATE.mama.face("s");
-
-      playAttentionBounce(GAME_STATE.mama);
-      playExclamation(GAME_STATE.mama);
-
-      gsap.delayedCall(1, () => {
-        DIALOGUE.effect(() => (parcelShine = playShine(parcel, { mode: "hidden", color: "#fff" })));
-        DIALOGUE.show({
-          text: "MAMA: Che, meron tayo nareceive na parcel.",
-          color: "red",
-        });
-        DIALOGUE.effect(() => playAttentionBounce(parcel, { hops: 3 }), 2);
-        DIALOGUE.queue(`
-            Invitation daw yan.
-            Nareceive rin ng ibang mga kapitbahay.
-        `);
-        DIALOGUE.queue(`Pero di naman yan tulad ng natanggap nila na invitation.`);
-        DIALOGUE.effect(() => {
-          GAME_STATE.mama.face("d");
-          playExclamation(GAME_STATE.mama, { hold: 2 });
-        }, 2);
-        DIALOGUE.queue(`Paki tingin naman ng parcel.`);
-
-        DIALOGUE.onComplete = () => {
-          parcelBounce = playAttentionBounce(parcel, { hops: "infinite", duration: 0.25 });
-          GAME_STATE.sequence.mama_parcel = true;
-
-          scheduleMamaFaceNorth();
-        };
-      });
-    },
-  },
+  exit: { onEnter: exitZone },
+  mama_parcel: { onEnter: mamaParcelConversation },
 };
 
 export const homeScene: Scene = {
@@ -131,6 +80,7 @@ export const homeScene: Scene = {
     placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
     placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
     placeAtTile({ sprite: parcel, tile: [8, 4] });
+
     GAME_STATE.boundaries.push(new Zone(GAME_STATE.mama.collisionBox)); // blocks walking through mama — must run after she's placed, so the box matches her actual spawn position
     GAME_STATE.interactables = [
       { sprite: GAME_STATE.mama },
@@ -141,7 +91,7 @@ export const homeScene: Scene = {
 
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
-    parcel.update(dt);
+    // parcel.update(dt);
     GAME_STATE.mama.update(dt);
 
     const playerBox = movePlayer(dt);
@@ -154,28 +104,7 @@ export const homeScene: Scene = {
       !DIALOGUE.isActive && !GAME_STATE.movementLocked && GAME_STATE.keys.justPressed.z;
 
     if (canInteract) {
-      const target = findFacedTarget(GAME_STATE.player);
-      if (target === GAME_STATE.mama) {
-        mamaFaceNorthTimer?.kill();
-        if (!GAME_STATE.bag.get("parcel"))
-          DIALOGUE.show({ text: "MAMA: Paki kuha mo na ang parcel at tingnan.", color: "red" });
-        else
-          DIALOGUE.show({
-            text: "MAMA: Check mo sa labas kung anu kaya event meron sa invitation na iyan.",
-            color: "red",
-          });
-        DIALOGUE.onComplete = scheduleMamaFaceNorth;
-      }
-      if (target === parcel && !GAME_STATE.bag.get("parcel")) {
-        DIALOGUE.show("A parcel — kunin ko na...");
-        DIALOGUE.onComplete = () => {
-          GAME_STATE.bag.set("parcel", (GAME_STATE.bag.get("parcel") ?? 0) + 1);
-          parcelShine?.stop();
-          parcelShine = null;
-          parcelBounce?.stop(); // it's picked up now — stop the infinite tween, don't leave it running forever on a sprite nothing draws anymore
-          parcelBounce = null;
-        };
-      }
+      interactions();
     }
   },
 
@@ -189,3 +118,79 @@ export const homeScene: Scene = {
     foreground.draw(ctx);
   },
 };
+
+function interactions() {
+  const target = findFacedTarget(GAME_STATE.player);
+  if (target === GAME_STATE.mama) {
+    mamaFaceNorthTimer?.kill();
+    if (!GAME_STATE.bag.get("parcel"))
+      DIALOGUE.show({ text: "MAMA: Paki kuha mo na ang parcel at tingnan.", color: "red" });
+    else
+      DIALOGUE.show({
+        text: "MAMA: Check mo sa labas kung anu kaya event meron sa invitation na iyan.",
+        color: "red",
+      });
+    DIALOGUE.onComplete = scheduleMamaFaceNorth;
+  }
+  if (target === parcel && !GAME_STATE.bag.get("parcel")) {
+    DIALOGUE.show("A parcel — kunin ko na...");
+    DIALOGUE.onComplete = () => {
+      GAME_STATE.bag.set("parcel", (GAME_STATE.bag.get("parcel") ?? 0) + 1);
+      parcelShine?.stop();
+      parcelShine = null;
+      parcelBounce?.stop(); // it's picked up now — stop the infinite tween, don't leave it running forever on a sprite nothing draws anymore
+      parcelBounce = null;
+    };
+  }
+}
+
+function mamaParcelConversation() {
+  if (GAME_STATE.bag.get("parcel") || GAME_STATE.sequence.mama_parcel) return;
+
+  GAME_STATE.movementLocked = true; // covers the pre-dialogue beat below; DIALOGUE.show() keeps it locked once the conversation itself starts
+  GAME_STATE.mama.face("s");
+
+  playAttentionBounce(GAME_STATE.mama);
+  playExclamation(GAME_STATE.mama);
+
+  gsap.delayedCall(1, () => {
+    DIALOGUE.effect(() => (parcelShine = playShine(parcel, { mode: "hidden", color: "#fff" })));
+    DIALOGUE.show({
+      text: "MAMA: Che, meron tayo nareceive na parcel.",
+      color: "red",
+    });
+    DIALOGUE.effect(() => playAttentionBounce(parcel, { hops: 3 }), 2);
+    DIALOGUE.queue(`
+            Invitation daw yan.
+            Nareceive rin ng ibang mga kapitbahay.
+        `);
+    DIALOGUE.queue(`Pero di naman yan tulad ng natanggap nila na invitation.`);
+    DIALOGUE.effect(() => {
+      GAME_STATE.mama.face("d");
+      playExclamation(GAME_STATE.mama, { hold: 2 });
+    }, 2);
+    DIALOGUE.queue(`Paki tingin naman ng parcel.`);
+
+    DIALOGUE.onComplete = () => {
+      parcelBounce = playAttentionBounce(parcel, { hops: "infinite", duration: 0.25 });
+      GAME_STATE.sequence.mama_parcel = true;
+
+      scheduleMamaFaceNorth();
+    };
+  });
+}
+
+function exitZone() {
+  if (!GAME_STATE.sequence.mama_parcel) {
+    DIALOGUE.show({ text: "MAMA: Cheng! Nasan ka?", color: "red" });
+    return; // no parcel yet — stay home
+  }
+
+  if (!GAME_STATE.bag.get("parcel")) {
+    DIALOGUE.show({ text: "MAMA: Cheng! Paki kuha nitong parcel.", color: "red" });
+    return; // no parcel yet — stay home
+  }
+
+  GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
+  GAME_STATE.sceneName = "overworld";
+}
