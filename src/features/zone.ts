@@ -2,6 +2,9 @@ import { getOverlapArea, type Rect } from "@/features/collisions";
 import type { Position } from "@/features/sprite";
 import { toScreen } from "@/lib/canvas/screen";
 
+/** px² of slack on the "fully contained" overlap check, to absorb floating-point rounding from fractional (moveSpeed * dt) movement — see `checkTriggerZones`. */
+const OVERLAP_EPSILON = 0.1;
+
 interface ZoneProps {
   position: Position;
   width: number;
@@ -71,7 +74,15 @@ export function checkTriggerZones(
   const playerArea = playerBox.width * playerBox.height;
 
   for (const zone of zones) {
-    const overlapping = getOverlapArea(playerBox, zone) >= playerArea;
+    const overlapArea = getOverlapArea(playerBox, zone);
+    // Movement deltas (moveSpeed * dt) are fractional pixels, so the player's
+    // box almost never lands on an exact integer boundary — without this
+    // slack, a box that's visually/practically fully inside a zone can come
+    // up a fraction of a px² short of `playerArea` and never register as
+    // "entered" (worst case: stuck against a wall, re-sampling that same
+    // near-miss every frame forever, until a direction change nudges it
+    // across the line).
+    const overlapping = overlapArea >= playerArea - OVERLAP_EPSILON;
     const handler = handlers[zone.name];
 
     if (overlapping && !zone.entered) handler?.onEnter?.(zone);

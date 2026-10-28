@@ -13,6 +13,9 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
 
 const KEY_TO_ACTION: Record<string, ActionKey> = { z: "z", x: "x", " ": "z" };
 
+/** `KeyboardEvent.key` reflects Shift/CapsLock state (e.g. "W" with CapsLock on) — normalize single-character keys to lowercase so letter lookups aren't case-sensitive. Multi-character keys (ArrowUp, Shift, ...) are left as-is. */
+const normalizeKey = (key: string) => (key.length === 1 ? key.toLowerCase() : key);
+
 export class Controller {
   private readonly keys: (typeof GAME_STATE)["keys"];
 
@@ -32,7 +35,8 @@ export class Controller {
     // repeat would silently refill it before the key was ever actually released.
     if (e.repeat) return;
 
-    const direction = KEY_TO_DIRECTION[e.key];
+    const key = normalizeKey(e.key);
+    const direction = KEY_TO_DIRECTION[key];
     if (direction) {
       const pressed = this.keys.pressed;
       const existing = pressed.indexOf(direction);
@@ -42,12 +46,13 @@ export class Controller {
       return;
     }
 
-    const action = KEY_TO_ACTION[e.key];
+    const action = KEY_TO_ACTION[key];
     if (action) this.keys.actions[action] = true;
   }
 
   keyup(e: KeyboardEvent) {
-    const direction = KEY_TO_DIRECTION[e.key];
+    const key = normalizeKey(e.key);
+    const direction = KEY_TO_DIRECTION[key];
     if (direction) {
       const pressed = this.keys.pressed;
       const existing = pressed.indexOf(direction);
@@ -55,7 +60,7 @@ export class Controller {
       return;
     }
 
-    const action = KEY_TO_ACTION[e.key];
+    const action = KEY_TO_ACTION[key];
     if (action) this.keys.actions[action] = false;
   }
 
