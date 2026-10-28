@@ -1,6 +1,7 @@
 import { GAME_STATE, img } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
+import { playIrisReveal } from "@/lib/iris-reveal";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
@@ -35,6 +36,11 @@ export const overworldScene: Scene = {
     placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
     placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
     placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
+
+    if (GAME_STATE.sequence.intro) {
+      GAME_STATE.sequence.intro = false;
+      playIrisReveal({ duration: 5, delay: 1, softness: 20 }); // delay matches home's fadeOut (1s) so it starts as the fade-in begins, not during the fade-out
+    }
   },
 
   update(dt) {

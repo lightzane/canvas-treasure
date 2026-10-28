@@ -48,6 +48,10 @@ export const GAME_STATE = {
   sceneName: "home" as SceneName,
   /** Seconds the current scene has been active — used by scenes with a `duration`. */
   sceneElapsed: 0,
+  /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = ongoing sequence. */
+  sequence: {
+    intro: true,
+  },
 };
 
 const { player } = GAME_STATE;
