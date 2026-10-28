@@ -61,18 +61,22 @@ export const homeScene: Scene = {
     if (GAME_STATE.sequence.intro) {
       spawnLocation = [3, 14];
       homeScene.fadeIn = 0.5;
+      GAME_STATE.mama.face("w");
     } else {
       GAME_STATE.player.face("a");
     }
 
     placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
+    // placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] }); // DO NOT DELETE
+    placeAtTile({ sprite: GAME_STATE.mama, tile: [4, 5] });
     placeAtTile({ sprite: parcel, tile: [8, 4] });
     GAME_STATE.movementLocked = false;
   },
 
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
-    parcel.update(dt);
+    // parcel.update(dt);
+    GAME_STATE.mama.update(dt);
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
@@ -81,6 +85,7 @@ export const homeScene: Scene = {
   draw(ctx) {
     background.draw(ctx);
     parcel.draw(ctx);
+    GAME_STATE.mama.draw(ctx);
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
