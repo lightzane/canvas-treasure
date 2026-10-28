@@ -315,7 +315,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <group id="11" name="removables">
+ <group id="11" name="removables" visible="0">
   <layer id="12" name="items" width="16" height="27">
    <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

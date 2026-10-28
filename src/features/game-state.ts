@@ -51,6 +51,12 @@ export const GAME_STATE = {
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = ongoing sequence. */
   sequence: {
     intro: true,
+    bag: [
+      {
+        name: "parcel",
+        quantity: 0,
+      },
+    ],
   },
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,

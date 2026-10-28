@@ -10,9 +10,11 @@ import { preload } from "@/lib/preload";
 
 const IMG_MAP_BG = img("maps/home.png");
 const IMG_MAP_FG = img("maps/home-fg.png");
+const IMG_PARCEL = img("others/parcel.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
+const parcel = new Sprite({ src: IMG_PARCEL, scale: 2 });
 
 const TRIGGER_HANDLERS: TriggerHandlers = {
   exit: {
@@ -26,7 +28,7 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
 export const homeScene: Scene = {
   fadeIn: 1,
   fadeOut: 1,
-  ready: preload([background.image, foreground.image]),
+  ready: preload([background.image, foreground.image, parcel.image]),
 
   enter() {
     GAME_STATE.boundaries = COLLISION_HOME.map(
@@ -64,11 +66,13 @@ export const homeScene: Scene = {
     }
 
     placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
+    placeAtTile({ sprite: parcel, tile: [8, 4] });
     GAME_STATE.movementLocked = false;
   },
 
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
+    parcel.update(dt);
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
@@ -76,6 +80,7 @@ export const homeScene: Scene = {
 
   draw(ctx) {
     background.draw(ctx);
+    parcel.draw(ctx);
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 

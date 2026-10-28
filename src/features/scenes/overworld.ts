@@ -1,15 +1,16 @@
+import { COLLISION_OVERWORLD } from "@/constants/collisions/overworld";
 import { TRIGGER_OVERWORLD } from "@/constants/triggers/overworld";
 import { GAME_STATE, img } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
-import { checkTriggerZones, TriggerZone, type TriggerHandlers } from "@/features/zone";
+import { checkTriggerZones, TriggerZone, Zone, type TriggerHandlers } from "@/features/zone";
 import { playIrisReveal } from "@/lib/iris-reveal";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 
 const IMG_MAP_BG = img("maps/overworld.png");
-const IMG_MAP_FG = img("pallet-town-foreground.png");
+const IMG_MAP_FG = img("maps/overworld-fg.png");
 const IMG_FOUNTAIN_SMALL = img("others/fountain-small.png");
 const IMG_FOUNTAIN_BIG = img("others/fountain-big.png");
 
@@ -47,6 +48,18 @@ export const overworldScene: Scene = {
     placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
     placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
     placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
+
+    GAME_STATE.boundaries = COLLISION_OVERWORLD.map(
+      (c) =>
+        new Zone({
+          position: {
+            x: c.x,
+            y: c.y,
+          },
+          width: c.width,
+          height: c.height,
+        }),
+    );
 
     GAME_STATE.triggerZones = TRIGGER_OVERWORLD.map(
       (t) =>
