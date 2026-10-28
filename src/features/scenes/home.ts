@@ -79,7 +79,7 @@ export const homeScene: Scene = {
 
     placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
     placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
-    placeAtTile({ sprite: parcel, tile: [8, 4] });
+    placeAtTile({ sprite: parcel, tile: [8, 3.9] });
 
     GAME_STATE.boundaries.push(new Zone(GAME_STATE.mama.collisionBox)); // blocks walking through mama — must run after she's placed, so the box matches her actual spawn position
     GAME_STATE.interactables = [
