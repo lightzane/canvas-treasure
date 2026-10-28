@@ -4,7 +4,7 @@ import { GAME_STATE, img } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import { checkTriggerZones, TriggerZone, Zone, type TriggerHandlers } from "@/features/zone";
-import { playIrisReveal } from "@/lib/iris-reveal";
+import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
