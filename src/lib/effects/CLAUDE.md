@@ -26,9 +26,15 @@ gives the canvas-local coordinate; add the canvas element's own
 lookup in `iris-reveal.ts`/`exclamation-bubble.ts`) to get a real page
 coordinate — then build a plain `position: fixed` element from that. This is
 fine for anything brief enough that the camera won't have panned
-meaningfully during it, which covers every effect here so far. If a future
-effect genuinely needs to track a moving target over a longer duration,
-that's a real exception — ask before reaching for canvas.
+meaningfully during it, which covers most effects here.
+
+`shine.ts` is the one real exception so far: it's infinite by design (runs
+until `.stop()`), so the camera genuinely can move meaningfully over its
+lifetime. It still stays DOM/CSS + GSAP — just re-reads the target's screen
+position every frame via `gsap.ticker.add(reposition)` instead of once at
+creation. That's the correct adaptation for a long-running effect; it's not
+license to add a canvas-drawn one — still ask first if a future effect seems
+to need that.
 
 ## Shape every effect follows
 
@@ -42,7 +48,13 @@ that's a real exception — ask before reaching for canvas.
 - `delay?: number` — handled by recursing through `gsap.delayedCall(delay, () => play<Name>({ ...options, delay: 0 }))`,
   not by making the caller schedule it themselves.
 - `onComplete?: () => void` — fires after the effect has fully finished
-  (and, where relevant, after its element has removed itself).
+  (and, where relevant, after its element has removed itself). An
+  infinite-by-design effect (`attention-bounce.ts`'s `hops: "infinite"`,
+  `shine.ts`) never fires this — it returns a `{ stop(): void }` handle
+  instead, which the caller MUST keep and call once the effect is no longer
+  needed. Forgetting to is a real memory leak (an orphaned GSAP tween
+  running forever) — see `playAttentionBounce`'s infinite mode for the bug
+  this was found from.
 - No manual `update(dt)` needed from the game loop — GSAP ticks itself via
   its own internal `requestAnimationFrame`, independent of the canvas game
   loop (same reasoning as `src/lib/cues.ts`).

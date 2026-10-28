@@ -9,6 +9,7 @@ import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
+import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
@@ -23,7 +24,7 @@ const foreground = new Sprite({ src: IMG_MAP_FG });
 const parcel = new Sprite({ src: IMG_PARCEL, scale: 2 });
 
 let parcelBounce: AttentionBounceHandle | null = null;
-
+let parcelShine: ShineHandle | null = null;
 let mamaFaceNorthTimer: gsap.core.Tween | null = null;
 function scheduleMamaFaceNorth() {
   mamaFaceNorthTimer?.kill(); // cancel any earlier pending one — e.g. from spam-talking — so only the latest survives
@@ -58,6 +59,7 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
       playExclamation(GAME_STATE.mama);
 
       gsap.delayedCall(1, () => {
+        DIALOGUE.effect(() => (parcelShine = playShine(parcel, { mode: "hidden", color: "#fff" })));
         DIALOGUE.show({
           text: "MAMA: Che, meron tayo nareceive na parcel.",
           color: "red",
@@ -168,6 +170,8 @@ export const homeScene: Scene = {
         DIALOGUE.show("A parcel — kunin ko na...");
         DIALOGUE.onComplete = () => {
           GAME_STATE.bag.set("parcel", (GAME_STATE.bag.get("parcel") ?? 0) + 1);
+          parcelShine?.stop();
+          parcelShine = null;
           parcelBounce?.stop(); // it's picked up now — stop the infinite tween, don't leave it running forever on a sprite nothing draws anymore
           parcelBounce = null;
         };

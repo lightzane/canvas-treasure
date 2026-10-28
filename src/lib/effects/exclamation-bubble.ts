@@ -34,7 +34,7 @@ export interface ExclamationBubbleOptions {
  */
 export function playExclamation(target: Sprite, options: ExclamationBubbleOptions = {}) {
   const {
-    size = 32,
+    size = 40,
     margin = 10,
     fill = "#fff",
     stroke = "black",
@@ -70,7 +70,7 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
   el.style.color = color;
   el.style.fontFamily = '"Oxanium", system-ui';
   el.style.fontWeight = "700";
-  el.style.fontSize = "24px";
+  el.style.fontSize = "32px";
   el.style.pointerEvents = "none";
   el.style.zIndex = "9999";
   el.style.transformOrigin = "center bottom"; // pops up from the point just above the head
