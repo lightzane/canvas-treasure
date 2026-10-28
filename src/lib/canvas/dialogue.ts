@@ -88,12 +88,14 @@ class Dialogue {
    */
   effect(run: () => void, delay = 0) {
     const wasIdle = !this.isActive;
+    if (wasIdle) this.onComplete = () => {}; // starting a fresh sequence from idle (no preceding show()) — otherwise a stale onComplete left over from the last conversation can fire again once this resolves
     this.pending.push({ kind: "effect", run, delay });
     if (wasIdle) this.pullPending(); // nothing else in progress — this can run right away
   }
 
   private enqueue(input: DialogueInput) {
     const wasIdle = !this.isActive;
+    if (wasIdle) this.onComplete = () => {}; // same reasoning as effect() above
     const isPlain = typeof input === "string" || Array.isArray(input);
     const text = isPlain ? input : input.text;
     const color = isPlain ? this.lastColor : (input.color ?? this.lastColor);

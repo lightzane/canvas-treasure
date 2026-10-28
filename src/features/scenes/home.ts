@@ -127,7 +127,7 @@ function interactions() {
       DIALOGUE.show({ text: "MAMA: Paki kuha mo na ang parcel at tingnan.", color: "red" });
     else
       DIALOGUE.show({
-        text: "MAMA: Check mo sa labas kung anu kaya event meron sa invitation na iyan.",
+        text: "MAMA: Check mo nga rin sa labas kung anu kaya event meron sa invitation na iyan.",
         color: "red",
       });
     DIALOGUE.onComplete = scheduleMamaFaceNorth;
@@ -135,13 +135,29 @@ function interactions() {
   if (target === parcel && !GAME_STATE.bag.get("parcel")) {
     DIALOGUE.show("A parcel — kunin ko na...");
     DIALOGUE.onComplete = () => {
+      GAME_STATE.movementLocked = true;
       GAME_STATE.bag.set("parcel", (GAME_STATE.bag.get("parcel") ?? 0) + 1);
       parcelShine?.stop();
       parcelShine = null;
       parcelBounce?.stop(); // it's picked up now — stop the infinite tween, don't leave it running forever on a sprite nothing draws anymore
       parcelBounce = null;
+      gsap.delayedCall(1, revealParcel);
     };
   }
+}
+
+function revealParcel() {
+  DIALOGUE.effect(() => gsap.delayedCall(1, () => GAME_STATE.mama.face("s")));
+  GAME_STATE.movementLocked = true;
+  DIALOGUE.queue({
+    text: "Ma, yung parcel meron maliit na chest tapos invitation lang rin ang laman.",
+    color: "teal",
+  });
+  DIALOGUE.queue({
+    text: "MAMA: Sige makapag marites na lang ako sa labas mamaya kung anung event meron.",
+    color: "red",
+  });
+  DIALOGUE.onComplete = scheduleMamaFaceNorth;
 }
 
 function mamaParcelConversation() {

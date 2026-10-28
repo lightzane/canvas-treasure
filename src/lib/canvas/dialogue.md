@@ -77,6 +77,21 @@ DIALOGUE.effect(() => playAttentionBounce(npc), 0.5);
 DIALOGUE.queue("...oh!");
 ```
 
+`.effect()`/`.queue()` can also legally start a sequence on their own — you
+don't strictly need a leading `.show()` if the first thing should be a
+side effect rather than text:
+
+```ts
+DIALOGUE.effect(() => playAttentionBounce(npc));
+DIALOGUE.queue("...oh!");
+DIALOGUE.onComplete = () => { ... };
+```
+
+Set `onComplete` _after_ these calls, not before — same as with `.show()`,
+calling `.effect()`/`.queue()` while idle resets it first, so an
+`onComplete` set earlier (e.g. by an unrelated prior conversation) can't
+accidentally fire again.
+
 `isActive` stays `true` for the whole delay, so anything gated on it (see
 below) keeps treating the conversation as still in progress.
 
