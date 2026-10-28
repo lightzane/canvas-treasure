@@ -18,21 +18,34 @@ export interface IrisRevealOptions {
   delay?: number;
   /** Pixels of blur/feather on the circle's edge. `0` (default) is a sharp cut. */
   softness?: number;
+  /** Runs after the disposable overlay has removed itself. */
+  onComplete?: () => void;
 }
 
 export function playIrisReveal(options: IrisRevealOptions = {}) {
-  const { duration = 1, delay = 0, softness = 0 } = options;
+  const { duration = 1, delay = 0, softness = 0, onComplete } = options;
 
   if (delay > 0) {
-    gsap.delayedCall(delay, () => playIrisReveal({ duration, softness }));
+    gsap.delayedCall(delay, () => playIrisReveal({ duration, softness, onComplete }));
     return;
   }
 
-  const maxRadius = Math.hypot(window.innerWidth, window.innerHeight) / 2; // reaches past the viewport's corners
+  // Scoped to the game canvas's own rect, not the whole viewport — on a
+  // screen bigger than the canvas, sizing this to window.innerWidth/innerHeight
+  // meant the circle had to keep growing well past the canvas's corners, over
+  // empty page background you'd never see, before the tween actually
+  // finished — so the canvas looked done long before onComplete fired.
+  const canvasRect = document.getElementById("treasure")?.getBoundingClientRect();
+  const width = canvasRect?.width ?? window.innerWidth;
+  const height = canvasRect?.height ?? window.innerHeight;
+  const maxRadius = Math.hypot(width, height) / 2; // reaches past the canvas's own corners
 
   const el = document.createElement("div");
   el.style.position = "fixed";
-  el.style.inset = "0";
+  el.style.top = `${canvasRect?.top ?? 0}px`;
+  el.style.left = `${canvasRect?.left ?? 0}px`;
+  el.style.width = `${width}px`;
+  el.style.height = `${height}px`;
   el.style.pointerEvents = "none";
   el.style.zIndex = "9999";
   el.style.background = "black";
@@ -51,8 +64,11 @@ export function playIrisReveal(options: IrisRevealOptions = {}) {
   gsap.to(state, {
     radius: maxRadius + softness, // so the inner (fully transparent) edge still reaches maxRadius at the end
     duration,
-    ease: "power2.out",
+    ease: "none", // linear — constant expansion speed, not a decelerating one
     onUpdate: setMask,
-    onComplete: () => el.remove(),
+    onComplete: () => {
+      el.remove();
+      onComplete?.();
+    },
   });
 }

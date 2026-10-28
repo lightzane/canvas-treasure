@@ -39,7 +39,14 @@ export const overworldScene: Scene = {
 
     if (GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = false;
-      playIrisReveal({ duration: 5, delay: 1, softness: 20 }); // delay matches home's fadeOut (1s) so it starts as the fade-in begins, not during the fade-out
+      playIrisReveal({
+        duration: 3,
+        delay: 1, // matches home's fadeOut (1s) so it starts as the fade-in begins, not during the fade-out
+        softness: 20,
+        onComplete: () => (GAME_STATE.movementLocked = false),
+      });
+    } else {
+      GAME_STATE.movementLocked = false; // no cutscene this time — nothing to wait for
     }
   },
 

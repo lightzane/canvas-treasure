@@ -15,7 +15,12 @@ const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
 
 const TRIGGER_HANDLERS: TriggerHandlers = {
-  exit: { onEnter: () => (GAME_STATE.sceneName = "overworld") },
+  exit: {
+    onEnter: () => {
+      GAME_STATE.sceneName = "overworld";
+      GAME_STATE.movementLocked = true;
+    },
+  },
 };
 
 export const homeScene: Scene = {
@@ -48,6 +53,7 @@ export const homeScene: Scene = {
         }),
     );
     placeAtTile({ sprite: GAME_STATE.player, tile: [3, 14] });
+    GAME_STATE.movementLocked = false;
   },
 
   update(dt) {

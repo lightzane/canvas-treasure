@@ -14,6 +14,14 @@ import { GAME_STATE } from "@/features/game-state";
  */
 export function movePlayer(dt: number): Rect | undefined {
   const player = GAME_STATE.player;
+
+  if (GAME_STATE.movementLocked) {
+    updateAnimation(undefined); // forces idle — otherwise the player can look stuck mid-walk-frame
+    player.update(dt); // keeps the idle animation itself playing, just blocks movement
+    followCamera(); // still track the player (e.g. its freshly-placed spawn tile) — only movement is blocked, not the camera
+    return undefined;
+  }
+
   const direction = GAME_STATE.keys.pressed.at(-1);
 
   updateAnimation(direction);

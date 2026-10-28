@@ -52,6 +52,8 @@ export const GAME_STATE = {
   sequence: {
     intro: true,
   },
+  /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
+  movementLocked: true,
 };
 
 const { player } = GAME_STATE;

@@ -26,7 +26,7 @@ export default function Layout() {
   return (
     <div className="w-full min-h-dvh flex justify-center items-center">
       <div className="relative">
-        <canvas ref={canvasRef}></canvas>
+        <canvas id="treasure" ref={canvasRef}></canvas>
 
         {showBag && (
           <div className="absolute inset-x-4 bottom-4 rounded-xl border-4 border-green-900 bg-[#f8f0d8] p-4 font-game text-green-950 shadow-[4px_4px_0_rgba(0,0,0,0.25)]">
