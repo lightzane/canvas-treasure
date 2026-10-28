@@ -1,0 +1,124 @@
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from "@/constants/game-settings";
+import { Controller } from "@/features/controller";
+import { assetsReady, GAME_STATE } from "@/features/game-state";
+import type { Scene, SceneEvent, SceneName } from "@/features/scene";
+import { homeScene } from "@/features/scenes/home";
+import { overworldScene } from "@/features/scenes/overworld";
+import { DIALOGUE, dialogueFontReady } from "@/lib/canvas/dialogue";
+import { FADE } from "@/lib/canvas/fade-transition";
+
+const SCENES: Record<SceneName, Scene> = {
+  home: homeScene,
+  overworld: overworldScene,
+};
+
+function enterScene(from: SceneName, to: SceneName) {
+  const showDuration = SCENES[from].fadeOut ?? 0;
+  const hideDuration = SCENES[to].fadeIn ?? 0;
+  GAME_STATE.sceneName = to;
+  GAME_STATE.sceneElapsed = 0;
+  // Otherwise a direction key still held from walking into e.g. an exit
+  // trigger immediately re-faces/moves the player next frame, fighting
+  // whatever the new scene's own `enter()` just set up.
+  GAME_STATE.keys.pressed.length = 0;
+  SCENES[to].enter?.();
+  FADE.start(showDuration, hideDuration);
+}
+
+export class GameEngine {
+  /** Overwrite this to listen for scene-emitted events (e.g. `game.on = (event) => {...}`). */
+  on: (event: SceneEvent) => void = () => {};
+
+  private ctx: CanvasRenderingContext2D;
+  /** The game controls input by user */
+  private controller: Controller;
+  /** Stores the rAF id (requestAnimationFrame) */
+  private gameLoopId = 0;
+  /**
+   * Used as elapsed time or delta time to sync devices via
+   * time-based instead of frame-rate
+   */
+  private lastTime = performance.now();
+  private lastSceneName: SceneName = GAME_STATE.sceneName;
+  private cancelled = false;
+
+  constructor(canvas: HTMLCanvasElement) {
+    canvas.width = CANVAS_WIDTH;
+    canvas.height = CANVAS_HEIGHT;
+    canvas.style.width = `${CANVAS_WIDTH}px`;
+    canvas.style.height = `${CANVAS_HEIGHT}px`;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) throw new Error("2D context not supported");
+    this.ctx = ctx;
+
+    this.controller = new Controller(GAME_STATE.keys);
+  }
+
+  start() {
+    window.addEventListener("keydown", this.controller.keydown);
+    window.addEventListener("keyup", this.controller.keyup);
+    window.addEventListener("blur", this.controller.blur);
+
+    const scenesReady = Object.values(SCENES).map((scene) => scene.ready ?? Promise.resolve());
+
+    Promise.all([assetsReady, dialogueFontReady, ...scenesReady])
+      .then(() => {
+        if (this.cancelled) return;
+        SCENES[GAME_STATE.sceneName].enter?.();
+        this.gameLoopId = requestAnimationFrame(this.tick);
+      })
+      .catch((err) => console.error(err));
+  }
+
+  stop() {
+    this.cancelled = true;
+    cancelAnimationFrame(this.gameLoopId);
+    window.removeEventListener("keydown", this.controller.keydown);
+    window.removeEventListener("keyup", this.controller.keyup);
+    window.removeEventListener("blur", this.controller.blur);
+  }
+
+  // class-field arrow: `this` stays bound without a manual .bind() call
+  // if not arrow, then in constructor we need to manually bind:
+  // `this.tick = this.tick.bind(this);`
+  private tick = (time: number) => {
+    this.gameLoopId = requestAnimationFrame(this.tick);
+    const dt = (time - this.lastTime) / 1000; // delta time in seconds
+    this.lastTime = time;
+
+    const scene = SCENES[GAME_STATE.sceneName];
+    scene.on = this.on;
+    scene.update(dt);
+    GAME_STATE.sceneElapsed += dt;
+
+    const sceneChanged = GAME_STATE.sceneName !== this.lastSceneName;
+    const sceneExpired = scene.duration !== undefined && GAME_STATE.sceneElapsed >= scene.duration;
+
+    if (sceneChanged) enterScene(this.lastSceneName, GAME_STATE.sceneName);
+    else if (sceneExpired) enterScene(this.lastSceneName, scene.next!);
+
+    this.lastSceneName = GAME_STATE.sceneName;
+
+    FADE.update(dt);
+    DIALOGUE.update(dt);
+
+    // Skip drawing while still showing the overlay — otherwise whatever this
+    // scene draws bleeds through the still-transparent overlay before the
+    // swap is actually hidden. The canvas just keeps the last painted
+    // (frozen) frame in the meantime, since nothing draws over it.
+    if (FADE.phase !== "show") {
+      this.ctx.fillStyle = "black";
+      this.ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      scene.draw(this.ctx, dt);
+      DIALOGUE.draw(this.ctx);
+    }
+
+    FADE.draw(this.ctx);
+
+    // DEBUG: Center of the canvas
+    // this.ctx.fillStyle = "rgba(255, 0, 0, 1)";
+    // this.ctx.fillRect(CANVAS_WIDTH / 2 - 5, CANVAS_HEIGHT / 2 - 5, 10, 10);
+  };
+}

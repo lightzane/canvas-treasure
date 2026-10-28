@@ -1,0 +1,12 @@
+:root {
+  /* prettier-ignore */
+  --default-font-feature-settings: /* See: https://rsms.me/inter/inter.css */
+    /* 'cv02', Open four */
+    'cv03', /* Open six */
+    'cv04', /* Open nine */
+    'cv11'; /* Single-story a */
+}
+
+@theme inline {
+  --font-game: "Oxanium", system-ui;
+}
