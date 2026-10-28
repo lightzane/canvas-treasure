@@ -9,4 +9,5 @@ export const TRIGGER_HOME = scaleTiledObjects([
     width: 20.0598086177064,
     height: 54.780683010218,
   },
+  { name: "mama_parcel", x: 225, y: 215.5, width: 63.5, height: 40.5 },
 ]);

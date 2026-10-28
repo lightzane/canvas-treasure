@@ -436,7 +436,7 @@
          "name":"removables",
          "opacity":1,
          "type":"group",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -985,7 +985,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -1006,6 +1006,18 @@
                  "width":20.0598086177064,
                  "x":458.979781109944,
                  "y":609.192276312211
+                }, 
+                {
+                 "height":40.5,
+                 "id":39,
+                 "name":"mama_parcel",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":63.5,
+                 "x":225,
+                 "y":215.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1014,7 +1026,7 @@
          "y":0
         }],
  "nextlayerid":22,
- "nextobjectid":39,
+ "nextobjectid":40,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

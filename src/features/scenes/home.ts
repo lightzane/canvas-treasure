@@ -4,12 +4,14 @@ import { GAME_STATE, img } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import { checkTriggerZones, TriggerZone, Zone, type TriggerHandlers } from "@/features/zone";
+import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import gsap from "gsap";
 
 const IMG_MAP_BG = img("maps/home.png");
 const IMG_MAP_FG = img("maps/home-fg.png");
@@ -22,10 +24,43 @@ const parcel = new Sprite({ src: IMG_PARCEL, scale: 2 });
 const TRIGGER_HANDLERS: TriggerHandlers = {
   exit: {
     onEnter: () => {
-      playAttentionBounce(GAME_STATE.mama); // just to see it in action for now — not blocking the exit
-      playExclamation(GAME_STATE.mama);
-      //   GAME_STATE.sceneName = "overworld";
       GAME_STATE.movementLocked = true;
+
+      if (!GAME_STATE.sequence.bag.get("parcel")) {
+        DIALOGUE.show({ text: "MAMA: Cheng! Nasan ka?", color: "red" });
+        DIALOGUE.onComplete = () => {
+          GAME_STATE.movementLocked = false;
+        };
+        return; // no parcel yet — stay home
+      }
+
+      GAME_STATE.sceneName = "overworld";
+    },
+  },
+  mama_parcel: {
+    onEnter: () => {
+      if (GAME_STATE.sequence.bag.get("parcel")) return;
+
+      GAME_STATE.movementLocked = true;
+      GAME_STATE.mama.face("s");
+
+      playAttentionBounce(GAME_STATE.mama);
+      playExclamation(GAME_STATE.mama);
+
+      gsap.delayedCall(1, () => {
+        DIALOGUE.show({
+          text: "MAMA: Che, meron tayo nareceive na parcel.",
+          color: "red",
+        });
+        DIALOGUE.effect(() => playAttentionBounce(parcel, { hops: 3 }), 2);
+
+        DIALOGUE.queue(`
+            Invitation daw yan.
+            Nareceive rin ng ibang mga kapitbahay.    
+        `);
+
+        DIALOGUE.onComplete = () => (GAME_STATE.movementLocked = false);
+      });
     },
   },
 };
@@ -72,8 +107,7 @@ export const homeScene: Scene = {
     }
 
     placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
-    // placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
-    placeAtTile({ sprite: GAME_STATE.mama, tile: [10, 18.5] });
+    placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
     placeAtTile({ sprite: parcel, tile: [8, 4] });
     GAME_STATE.boundaries.push(new Zone(GAME_STATE.mama.collisionBox)); // blocks walking through mama — must run after she's placed, so the box matches her actual spawn position
     GAME_STATE.movementLocked = false;
@@ -81,7 +115,7 @@ export const homeScene: Scene = {
 
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
-    // parcel.update(dt);
+    parcel.update(dt);
     GAME_STATE.mama.update(dt);
 
     const playerBox = movePlayer(dt);

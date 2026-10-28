@@ -59,6 +59,23 @@ DIALOGUE.queue({ text: "You've got this!", color: "red" });
 > still owned by one speaker/color. Use a separate `.queue()` call per speaker
 > instead.
 
+## Running a side effect between messages
+
+`.queue()` is for text the player taps through. For something that should
+just happen — a bounce, a sound, a camera nudge — between two messages,
+without waiting for a tap, use `.effect()` instead. `delay` (seconds,
+optional) pauses afterward, with the box still showing the previous page,
+before the next queued item appears:
+
+```ts
+DIALOGUE.show("Something catches her eye.");
+DIALOGUE.effect(() => playAttentionBounce(npc), 0.5);
+DIALOGUE.queue("...oh!");
+```
+
+`isActive` stays `true` for the whole delay, so anything gated on it (see
+below) keeps treating the conversation as still in progress.
+
 ## Controls
 
 - **Hold Z or X**: reveal the current page faster.
