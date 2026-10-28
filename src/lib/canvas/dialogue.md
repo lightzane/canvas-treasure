@@ -15,6 +15,10 @@ Already wired into the engine — nothing to do per-scene.
   frame, gated behind the same fade check as scene drawing.
 - `Controller` tracks `Z`/`X` into `GAME_STATE.keys.actions`, which `Dialogue`
   reads directly.
+- `show()` sets `GAME_STATE.movementLocked = true`; it's released automatically
+  once the whole conversation finishes (right before `onComplete` fires, so
+  `onComplete` can re-lock it again if it needs to for its own reasons). No
+  scene needs to lock/unlock around a `DIALOGUE.show()` call by hand.
 
 Any scene can just import the singleton and call `.show()`:
 

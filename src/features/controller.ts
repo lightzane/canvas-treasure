@@ -47,7 +47,10 @@ export class Controller {
     }
 
     const action = KEY_TO_ACTION[key];
-    if (action) this.keys.actions[action] = true;
+    if (action) {
+      this.keys.actions[action] = true;
+      this.keys.justPressed[action] = true; // repeats already filtered above, so this is the real rising edge
+    }
   }
 
   keyup(e: KeyboardEvent) {
@@ -69,5 +72,7 @@ export class Controller {
     this.keys.pressed.length = 0;
     this.keys.actions.z = false;
     this.keys.actions.x = false;
+    this.keys.justPressed.z = false;
+    this.keys.justPressed.x = false;
   }
 }

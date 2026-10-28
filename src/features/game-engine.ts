@@ -132,6 +132,10 @@ export class GameEngine {
 
     FADE.draw(this.ctx);
 
+    // Spent for this frame — a keydown sets it again for the next one.
+    GAME_STATE.keys.justPressed.z = false;
+    GAME_STATE.keys.justPressed.x = false;
+
     // DEBUG: Center of the canvas
     // this.ctx.fillStyle = "rgba(255, 0, 0, 1)";
     // this.ctx.fillRect(CANVAS_WIDTH / 2 - 5, CANVAS_HEIGHT / 2 - 5, 10, 10);

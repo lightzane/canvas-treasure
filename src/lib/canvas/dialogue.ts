@@ -59,13 +59,14 @@ class Dialogue {
     return this.pages.length > 0 || this.pending.length > 0 || this.resolvingEffects;
   }
 
-  /** Starts a brand-new conversation, discarding whatever was showing before. */
+  /** Starts a brand-new conversation, discarding whatever was showing before. Locks `GAME_STATE.movementLocked` automatically — released automatically once the whole conversation finishes, see `pullPending`. */
   show(input: DialogueInput) {
     this.pending = [];
     this.pages = [];
     this.needsWrap = false;
     this.onComplete = () => {};
     this.lastColor = "black"; // a new conversation always starts from the default, not whatever the last one ended on
+    GAME_STATE.movementLocked = true;
     this.enqueue(input);
   }
 
@@ -125,6 +126,7 @@ class Dialogue {
     if (!next) {
       this.resolvingEffects = false;
       this.pages = [];
+      GAME_STATE.movementLocked = false; // ahead of onComplete, so it can re-lock for its own purposes if it needs to
       this.onComplete();
       return;
     }
