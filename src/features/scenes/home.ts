@@ -4,6 +4,7 @@ import { GAME_STATE, img } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import { checkTriggerZones, TriggerZone, Zone, type TriggerHandlers } from "@/features/zone";
+import { drawYSorted } from "@/lib/canvas/y-sort";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
@@ -67,8 +68,7 @@ export const homeScene: Scene = {
     }
 
     placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
-    // placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] }); // DO NOT DELETE
-    placeAtTile({ sprite: GAME_STATE.mama, tile: [4, 5] });
+    placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
     placeAtTile({ sprite: parcel, tile: [8, 4] });
     GAME_STATE.boundaries.push(new Zone(GAME_STATE.mama.collisionBox)); // blocks walking through mama — must run after she's placed, so the box matches her actual spawn position
     GAME_STATE.movementLocked = false;
@@ -86,11 +86,10 @@ export const homeScene: Scene = {
   draw(ctx) {
     background.draw(ctx);
     parcel.draw(ctx);
-    GAME_STATE.mama.draw(ctx);
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
-    GAME_STATE.player.draw(ctx);
+    drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
     foreground.draw(ctx);
   },
 };
