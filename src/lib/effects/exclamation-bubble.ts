@@ -56,7 +56,7 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
 
   const el = document.createElement("div");
   el.textContent = "!";
-  el.style.position = "fixed";
+  el.className = "game-effect-overlay font-game";
   el.style.left = `${anchorX}px`;
   el.style.top = `${anchorY}px`;
   el.style.width = `${size}px`;
@@ -68,11 +68,8 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
   el.style.background = fill;
   el.style.border = `2px solid ${stroke}`;
   el.style.color = color;
-  el.style.fontFamily = '"Oxanium", system-ui';
   el.style.fontWeight = "700";
   el.style.fontSize = "32px";
-  el.style.pointerEvents = "none";
-  el.style.zIndex = "9999";
   el.style.transformOrigin = "center bottom"; // pops up from the point just above the head
   document.body.appendChild(el);
 

@@ -41,13 +41,11 @@ export function playIrisReveal(options: IrisRevealOptions = {}) {
   const maxRadius = Math.hypot(width, height) / 2; // reaches past the canvas's own corners
 
   const el = document.createElement("div");
-  el.style.position = "fixed";
+  el.className = "game-effect-overlay";
   el.style.top = `${canvasRect?.top ?? 0}px`;
   el.style.left = `${canvasRect?.left ?? 0}px`;
   el.style.width = `${width}px`;
   el.style.height = `${height}px`;
-  el.style.pointerEvents = "none";
-  el.style.zIndex = "9999";
   el.style.background = "black";
   document.body.appendChild(el);
 

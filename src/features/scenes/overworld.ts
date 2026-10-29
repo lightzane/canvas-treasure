@@ -37,7 +37,7 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
 
 export const overworldScene: Scene = {
   fadeIn: 1,
-  fadeOut: 1,
+  fadeOut: 0.5,
   ready: preload([background.image, foreground.image, smallFountainA.image, bigFountainA.image]),
 
   enter() {
@@ -76,6 +76,7 @@ export const overworldScene: Scene = {
 
     if (!GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = true;
+      overworldScene.fadeIn = 0.5;
       playIrisReveal({
         duration: 3,
         delay: 1, // matches home's fadeOut (1s) so it starts as the fade-in begins, not during the fade-out

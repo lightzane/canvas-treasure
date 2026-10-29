@@ -1,4 +1,4 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from "@/constants/game-settings";
+import { CANVAS_HEIGHT, CANVAS_WIDTH, GAME_FONT_FAMILY } from "@/constants/game-settings";
 import { GAME_STATE } from "@/features/game-state";
 import gsap from "gsap";
 
@@ -17,7 +17,7 @@ const BOX_TOP = CANVAS_HEIGHT - BOX_HEIGHT - BOX_PADDING;
 const TEXT_LEFT = BOX_LEFT + TEXT_PADDING;
 const TEXT_MAX_WIDTH = BOX_WIDTH - TEXT_PADDING * 2;
 const LINE_HEIGHT = 36;
-const FONT = '300 28px "Oxanium", system-ui';
+const FONT = `300 28px ${GAME_FONT_FAMILY}`;
 const READ_MORE_SIZE = 14;
 const READ_MORE_GAP = 8; // space between the last word and the indicator
 const READ_MORE_BLINK_INTERVAL = 0.5; // seconds

@@ -1,0 +1,14 @@
+/* Shared base for every disposable DOM "drama" effect overlay in
+   src/lib/effects/ (iris-reveal, exclamation-bubble, shine) — the one thing
+   all three always set the same way, regardless of their own size/position/
+   color. See src/lib/effects/CLAUDE.md for the pattern these follow.
+
+   position: fixed (not absolute) deliberately — these elements' left/top
+   are computed from getBoundingClientRect(), which is viewport-relative, so
+   fixed lines up with zero extra scroll-offset math. absolute would drift
+   out of alignment with the canvas the moment the page ever scrolls. */
+.game-effect-overlay {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+}

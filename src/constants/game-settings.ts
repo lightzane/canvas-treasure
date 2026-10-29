@@ -16,3 +16,12 @@ export const CANVAS_CENTER = {
   x: CANVAS_WIDTH / 2,
   y: CANVAS_HEIGHT / 2,
 };
+
+/**
+ * Canvas-drawn text can't use the `font-game` CSS class (`ctx.font` is a
+ * plain string the Canvas 2D API parses itself, nothing to do with the
+ * DOM/CSSOM) — this is the canvas-side equivalent. Keep this in sync with
+ * `--font-game` in `src/custom.css` if the game's font ever changes; DOM
+ * elements should use the `font-game` class instead of this constant.
+ */
+export const GAME_FONT_FAMILY = '"Oxanium", system-ui';

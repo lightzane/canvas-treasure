@@ -8,5 +8,8 @@
 }
 
 @theme inline {
+  /* Canvas-drawn text can't use this class (ctx.font is a plain string, not
+     CSS) — keep GAME_FONT_FAMILY in src/constants/game-settings.ts in sync
+     with this if it ever changes. */
   --font-game: "Oxanium", system-ui;
 }

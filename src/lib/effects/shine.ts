@@ -54,14 +54,12 @@ export function playShine(target: Sprite, options: ShineOptions = {}): ShineHand
   const { mode = "shimmer", size = 20, color = "#fff176", delay = 0 } = options;
 
   const el = document.createElement("div");
-  el.style.position = "fixed";
+  el.className = "game-effect-overlay";
   el.style.width = `${size}px`;
   el.style.height = `${size}px`;
   el.style.background = color;
   el.style.clipPath = SPARKLE_CLIP_PATH;
   el.style.filter = `drop-shadow(0 0 ${size / 2}px ${color})`; // the glow halo — respects the clipped star shape, unlike box-shadow
-  el.style.pointerEvents = "none";
-  el.style.zIndex = "9999";
   el.style.opacity = "0";
   document.body.appendChild(el);
   // Centers the element on its own point, the GSAP way — setting raw CSS

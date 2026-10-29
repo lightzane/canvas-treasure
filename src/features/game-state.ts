@@ -1,6 +1,7 @@
 import type { Direction } from "@/features/controller";
 import type { Interactable } from "@/features/interact";
 import type { SceneName } from "@/features/scene";
+import type { Sprite } from "@/features/sprite";
 import { PlayerSprite, type AnimationSource } from "@/features/sprite-player";
 import type { TriggerZone, Zone } from "@/features/zone";
 import { preload } from "@/lib/preload";
@@ -69,6 +70,8 @@ export const GAME_STATE = {
   triggerZones: [] as TriggerZone[],
   /** Everything the player can face-and-press-Z to interact with in the current scene (NPCs to talk to, chests, ...) — rebuilt fresh by each scene's `enter()`, same as `boundaries`/`triggerZones`. */
   interactables: [] as Interactable[],
+  /** Whatever `findFacedTarget()` currently returns — recomputed every frame by the active scene, read by `drawInteractHighlight()`. */
+  facedTarget: undefined as Sprite | undefined,
   keys: {
     pressed: [] as Direction[],
     actions: { z: false, x: false },

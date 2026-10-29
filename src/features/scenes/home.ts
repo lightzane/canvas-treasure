@@ -1,7 +1,7 @@
 import { COLLISION_HOME } from "@/constants/collisions/home";
 import { TRIGGER_HOME } from "@/constants/triggers/home";
 import { GAME_STATE, img } from "@/features/game-state";
-import { findFacedTarget } from "@/features/interact";
+import { drawInteractPrompt, findFacedTarget, interact } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import { checkTriggerZones, TriggerZone, Zone, type TriggerHandlers } from "@/features/zone";
@@ -21,7 +21,7 @@ const IMG_PARCEL = img("others/parcel.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
-const parcel = new Sprite({ src: IMG_PARCEL, scale: 2 });
+const parcel = new Sprite({ src: IMG_PARCEL, scale: 2, boxSize: { height: 64, width: 64 } });
 
 let parcelBounce: AttentionBounceHandle | null = null;
 let parcelShine: ShineHandle | null = null;
@@ -38,7 +38,7 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
 
 export const homeScene: Scene = {
   fadeIn: 1,
-  fadeOut: 1,
+  fadeOut: 0.5,
   ready: preload([background.image, foreground.image, parcel.image]),
 
   enter() {
@@ -72,6 +72,7 @@ export const homeScene: Scene = {
     if (!GAME_STATE.sequence.intro) {
       spawnLocation = [3, 14];
       homeScene.fadeIn = 0.5;
+      homeScene.fadeOut = 1;
       GAME_STATE.mama.face("w");
     } else {
       GAME_STATE.player.face("a");
@@ -79,12 +80,12 @@ export const homeScene: Scene = {
 
     placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
     placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
-    placeAtTile({ sprite: parcel, tile: [8, 3.9] });
+    placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
 
     GAME_STATE.boundaries.push(new Zone(GAME_STATE.mama.collisionBox)); // blocks walking through mama — must run after she's placed, so the box matches her actual spawn position
     GAME_STATE.interactables = [
-      { sprite: GAME_STATE.mama },
-      { sprite: parcel, probeDistance: 64, facePlayer: false }, // sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway
+      { sprite: GAME_STATE.mama, label: "Talk" },
+      { sprite: parcel, probeDistance: 32 * 4, facePlayer: false, label: "Get" }, // sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway
     ];
     GAME_STATE.movementLocked = false;
   },
@@ -100,27 +101,28 @@ export const homeScene: Scene = {
     // Shared gate for anything triggered by facing + pressing Z — combine
     // with a target-specific condition per interactable (progress flags,
     // item ownership, ...), same as mama's check below.
-    const canInteract =
-      !DIALOGUE.isActive && !GAME_STATE.movementLocked && GAME_STATE.keys.justPressed.z;
+    const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
+    GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
 
-    if (canInteract) {
-      interactions();
+    if (canAct && GAME_STATE.keys.justPressed.z) {
+      interactions(interact(GAME_STATE.player));
     }
   },
 
   draw(ctx) {
     background.draw(ctx);
-    if (!GAME_STATE.bag.get("parcel")) parcel.draw(ctx);
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
     drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
     foreground.draw(ctx);
+
+    if (!GAME_STATE.bag.get("parcel")) parcel.draw(ctx);
+    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget);
   },
 };
 
-function interactions() {
-  const target = findFacedTarget(GAME_STATE.player);
+function interactions(target: Sprite | undefined) {
   if (target === GAME_STATE.mama) {
     mamaFaceNorthTimer?.kill();
     if (!GAME_STATE.bag.get("parcel"))
@@ -132,22 +134,28 @@ function interactions() {
       });
     DIALOGUE.onComplete = scheduleMamaFaceNorth;
   }
+
   if (target === parcel && !GAME_STATE.bag.get("parcel")) {
     DIALOGUE.show("A parcel — kunin ko na...");
+    DIALOGUE.effect(() => {
+      playExclamation(GAME_STATE.player);
+      playAttentionBounce(GAME_STATE.player);
+    });
     DIALOGUE.onComplete = () => {
       GAME_STATE.movementLocked = true;
       GAME_STATE.bag.set("parcel", (GAME_STATE.bag.get("parcel") ?? 0) + 1);
+      GAME_STATE.interactables = GAME_STATE.interactables.filter((i) => i.sprite !== parcel);
       parcelShine?.stop();
       parcelShine = null;
       parcelBounce?.stop(); // it's picked up now — stop the infinite tween, don't leave it running forever on a sprite nothing draws anymore
       parcelBounce = null;
-      gsap.delayedCall(1, revealParcel);
+      gsap.delayedCall(0.5, revealParcel);
     };
   }
 }
 
 function revealParcel() {
-  DIALOGUE.effect(() => gsap.delayedCall(1, () => GAME_STATE.mama.face("s")));
+  DIALOGUE.effect(() => gsap.delayedCall(1, () => GAME_STATE.mama.face("d")));
   GAME_STATE.movementLocked = true;
   DIALOGUE.queue({
     text: "Ma, yung parcel meron maliit na chest tapos invitation lang rin ang laman.",
