@@ -207,13 +207,20 @@ export class Sprite {
     const groundX = x + box.width / 2 + SHADOW_DIRECTION.x * shadowLength;
     const groundY = y + box.height - shadowHeight * 0.5 + SHADOW_DIRECTION.y * shadowLength;
 
-    ctx.save();
+    // Manually snapshot/restore just the two properties touched here, rather than
+    // ctx.save()/restore() — a full state push/pop for two values measured as
+    // disproportionately expensive in this environment (a captured performance
+    // trace showed it as the single biggest main-thread cost, called twice a
+    // frame for the player + one NPC — far more than the shadow draw itself).
+    const prevAlpha = ctx.globalAlpha;
+    const prevFillStyle = ctx.fillStyle;
     ctx.globalAlpha = 0.3;
     ctx.fillStyle = "black";
     ctx.beginPath();
     ctx.ellipse(groundX, groundY, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.restore();
+    ctx.globalAlpha = prevAlpha;
+    ctx.fillStyle = prevFillStyle;
   }
 
   update(dt: number) {

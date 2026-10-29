@@ -124,7 +124,13 @@ export function drawInteractPrompt(ctx: CanvasRenderingContext2D, sprite: Sprite
   const centerX = x + sprite.boxSize.width / 2;
   const headY = y - 10; // gap above the sprite's head
 
-  ctx.save();
+  // Manually snapshot/restore just the properties touched here, rather than
+  // ctx.save()/restore() — see the same fix + rationale in Sprite.drawShadow().
+  const prevFont = ctx.font;
+  const prevTextAlign = ctx.textAlign;
+  const prevTextBaseline = ctx.textBaseline;
+  const prevFillStyle = ctx.fillStyle;
+
   ctx.font = `700 16px ${GAME_FONT_FAMILY}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "bottom";
@@ -145,5 +151,8 @@ export function drawInteractPrompt(ctx: CanvasRenderingContext2D, sprite: Sprite
   ctx.fillStyle = "white";
   ctx.fillText(label, centerX, headY - paddingY);
 
-  ctx.restore();
+  ctx.font = prevFont;
+  ctx.textAlign = prevTextAlign;
+  ctx.textBaseline = prevTextBaseline;
+  ctx.fillStyle = prevFillStyle;
 }

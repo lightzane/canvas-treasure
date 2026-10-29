@@ -10,6 +10,8 @@ import {
   Zone,
   type TriggerHandlers,
 } from "@/features/zone";
+import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
+import { isInViewport } from "@/lib/canvas/viewport";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { img } from "@/lib/img";
@@ -52,7 +54,12 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
 export const overworldScene: Scene = {
   fadeIn: 1,
   fadeOut: 0.5,
-  ready: preload([background.image, foreground.image, smallFountainA.image, bigFountainA.image]),
+  ready: preload([
+    background.image,
+    foreground.image,
+    smallFountainA.image,
+    bigFountainA.image,
+  ]).then(() => prepareViewportClamped([background, foreground])),
 
   enter() {
     GAME_STATE.player.face("s");
@@ -90,7 +97,7 @@ export const overworldScene: Scene = {
   },
 
   update(dt) {
-    decor.forEach((sprite) => sprite.update(dt));
+    decor.filter(isInViewport).forEach((sprite) => sprite.update(dt));
     GAME_STATE.papa.update(dt);
 
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
@@ -100,11 +107,11 @@ export const overworldScene: Scene = {
   },
 
   draw(ctx) {
-    background.draw(ctx);
+    drawViewportClamped(ctx, background);
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
-    decor.forEach((sprite) => sprite.draw(ctx));
+    decor.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
     // GAME_STATE.player.draw(ctx);
     drawYSorted(ctx, [GAME_STATE.player, GAME_STATE.papa]);
-    foreground.draw(ctx);
+    drawViewportClamped(ctx, foreground);
   },
 };

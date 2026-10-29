@@ -12,6 +12,7 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
+import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
@@ -46,7 +47,9 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
 export const homeScene: Scene = {
   fadeIn: 1,
   fadeOut: 0.5,
-  ready: preload([background.image, foreground.image, parcel.image]),
+  ready: preload([background.image, foreground.image, parcel.image]).then(() =>
+    prepareViewportClamped([background, foreground]),
+  ),
 
   enter() {
     GAME_STATE.boundaries = createBoundaries(COLLISION_HOME);
@@ -95,12 +98,12 @@ export const homeScene: Scene = {
   },
 
   draw(ctx) {
-    background.draw(ctx);
+    drawViewportClamped(ctx, background);
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
     drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
-    foreground.draw(ctx);
+    drawViewportClamped(ctx, foreground);
 
     if (!GAME_STATE.bag.get("parcel")) parcel.draw(ctx);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget);

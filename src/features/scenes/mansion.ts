@@ -11,6 +11,7 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
+import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
@@ -30,7 +31,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
 export const mansionScene: Scene = {
   fadeIn: 0.5,
   fadeOut: 0.5,
-  ready: preload([background.image]),
+  ready: preload([background.image]).then(() => prepareViewportClamped([background])),
 
   enter() {
     GAME_STATE.boundaries = createBoundaries(COLLISION_MANSION);
@@ -62,7 +63,7 @@ export const mansionScene: Scene = {
   },
 
   draw(ctx) {
-    background.draw(ctx);
+    drawViewportClamped(ctx, background);
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
