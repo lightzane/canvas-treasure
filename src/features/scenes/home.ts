@@ -1,7 +1,7 @@
 import { COLLISION_HOME } from "@/constants/collisions/home";
 import { TRIGGER_HOME, type TriggerName } from "@/constants/triggers/home";
 import { GAME_STATE } from "@/features/game-state";
-import { drawInteractPrompt, findFacedTarget, interact } from "@/features/interact";
+import { drawInteractPrompt, updateInteraction } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import {
@@ -85,13 +85,7 @@ export const homeScene: Scene = {
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
-    // Shared gate for anything triggered by facing + pressing Z — combine
-    // with a target-specific condition per interactable (progress flags,
-    // item ownership, ...), same as mama's check below.
-    const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
-    GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
-
-    if (canAct && GAME_STATE.keys.justPressed.z) interactions(interact(GAME_STATE.player));
+    updateInteraction(interactions);
   },
 
   draw(ctx) {

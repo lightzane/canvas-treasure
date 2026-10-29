@@ -70,7 +70,7 @@ export const GAME_STATE = {
     /** True for exactly one frame — the frame the key actually went down, not every frame it's held. Set by `Controller.keydown`, cleared once per frame by `GameEngine.tick`. */
     justPressed: { z: false, x: false },
   },
-  sceneName: "mansion" as SceneName,
+  sceneName: "overworld" as SceneName,
   /** Seconds the current scene has been active — used by scenes with a `duration`. */
   sceneElapsed: 0,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */

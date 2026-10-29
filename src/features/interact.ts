@@ -4,6 +4,7 @@ import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
 import type { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
+import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { toScreen } from "@/lib/canvas/screen";
 
 const DEFAULT_PROBE_DISTANCE = 64; // px — how far ahead of the player to reach, unless an interactable sets its own
@@ -103,6 +104,28 @@ export function interact(player: { collisionBox: Rect; facing: Direction }): Spr
   }
 
   return match.sprite;
+}
+
+/**
+ * Drives the interact system for one frame — the shared gate + lookup +
+ * keypress logic every scene was repeating in its own `update()`:
+ * recomputes `GAME_STATE.facedTarget` (cleared while mid-dialogue or
+ * movement-locked, so nothing can be interacted with then), and — only on
+ * the frame Z is actually pressed, and only while able to act — calls
+ * `onInteract` with whatever `interact()` resolves. Combine `onInteract`
+ * with per-target conditions of your own (progress flags, item ownership,
+ * ...), same as every scene's own `interactions()` already does.
+ *
+ * @example
+ * update(dt) {
+ *   // ...movement, trigger zones...
+ *   updateInteraction(interactions);
+ * }
+ */
+export function updateInteraction(onInteract: (target: Sprite | undefined) => void) {
+  const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
+  GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
+  if (canAct && GAME_STATE.keys.justPressed.z) onInteract(interact(GAME_STATE.player));
 }
 
 /**

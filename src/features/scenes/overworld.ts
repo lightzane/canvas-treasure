@@ -1,9 +1,10 @@
 import { COLLISION_OVERWORLD } from "@/constants/collisions/overworld";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
 import { GAME_STATE } from "@/features/game-state";
-import { drawInteractPrompt, findFacedTarget, interact } from "@/features/interact";
+import { drawInteractPrompt, updateInteraction } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
+import type { PlayerSprite } from "@/features/sprite-player";
 import {
   checkTriggerZones,
   createBoundaries,
@@ -35,7 +36,8 @@ const bigFountainA = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, sca
 const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 
 /** This map's own static/animated decor — drawn after the background, before the player. */
-const decor: Sprite[] = [smallFountainA, smallFountainB, bigFountainA, bigFountainB];
+const DECORS: Sprite[] = [smallFountainA, smallFountainB, bigFountainA, bigFountainB];
+const NPCS: PlayerSprite[] = [GAME_STATE.papa];
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   enter_home: {
@@ -81,7 +83,7 @@ export const overworldScene: Scene = {
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
-    GAME_STATE.obstacles = [GAME_STATE.papa]; // blocks walking through him, tracking wherever he currently is
+    GAME_STATE.obstacles = NPCS;
     GAME_STATE.interactables = [{ sprite: GAME_STATE.papa, label: "Talk" }];
 
     if (!GAME_STATE.sequence.intro) {
@@ -96,28 +98,33 @@ export const overworldScene: Scene = {
     } else {
       GAME_STATE.movementLocked = false; // no cutscene this time — nothing to wait for
     }
+
+    // Spawn Hua Ze Lei after meeting Dao Ming Si
+    if (GAME_STATE.sequence.meet_daomingsi) {
+      NPCS.push(GAME_STATE.huazelei);
+      placeAtTile({ sprite: GAME_STATE.huazelei, tile: [81.5, 35] });
+      GAME_STATE.huazelei.face("w");
+    }
   },
 
   update(dt) {
-    decor.filter(isInViewport).forEach((sprite) => sprite.update(dt));
-    GAME_STATE.papa.update(dt);
+    DECORS.filter(isInViewport).forEach((sprite) => sprite.update(dt));
+    NPCS.forEach((n) => n.update(dt));
 
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
-    const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
-    GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
-    if (canAct && GAME_STATE.keys.justPressed.z) interactions(interact(GAME_STATE.player));
+    updateInteraction(interactions);
   },
 
   draw(ctx) {
     drawViewportClamped(ctx, background);
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
-    decor.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
+    DECORS.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
     // GAME_STATE.player.draw(ctx);
-    drawYSorted(ctx, [GAME_STATE.player, GAME_STATE.papa]);
+    drawYSorted(ctx, [GAME_STATE.player, ...NPCS]);
     drawViewportClamped(ctx, foreground);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget);
   },

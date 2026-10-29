@@ -1,7 +1,7 @@
 import { COLLISION_MANSION } from "@/constants/collisions/mansion";
 import { TRIGGER_MANSION, type TriggerName } from "@/constants/triggers/mansion";
 import { GAME_STATE } from "@/features/game-state";
-import { drawInteractPrompt, findFacedTarget, interact } from "@/features/interact";
+import { drawInteractPrompt, updateInteraction } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
@@ -112,9 +112,7 @@ export const mansionScene: Scene = {
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
-    const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
-    GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
-    if (canAct && GAME_STATE.keys.justPressed.z) interactions(interact(GAME_STATE.player));
+    updateInteraction(interactions);
   },
 
   draw(ctx) {
