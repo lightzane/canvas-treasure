@@ -62,6 +62,7 @@ export class GameEngine {
     const ctx = canvas.getContext("2d");
 
     if (!ctx) throw new Error("2D context not supported");
+    ctx.imageSmoothingEnabled = false;
     this.ctx = ctx;
 
     this.controller = new Controller(GAME_STATE.keys);
