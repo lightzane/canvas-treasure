@@ -66,10 +66,13 @@ function getMoveDelta(direction: Direction, distance: number): { dx: number; dy:
 
 /**
  * Builds the player's attempted box at `(dx, dy)`, blocks it against
- * `GAME_STATE.boundaries`, and commits the move if it's clear.
+ * `GAME_STATE.boundaries` (static) and `GAME_STATE.obstacles` (live sprites
+ * — checked by their current `collisionBox` every call, so a moving NPC
+ * keeps blocking correctly wherever it actually is), and commits the move
+ * if it's clear.
  *
- * `GAME_STATE.boundaries` is one shared field, rebuilt fresh by each
- * scene's own `enter()` (via `createBoundaries` in `zone.ts`) before
+ * Both are shared fields, rebuilt fresh by each scene's own `enter()`
+ * (`GAME_STATE.boundaries` via `createBoundaries` in `zone.ts`) before
  * gameplay starts there.
  */
 function attemptMove(dx: number, dy: number): Rect {
@@ -85,7 +88,9 @@ function attemptMove(dx: number, dy: number): Rect {
     },
   };
 
-  const blocked = GAME_STATE.boundaries.some((b) => isColliding(playerBox, b));
+  const blocked =
+    GAME_STATE.boundaries.some((b) => isColliding(playerBox, b)) ||
+    GAME_STATE.obstacles.some((o) => isColliding(playerBox, o.collisionBox));
   if (!blocked) {
     player.position = {
       x: player.position.x + dx,

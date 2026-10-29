@@ -38,6 +38,17 @@ export const GAME_STATE = {
   meizuo: new PlayerSprite({ sprites: { idle: IMGS_MEIZUO_IDLE } }),
   ximen: new PlayerSprite({ sprites: { idle: IMGS_DAOMINGSI_IDLE } }),
   boundaries: [] as Zone[],
+  /**
+   * Sprites to block the player against by their *live* `collisionBox` —
+   * for anything that moves (NPCs, mama, papa). Checked fresh every frame in
+   * `attemptMove`, unlike `boundaries`, which is fixed `Zone` rects (walls,
+   * furniture) that never move once built. Don't snapshot a moving sprite's
+   * `collisionBox` into a `Zone` and push it onto `boundaries` — that freezes
+   * it at whatever position it was at that moment, so it stops blocking
+   * where the sprite actually is the instant it moves. Rebuilt fresh by each
+   * scene's `enter()`, same as `boundaries`/`triggerZones`.
+   */
+  obstacles: [] as Sprite[],
   triggerZones: [] as TriggerZone[],
   /** Everything the player can face-and-press-Z to interact with in the current scene (NPCs to talk to, chests, ...) — rebuilt fresh by each scene's `enter()`, same as `boundaries`/`triggerZones`. */
   interactables: [] as Interactable[],

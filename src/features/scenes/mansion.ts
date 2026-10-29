@@ -9,7 +9,6 @@ import {
   checkTriggerZones,
   createBoundaries,
   createTriggerZones,
-  Zone,
   type TriggerHandlers,
 } from "@/features/zone";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
@@ -21,10 +20,13 @@ import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import { walkToTile, type WalkHandle } from "@/lib/walk-to-tile";
 import { IMGS_BUTLER_IDLE } from "@/sprites/butler";
 import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
 import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
 import gsap from "gsap";
+
+let daoMingSiWalk: WalkHandle | null = null;
 
 const BUTLER = new PlayerSprite({ sprites: { idle: IMGS_BUTLER_IDLE } });
 const STAFF_M1 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } });
@@ -70,8 +72,17 @@ export const mansionScene: Scene = {
     const spawnLocation: [number, number] = [11.5, 20];
 
     placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
-    placeAtTile({ sprite: BUTLER, tile: [11, 6] });
-    placeAtTile({ sprite: GAME_STATE.daomingsi, tile: [11.5, 4] });
+
+    // Once he's left (see removeNpc in nearMissConversation), he's out of NPCS for
+    // good — skip re-placing/re-adding him on a later re-entry to this scene.
+    if (!GAME_STATE.sequence.meet_daomingsi) {
+      placeAtTile({ sprite: BUTLER, tile: [11, 6] });
+      placeAtTile({ sprite: GAME_STATE.daomingsi, tile: [11.5, 4] });
+      BUTLER.face("w");
+    } else {
+      placeAtTile({ sprite: BUTLER, tile: [11, 17] });
+      BUTLER.face("s");
+    }
 
     let col = 21;
     for (const npc of COL_A) {
@@ -85,11 +96,8 @@ export const mansionScene: Scene = {
       col--;
     }
 
-    for (const npc of NPCS) {
-      GAME_STATE.boundaries.push(new Zone(npc.collisionBox));
-    }
+    GAME_STATE.obstacles = NPCS; // blocks walking through any of them, tracking wherever each currently is
 
-    BUTLER.face("w");
     COL_A.forEach((npc) => npc.face("d"));
     COL_B.forEach((npc) => npc.face("a"));
 
@@ -127,15 +135,20 @@ function exitZone() {
   GAME_STATE.sceneName = "overworld";
 }
 
+/** Drops `npc` from this scene's cast — out of `NPCS`, so it stops drawing and updating, and out of `GAME_STATE.obstacles` for free, since that's assigned the same array (not a copy). Use when an NPC has scripted-walked off and shouldn't still be standing there (or blocking the player) once the camera catches up. */
+function removeNpc(npc: PlayerSprite) {
+  const i = NPCS.indexOf(npc);
+  if (i !== -1) NPCS.splice(i, 1);
+}
+
 function interactions(target: Sprite | undefined) {
   if (target === BUTLER) {
-    DIALOGUE.show({ text: "BUTLER LIU: Hello!" });
+    DIALOGUE.show({ text: "BUTLER LIU: Binibining CHE! Wala po dito si Young Master..." });
   }
 }
 
 function nearMissConversation() {
-  if (GAME_STATE.sequence.meet_daomingsi) return;
-  GAME_STATE.sequence.meet_daomingsi = true;
+  if (GAME_STATE.sequence.meet_daomingsi) return; // already met him (and he's gone) — don't replay this
 
   DIALOGUE.show({ text: `BUTLER LIU: Young Master, saan po natin ilalagay ang ke—k!` });
   DIALOGUE.effect(() => {
@@ -147,8 +160,51 @@ function nearMissConversation() {
       playExclamation(BUTLER);
     });
   }, 0.5);
-  DIALOGUE.queue({ text: `[F4] DAO MING SI: Saan ilalagay ang "keys"?`, color: "blue" });
+  DIALOGUE.queue({ text: `F4 DAO MING SI: Saan ilalagay ang "keys"?`, color: "red" });
   DIALOGUE.effect(() => BUTLER.face("w"));
-  DIALOGUE.queue(`LIU! Ihanda mo ang almusal ko nagugutom na ako!`);
+  DIALOGUE.effect(() => playAttentionBounce(GAME_STATE.daomingsi, { hops: 2 }));
+  DIALOGUE.queue(`Liu— ihanda mo ang almusal ko nagugutom na ako!`);
   DIALOGUE.queue(`Hahanapin ko lang ang keys ko...`);
+  DIALOGUE.effect(() => {
+    daoMingSiWalk = walkToTile(GAME_STATE.daomingsi, [[23, 4]], { animated: true });
+  }, 1);
+  DIALOGUE.effect(() => {
+    BUTLER.face("d");
+    gsap.delayedCall(0.5, () => daoMingSiWalk?.stop());
+  });
+  DIALOGUE.queue({
+    text: `BUTLER LIU: Pero ang alam ko ay hindi naman po nawawala ang keys niyo...`,
+    color: "black",
+  });
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.daomingsi), 0.5);
+  DIALOGUE.effect(() => {
+    GAME_STATE.daomingsi.face("a");
+    gsap.delayedCall(0.5, () => playAttentionBounce(GAME_STATE.daomingsi, { hops: 6 }));
+    gsap.delayedCall(0.8, () => {
+      playAttentionBounce(BUTLER);
+      playExclamation(BUTLER);
+    });
+  }, 0.5);
+  DIALOGUE.queue({ text: `DAO MING SI: Hinihingi ko ba ang opinyon mo HA?`, color: "red" });
+  DIALOGUE.effect(() => gsap.delayedCall(0.5, () => GAME_STATE.daomingsi.face("s")));
+  DIALOGUE.queue(`
+    Basta alam ko yung keys ko naiwan ko lang yun kay LEI, 
+    o kay XI MEN man o MEI ZUO. Bahala ka na jan mauna na ako!`);
+  DIALOGUE.effect(() => {
+    walkToTile(GAME_STATE.daomingsi, [[25, 4]], { animated: true });
+    gsap.delayedCall(0.5, () => BUTLER.face("s"));
+  }, 1);
+  DIALOGUE.effect(() => playExclamation(BUTLER), 0.5);
+  DIALOGUE.queue({
+    text: `
+      BUTLER LIU: Mawalang galang na po binibining CHE, 
+      pero nahihiya lang po si Young Master manghingi ng tulong.
+      Kung maaari po tulungan po ninyo siya mahanap ang keys niya.
+    `,
+    color: "black",
+  });
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.sequence.meet_daomingsi = true;
+    removeNpc(GAME_STATE.daomingsi); // he's left — also drops him from GAME_STATE.obstacles, same array reference
+  };
 }

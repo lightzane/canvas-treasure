@@ -8,7 +8,6 @@ import {
   checkTriggerZones,
   createBoundaries,
   createTriggerZones,
-  Zone,
   type TriggerHandlers,
 } from "@/features/zone";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
@@ -82,7 +81,7 @@ export const overworldScene: Scene = {
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
-    GAME_STATE.boundaries.push(new Zone(GAME_STATE.papa.collisionBox));
+    GAME_STATE.obstacles = [GAME_STATE.papa]; // blocks walking through him, tracking wherever he currently is
     GAME_STATE.interactables = [{ sprite: GAME_STATE.papa, label: "Talk" }];
 
     if (!GAME_STATE.sequence.intro) {
