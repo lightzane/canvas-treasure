@@ -3,12 +3,14 @@ import { Controller } from "@/features/controller";
 import { assetsReady, GAME_STATE } from "@/features/game-state";
 import type { Scene, SceneEvent, SceneName } from "@/features/scene";
 import { homeScene } from "@/features/scenes/home";
+import { mansionScene } from "@/features/scenes/mansion";
 import { overworldScene } from "@/features/scenes/overworld";
 import { DIALOGUE, dialogueFontReady } from "@/lib/canvas/dialogue";
 import { FADE } from "@/lib/canvas/fade-transition";
 
 const SCENES: Record<SceneName, Scene> = {
   home: homeScene,
+  mansion: mansionScene,
   overworld: overworldScene,
 };
 

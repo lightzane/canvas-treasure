@@ -1,3 +1,6 @@
+# Aseprite *.bin images
+*.bin
+
 # Logs
 logs
 *.log

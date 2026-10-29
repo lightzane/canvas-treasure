@@ -61,17 +61,25 @@ export const GAME_STATE = {
   player: new PlayerSprite({
     sprites: { walk: IMGS_PLAYER_WALK, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
+    // moveSpeed: 350,
   }),
-  mama: new PlayerSprite({
-    sprites: { idle: IMGS_MAMA_IDLE },
-    initialSprite: "idle",
-  }),
+  mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
   boundaries: [] as Zone[],
   triggerZones: [] as TriggerZone[],
   /** Everything the player can face-and-press-Z to interact with in the current scene (NPCs to talk to, chests, ...) — rebuilt fresh by each scene's `enter()`, same as `boundaries`/`triggerZones`. */
   interactables: [] as Interactable[],
   /** Whatever `findFacedTarget()` currently returns — recomputed every frame by the active scene, read by `drawInteractHighlight()`. */
   facedTarget: undefined as Sprite | undefined,
+  /**
+   * Where the player should spawn next — set by the *exiting* scene right
+   * before it changes `sceneName` (e.g. mansion's exit sets this to
+   * somewhere just outside its own overworld doorway), consumed by the
+   * destination scene's own `enter()`. Needed for any scene with more than
+   * one way in (overworld, reached from home's door, the mansion's door,
+   * ...) — falls back to that scene's own default spawn tile when unset
+   * (e.g. on a direct game boot, with no prior scene to have set one).
+   */
+  spawnLocation: undefined as [number, number] | undefined,
   keys: {
     pressed: [] as Direction[],
     actions: { z: false, x: false },

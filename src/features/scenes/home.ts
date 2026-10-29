@@ -180,10 +180,10 @@ function mamaParcelConversation() {
   gsap.delayedCall(1, () => {
     DIALOGUE.effect(() => (parcelShine = playShine(parcel, { mode: "hidden", color: "#fff" })));
     DIALOGUE.show({
-      text: "MAMA: Che, meron tayo nareceive na parcel.",
+      text: "MAMA: CHE, meron tayo nareceive na parcel.",
       color: "red",
     });
-    DIALOGUE.effect(() => playAttentionBounce(parcel, { hops: 3 }), 2);
+    DIALOGUE.effect(() => playAttentionBounce(parcel, { hops: 3 }), 1);
     DIALOGUE.queue(`
             Invitation daw yan.
             Nareceive rin ng ibang mga kapitbahay.
@@ -191,8 +191,8 @@ function mamaParcelConversation() {
     DIALOGUE.queue(`Pero di naman yan tulad ng natanggap nila na invitation.`);
     DIALOGUE.effect(() => {
       GAME_STATE.mama.face("d");
-      playExclamation(GAME_STATE.mama, { hold: 2 });
-    }, 2);
+      playExclamation(GAME_STATE.mama, { hold: 1 });
+    }, 1);
     DIALOGUE.queue(`Paki tingin naman ng parcel.`);
 
     DIALOGUE.onComplete = () => {
@@ -206,12 +206,12 @@ function mamaParcelConversation() {
 
 function exitZone() {
   if (!GAME_STATE.sequence.mama_parcel) {
-    DIALOGUE.show({ text: "MAMA: Cheng! Nasan ka?", color: "red" });
+    DIALOGUE.show({ text: "MAMA: CHENG! Nasan ka?", color: "red" });
     return; // no parcel yet — stay home
   }
 
   if (!GAME_STATE.bag.get("parcel")) {
-    DIALOGUE.show({ text: "MAMA: Cheng! Paki kuha nitong parcel.", color: "red" });
+    DIALOGUE.show({ text: "MAMA: CHENG! Paki kuha nitong parcel.", color: "red" });
     return; // no parcel yet — stay home
   }
 

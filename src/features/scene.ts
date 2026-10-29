@@ -1,4 +1,4 @@
-export type SceneName = "home" | "overworld";
+export type SceneName = "home" | "mansion" | "overworld";
 
 /**
  * Canvas-scene → HTML-UI bridge. A scene calls `this.on?.(event)` at

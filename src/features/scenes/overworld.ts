@@ -33,6 +33,12 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
       GAME_STATE.movementLocked = true;
     },
   },
+  mansion: {
+    onEnter: () => {
+      GAME_STATE.sceneName = "mansion";
+      GAME_STATE.movementLocked = true;
+    },
+  },
 };
 
 export const overworldScene: Scene = {
@@ -42,8 +48,13 @@ export const overworldScene: Scene = {
 
   enter() {
     GAME_STATE.player.face("s");
-    // Spawn at specific tiles (col, row from Tiled's bottom-left readout)
-    placeAtTile({ sprite: GAME_STATE.player, tile: [58.9, 42] });
+    // Spawn at specific tiles (col, row from Tiled's bottom-left readout).
+    // Default here is "arrived from home" — whichever scene set spawnLocation
+    // (e.g. mansion's exit) takes priority; consumed so it doesn't leak into
+    // a later, unrelated entry (e.g. a straight game boot into overworld).
+    placeAtTile({ sprite: GAME_STATE.player, tile: GAME_STATE.spawnLocation ?? [58.9, 42] });
+    GAME_STATE.spawnLocation = undefined;
+    placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
     placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
     placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
     placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
