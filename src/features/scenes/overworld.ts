@@ -1,5 +1,5 @@
 import { COLLISION_OVERWORLD } from "@/constants/collisions/overworld";
-import { TRIGGER_OVERWORLD } from "@/constants/triggers/overworld";
+import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
 import { GAME_STATE, img } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
@@ -26,14 +26,14 @@ const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, sca
 /** This map's own static/animated decor — drawn after the background, before the player. */
 const decor: Sprite[] = [smallFountainA, smallFountainB, bigFountainA, bigFountainB];
 
-const TRIGGER_HANDLERS: TriggerHandlers = {
-  home: {
+const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
+  enter_home: {
     onEnter: () => {
       GAME_STATE.sceneName = "home";
       GAME_STATE.movementLocked = true;
     },
   },
-  mansion: {
+  enter_mansion: {
     onEnter: () => {
       GAME_STATE.sceneName = "mansion";
       GAME_STATE.movementLocked = true;

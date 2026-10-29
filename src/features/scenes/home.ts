@@ -1,5 +1,5 @@
 import { COLLISION_HOME } from "@/constants/collisions/home";
-import { TRIGGER_HOME } from "@/constants/triggers/home";
+import { TRIGGER_HOME, type TriggerName } from "@/constants/triggers/home";
 import { GAME_STATE, img } from "@/features/game-state";
 import { drawInteractPrompt, findFacedTarget, interact } from "@/features/interact";
 import type { Scene } from "@/features/scene";
@@ -31,9 +31,9 @@ function scheduleMamaFaceNorth() {
   mamaFaceNorthTimer = gsap.delayedCall(2, () => GAME_STATE.mama.face("w"));
 }
 
-const TRIGGER_HANDLERS: TriggerHandlers = {
+const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
-  mama_parcel: { onEnter: mamaParcelConversation },
+  story_mama_parcel: { onEnter: mamaParcelConversation },
 };
 
 export const homeScene: Scene = {

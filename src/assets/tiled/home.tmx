@@ -535,8 +535,8 @@
   <object id="36" x="333.249" y="423.018" width="36.8394" height="55.9787"/>
   <object id="37" x="333.249" y="423.018" width="0.423442"/>
  </objectgroup>
- <objectgroup color="#fffb00" id="21" name="trigger_zones" visible="0">
+ <objectgroup color="#fffb00" id="21" name="trigger_zones">
   <object id="38" name="exit" x="458.98" y="609.192" width="20.0598" height="54.7807"/>
-  <object id="39" name="mama_parcel" x="225" y="215.5" width="63.5" height="40.5"/>
+  <object id="39" name="story_mama_parcel" x="225" y="215.5" width="63.5" height="40.5"/>
  </objectgroup>
 </map>

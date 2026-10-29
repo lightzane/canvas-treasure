@@ -1,4 +1,4 @@
-import { TRIGGER_MANSION } from "@/constants/triggers/mansion";
+import { TRIGGER_MANSION, type TriggerName } from "@/constants/triggers/mansion";
 import { GAME_STATE, img } from "@/features/game-state";
 import { drawInteractPrompt, findFacedTarget } from "@/features/interact";
 import type { Scene } from "@/features/scene";
@@ -16,7 +16,7 @@ const IMG_MAP_BG = img("maps/mansion.png");
 const background = new Sprite({ src: IMG_MAP_BG });
 // const foreground = new Sprite({ src: IMG_MAP_FG });
 
-const TRIGGER_HANDLERS: TriggerHandlers = {
+const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
 };
 

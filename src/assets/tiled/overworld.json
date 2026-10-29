@@ -13546,7 +13546,7 @@
                 {
                  "height":40.548674248,
                  "id":1,
-                 "name":"home",
+                 "name":"enter_home",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
@@ -13558,7 +13558,7 @@
                 {
                  "height":47.5,
                  "id":4,
-                 "name":"mansion",
+                 "name":"enter_mansion",
                  "opacity":1,
                  "rotation":0,
                  "type":"",
@@ -13582,7 +13582,7 @@
                 {
                  "height":170.954202409833,
                  "id":5,
-                 "name":"mansion_fountain",
+                 "name":"sound_fountain_mansion",
                  "opacity":1,
                  "rotation":0,
                  "type":"",

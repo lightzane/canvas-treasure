@@ -51,15 +51,22 @@ export class TriggerZone extends Zone {
   }
 }
 
-export type TriggerHandlers = Record<
-  string,
-  {
-    /** Fires once, the frame the player's box starts overlapping the zone. */
-    onEnter?: (zone: TriggerZone) => void;
-    /** Fires once, the frame the player's box stops overlapping the zone. */
-    onLeave?: (zone: TriggerZone) => void;
-  }
->;
+interface TriggerHandler {
+  /** Fires once, the frame the player's box starts overlapping the zone. */
+  onEnter?: (zone: TriggerZone) => void;
+  /** Fires once, the frame the player's box stops overlapping the zone. */
+  onLeave?: (zone: TriggerZone) => void;
+}
+
+/**
+ * Parameterize with the map's own trigger-zone name union for autocomplete
+ * and typo-checking, e.g. `TriggerHandlers<(typeof TRIGGER_HOME)[number]["name"]>`
+ * — a misspelled or stale key (one that doesn't match any zone Tiled
+ * actually exports for that map) becomes a compile error instead of a
+ * silently-never-firing handler. `Partial` — a scene only needs to handle
+ * the zones it cares about, not every single one the map defines.
+ */
+export type TriggerHandlers<Name extends string = string> = Partial<Record<Name, TriggerHandler>>;
 
 /**
  * Dispatches each zone's `onEnter`/`onLeave` by `zone.name` — the one place
