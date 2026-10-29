@@ -1,6 +1,7 @@
 import { COLLISION_OVERWORLD } from "@/constants/collisions/overworld";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
 import { GAME_STATE } from "@/features/game-state";
+import { drawInteractPrompt, findFacedTarget, interact } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import {
@@ -10,8 +11,9 @@ import {
   Zone,
   type TriggerHandlers,
 } from "@/features/zone";
-import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
+import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
+import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { img } from "@/lib/img";
@@ -81,6 +83,7 @@ export const overworldScene: Scene = {
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
     GAME_STATE.boundaries.push(new Zone(GAME_STATE.papa.collisionBox));
+    GAME_STATE.interactables = [{ sprite: GAME_STATE.papa, label: "Talk" }];
 
     if (!GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = true;
@@ -104,6 +107,10 @@ export const overworldScene: Scene = {
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+
+    const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
+    GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
+    if (canAct && GAME_STATE.keys.justPressed.z) interactions(interact(GAME_STATE.player));
   },
 
   draw(ctx) {
@@ -113,5 +120,23 @@ export const overworldScene: Scene = {
     // GAME_STATE.player.draw(ctx);
     drawYSorted(ctx, [GAME_STATE.player, GAME_STATE.papa]);
     drawViewportClamped(ctx, foreground);
+    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget);
   },
 };
+
+function interactions(target: Sprite | undefined) {
+  if (target === GAME_STATE.papa) {
+    if (!GAME_STATE.sequence.meet_daomingsi) {
+      DIALOGUE.show({
+        text: `
+        PAPA: Punta kayo sa mansion, daan sa kanan tapos taas.
+        Meron daw pogi dun.
+      `,
+        color: "blue",
+      });
+      return;
+    }
+
+    DIALOGUE.show({ text: "PAPA: Yes Ching?", color: "blue" });
+  }
+}

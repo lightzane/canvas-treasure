@@ -5,7 +5,10 @@ import type { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
 import type { TriggerZone, Zone } from "@/features/zone";
 import { preload } from "@/lib/preload";
+import { IMGS_DAOMINGSI_IDLE, IMGS_DAOMINGSI_WALK } from "@/sprites/dao-ming-si";
+import { IMGS_HUAZELEI_IDLE, IMGS_HUAZELEI_WALK } from "@/sprites/hua-ze-lei";
 import { IMGS_MAMA_IDLE } from "@/sprites/mama";
+import { IMGS_MEIZUO_IDLE } from "@/sprites/mei-zuo";
 import { IMGS_PAPA_IDLE } from "@/sprites/papa";
 import { IMGS_PLAYER_IDLE, IMGS_PLAYER_WALK } from "@/sprites/player";
 
@@ -26,6 +29,14 @@ export const GAME_STATE = {
   }),
   mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
   papa: new PlayerSprite({ sprites: { idle: IMGS_PAPA_IDLE } }),
+  daomingsi: new PlayerSprite({
+    sprites: { idle: IMGS_DAOMINGSI_IDLE, walk: IMGS_DAOMINGSI_WALK },
+  }),
+  huazelei: new PlayerSprite({
+    sprites: { idle: IMGS_HUAZELEI_IDLE, walk: IMGS_HUAZELEI_WALK },
+  }),
+  meizuo: new PlayerSprite({ sprites: { idle: IMGS_MEIZUO_IDLE } }),
+  ximen: new PlayerSprite({ sprites: { idle: IMGS_DAOMINGSI_IDLE } }),
   boundaries: [] as Zone[],
   triggerZones: [] as TriggerZone[],
   /** Everything the player can face-and-press-Z to interact with in the current scene (NPCs to talk to, chests, ...) — rebuilt fresh by each scene's `enter()`, same as `boundaries`/`triggerZones`. */
@@ -48,19 +59,20 @@ export const GAME_STATE = {
     /** True for exactly one frame — the frame the key actually went down, not every frame it's held. Set by `Controller.keydown`, cleared once per frame by `GameEngine.tick`. */
     justPressed: { z: false, x: false },
   },
-  sceneName: "home" as SceneName,
+  sceneName: "mansion" as SceneName,
   /** Seconds the current scene has been active — used by scenes with a `duration`. */
   sceneElapsed: 0,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
     intro: false,
     mama_parcel: false,
+    meet_daomingsi: false,
   },
   bag: new Map<ItemName, number>([["parcel", 0]]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,
 };
 
-const { player, mama } = GAME_STATE;
+const { player, mama, papa } = GAME_STATE;
 
-export const assetsReady = preload([...player.images, ...mama.images]);
+export const assetsReady = preload([...player.images, ...mama.images, ...papa.images]);

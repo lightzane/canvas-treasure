@@ -92,9 +92,7 @@ export const homeScene: Scene = {
     const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
     GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
 
-    if (canAct && GAME_STATE.keys.justPressed.z) {
-      interactions(interact(GAME_STATE.player));
-    }
+    if (canAct && GAME_STATE.keys.justPressed.z) interactions(interact(GAME_STATE.player));
   },
 
   draw(ctx) {
