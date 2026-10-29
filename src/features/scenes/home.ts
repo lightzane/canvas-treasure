@@ -4,7 +4,13 @@ import { GAME_STATE, img } from "@/features/game-state";
 import { drawInteractPrompt, findFacedTarget, interact } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
-import { checkTriggerZones, TriggerZone, Zone, type TriggerHandlers } from "@/features/zone";
+import {
+  checkTriggerZones,
+  createBoundaries,
+  createTriggerZones,
+  Zone,
+  type TriggerHandlers,
+} from "@/features/zone";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
@@ -42,30 +48,8 @@ export const homeScene: Scene = {
   ready: preload([background.image, foreground.image, parcel.image]),
 
   enter() {
-    GAME_STATE.boundaries = COLLISION_HOME.map(
-      (c) =>
-        new Zone({
-          position: {
-            x: c.x,
-            y: c.y,
-          },
-          width: c.width,
-          height: c.height,
-        }),
-    );
-
-    GAME_STATE.triggerZones = TRIGGER_HOME.map(
-      (t) =>
-        new TriggerZone({
-          name: t.name,
-          position: {
-            x: t.x,
-            y: t.y,
-          },
-          width: t.width,
-          height: t.height,
-        }),
-    );
+    GAME_STATE.boundaries = createBoundaries(COLLISION_HOME);
+    GAME_STATE.triggerZones = createTriggerZones(TRIGGER_HOME);
 
     let spawnLocation: [number, number] = [13, 19];
 

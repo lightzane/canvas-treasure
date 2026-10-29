@@ -1,6 +1,7 @@
 import { getOverlapArea, type Rect } from "@/features/collisions";
 import type { Position } from "@/features/sprite";
 import { toScreen } from "@/lib/canvas/screen";
+import type { TiledRect } from "@/lib/tiled";
 
 /** px² of slack on the "fully contained" overlap check, to absorb floating-point rounding from fractional (moveSpeed * dt) movement — see `checkTriggerZones`. */
 const OVERLAP_EPSILON = 0.1;
@@ -49,6 +50,26 @@ export class TriggerZone extends Zone {
     super(zoneProps);
     this.name = name;
   }
+}
+
+/** Builds `Zone[]` from a map's raw `COLLISION_<MAP>` data — the one place this `.map()`-to-`Zone` boilerplate lives, instead of duplicated in every scene's own `enter()`. */
+export function createBoundaries(rects: TiledRect[]): Zone[] {
+  return rects.map(
+    (r) => new Zone({ position: { x: r.x, y: r.y }, width: r.width, height: r.height }),
+  );
+}
+
+/** Same idea as `createBoundaries`, for a map's raw `TRIGGER_<MAP>` data. */
+export function createTriggerZones(rects: (TiledRect & { name: string })[]): TriggerZone[] {
+  return rects.map(
+    (r) =>
+      new TriggerZone({
+        name: r.name,
+        position: { x: r.x, y: r.y },
+        width: r.width,
+        height: r.height,
+      }),
+  );
 }
 
 interface TriggerHandler {

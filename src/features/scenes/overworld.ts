@@ -3,7 +3,12 @@ import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overwo
 import { GAME_STATE, img } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
-import { checkTriggerZones, TriggerZone, Zone, type TriggerHandlers } from "@/features/zone";
+import {
+  checkTriggerZones,
+  createBoundaries,
+  createTriggerZones,
+  type TriggerHandlers,
+} from "@/features/zone";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -60,30 +65,8 @@ export const overworldScene: Scene = {
     placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
     placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
 
-    GAME_STATE.boundaries = COLLISION_OVERWORLD.map(
-      (c) =>
-        new Zone({
-          position: {
-            x: c.x,
-            y: c.y,
-          },
-          width: c.width,
-          height: c.height,
-        }),
-    );
-
-    GAME_STATE.triggerZones = TRIGGER_OVERWORLD.map(
-      (t) =>
-        new TriggerZone({
-          name: t.name,
-          position: {
-            x: t.x,
-            y: t.y,
-          },
-          width: t.width,
-          height: t.height,
-        }),
-    );
+    GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
+    GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
     if (!GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = true;

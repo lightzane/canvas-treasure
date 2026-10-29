@@ -1,9 +1,15 @@
+import { COLLISION_MANSION } from "@/constants/collisions/mansion";
 import { TRIGGER_MANSION, type TriggerName } from "@/constants/triggers/mansion";
 import { GAME_STATE, img } from "@/features/game-state";
 import { drawInteractPrompt, findFacedTarget } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
-import { checkTriggerZones, TriggerZone, type TriggerHandlers } from "@/features/zone";
+import {
+  checkTriggerZones,
+  createBoundaries,
+  createTriggerZones,
+  type TriggerHandlers,
+} from "@/features/zone";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { movePlayer } from "@/lib/map-movement";
@@ -26,31 +32,8 @@ export const mansionScene: Scene = {
   ready: preload([background.image]),
 
   enter() {
-    GAME_STATE.boundaries = [];
-    // GAME_STATE.boundaries = COLLISION_HOME.map(
-    //   (c) =>
-    //     new Zone({
-    //       position: {
-    //         x: c.x,
-    //         y: c.y,
-    //       },
-    //       width: c.width,
-    //       height: c.height,
-    //     }),
-    // );
-
-    GAME_STATE.triggerZones = TRIGGER_MANSION.map(
-      (t) =>
-        new TriggerZone({
-          name: t.name,
-          position: {
-            x: t.x,
-            y: t.y,
-          },
-          width: t.width,
-          height: t.height,
-        }),
-    );
+    GAME_STATE.boundaries = createBoundaries(COLLISION_MANSION);
+    GAME_STATE.triggerZones = createTriggerZones(TRIGGER_MANSION);
 
     const spawnLocation: [number, number] = [11, 20];
 

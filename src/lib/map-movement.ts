@@ -68,11 +68,9 @@ function getMoveDelta(direction: Direction, distance: number): { dx: number; dy:
  * Builds the player's attempted box at `(dx, dy)`, blocks it against
  * `GAME_STATE.boundaries`, and commits the move if it's clear.
  *
- * TODO: `GAME_STATE.boundaries` is one shared field, currently always `[]`
- * for every scene (no scene populates it yet). Once per-map collision data
- * exists, have each scene's own `enter()` set `GAME_STATE.boundaries` to its
- * own `Zone[]` (e.g. via `createBoundaries` in collisions.ts) before
- * gameplay starts.
+ * `GAME_STATE.boundaries` is one shared field, rebuilt fresh by each
+ * scene's own `enter()` (via `createBoundaries` in `zone.ts`) before
+ * gameplay starts there.
  */
 function attemptMove(dx: number, dy: number): Rect {
   const player = GAME_STATE.player;
