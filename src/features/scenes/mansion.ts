@@ -15,6 +15,8 @@ import {
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { playAttentionBounce } from "@/lib/effects/attention-bounce";
+import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -22,6 +24,7 @@ import { preload } from "@/lib/preload";
 import { IMGS_BUTLER_IDLE } from "@/sprites/butler";
 import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
 import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
+import gsap from "gsap";
 
 const BUTLER = new PlayerSprite({ sprites: { idle: IMGS_BUTLER_IDLE } });
 const STAFF_M1 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } });
@@ -45,6 +48,9 @@ const background = new Sprite({ src: IMG_MAP_BG });
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
+  meet_daomingsi: {
+    onEnter: nearMissConversation,
+  },
 };
 
 export const mansionScene: Scene = {
@@ -59,6 +65,7 @@ export const mansionScene: Scene = {
   enter() {
     GAME_STATE.boundaries = createBoundaries(COLLISION_MANSION);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_MANSION);
+    GAME_STATE.interactables = [{ sprite: BUTLER, label: "Talk" }];
 
     const spawnLocation: [number, number] = [11.5, 20];
 
@@ -99,10 +106,7 @@ export const mansionScene: Scene = {
 
     const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
     GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
-
-    if (canAct && GAME_STATE.keys.justPressed.z) {
-      interactions(interact(GAME_STATE.player));
-    }
+    if (canAct && GAME_STATE.keys.justPressed.z) interactions(interact(GAME_STATE.player));
   },
 
   draw(ctx) {
@@ -123,4 +127,28 @@ function exitZone() {
   GAME_STATE.sceneName = "overworld";
 }
 
-function interactions(target: Sprite | undefined) {}
+function interactions(target: Sprite | undefined) {
+  if (target === BUTLER) {
+    DIALOGUE.show({ text: "BUTLER LIU: Hello!" });
+  }
+}
+
+function nearMissConversation() {
+  if (GAME_STATE.sequence.meet_daomingsi) return;
+  GAME_STATE.sequence.meet_daomingsi = true;
+
+  DIALOGUE.show({ text: `BUTLER LIU: Young Master, saan po natin ilalagay ang ke—k!` });
+  DIALOGUE.effect(() => {
+    playAttentionBounce(GAME_STATE.daomingsi, { hops: 5, duration: 0.1 });
+    playExclamation(GAME_STATE.daomingsi);
+    gsap.delayedCall(0.5, () => {
+      BUTLER.face("s");
+      playAttentionBounce(BUTLER);
+      playExclamation(BUTLER);
+    });
+  }, 0.5);
+  DIALOGUE.queue({ text: `[F4] DAO MING SI: Saan ilalagay ang "keys"?`, color: "blue" });
+  DIALOGUE.effect(() => BUTLER.face("w"));
+  DIALOGUE.queue(`LIU! Ihanda mo ang almusal ko nagugutom na ako!`);
+  DIALOGUE.queue(`Hahanapin ko lang ang keys ko...`);
+}

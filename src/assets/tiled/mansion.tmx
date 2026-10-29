@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="24" height="24" tilewidth="32" tileheight="32" infinite="0" nextlayerid="15" nextobjectid="2">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="24" height="24" tilewidth="32" tileheight="32" infinite="0" nextlayerid="16" nextobjectid="4">
  <editorsettings>
   <export target="mansion.json" format="json"/>
  </editorsettings>
@@ -314,7 +314,9 @@
 </data>
  </layer>
  <objectgroup color="#ff2600" id="14" name="collisions"/>
- <objectgroup color="#fffb00" id="13" name="trigger_zones">
+ <objectgroup color="#fffb00" id="13" name="trigger_zones" visible="0">
   <object id="1" name="exit" x="314.048" y="724.135" width="140.477" height="33.8897"/>
+  <object id="2" name="meet_daomingsi" x="308.332" y="241.874" width="152.358" height="53.3478"/>
+  <object id="3" x="340.431" y="166.373"/>
  </objectgroup>
 </map>
