@@ -1,6 +1,6 @@
 import { COLLISION_MANSION } from "@/constants/collisions/mansion";
 import { TRIGGER_MANSION, type TriggerName } from "@/constants/triggers/mansion";
-import { GAME_STATE, img } from "@/features/game-state";
+import { GAME_STATE } from "@/features/game-state";
 import { drawInteractPrompt, findFacedTarget } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
@@ -12,6 +12,7 @@ import {
 } from "@/features/zone";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";

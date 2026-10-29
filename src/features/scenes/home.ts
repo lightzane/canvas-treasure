@@ -1,6 +1,6 @@
 import { COLLISION_HOME } from "@/constants/collisions/home";
 import { TRIGGER_HOME, type TriggerName } from "@/constants/triggers/home";
-import { GAME_STATE, img } from "@/features/game-state";
+import { GAME_STATE } from "@/features/game-state";
 import { drawInteractPrompt, findFacedTarget, interact } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
@@ -16,6 +16,7 @@ import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
+import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
@@ -164,7 +165,7 @@ function mamaParcelConversation() {
   gsap.delayedCall(1, () => {
     DIALOGUE.effect(() => (parcelShine = playShine(parcel, { mode: "hidden", color: "#fff" })));
     DIALOGUE.show({
-      text: "MAMA: CHE, meron tayo nareceive na parcel.",
+      text: "MAMA: CHING, meron tayo nareceive na parcel.",
       color: "red",
     });
     DIALOGUE.effect(() => playAttentionBounce(parcel, { hops: 3 }), 1);
@@ -190,12 +191,12 @@ function mamaParcelConversation() {
 
 function exitZone() {
   if (!GAME_STATE.sequence.mama_parcel) {
-    DIALOGUE.show({ text: "MAMA: CHENG! Nasan ka?", color: "red" });
+    DIALOGUE.show({ text: "MAMA: CHINGKAY! Nasan ka?", color: "red" });
     return; // no parcel yet — stay home
   }
 
   if (!GAME_STATE.bag.get("parcel")) {
-    DIALOGUE.show({ text: "MAMA: CHENG! Paki kuha nitong parcel.", color: "red" });
+    DIALOGUE.show({ text: "MAMA: CHINGKAY! Paki kuha nitong parcel.", color: "red" });
     return; // no parcel yet — stay home
   }
 

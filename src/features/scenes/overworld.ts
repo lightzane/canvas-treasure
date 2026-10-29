@@ -1,15 +1,18 @@
 import { COLLISION_OVERWORLD } from "@/constants/collisions/overworld";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
-import { GAME_STATE, img } from "@/features/game-state";
+import { GAME_STATE } from "@/features/game-state";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import {
   checkTriggerZones,
   createBoundaries,
   createTriggerZones,
+  Zone,
   type TriggerHandlers,
 } from "@/features/zone";
+import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
+import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
@@ -53,11 +56,13 @@ export const overworldScene: Scene = {
 
   enter() {
     GAME_STATE.player.face("s");
+    GAME_STATE.papa.face("s");
     // Spawn at specific tiles (col, row from Tiled's bottom-left readout).
     // Default here is "arrived from home" — whichever scene set spawnLocation
     // (e.g. mansion's exit) takes priority; consumed so it doesn't leak into
     // a later, unrelated entry (e.g. a straight game boot into overworld).
     placeAtTile({ sprite: GAME_STATE.player, tile: GAME_STATE.spawnLocation ?? [58.9, 42] });
+    placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
     GAME_STATE.spawnLocation = undefined;
     placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
     placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
@@ -67,6 +72,8 @@ export const overworldScene: Scene = {
 
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
+
+    GAME_STATE.boundaries.push(new Zone(GAME_STATE.papa.collisionBox));
 
     if (!GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = true;
@@ -84,6 +91,7 @@ export const overworldScene: Scene = {
 
   update(dt) {
     decor.forEach((sprite) => sprite.update(dt));
+    GAME_STATE.papa.update(dt);
 
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
 
@@ -95,7 +103,8 @@ export const overworldScene: Scene = {
     background.draw(ctx);
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
     decor.forEach((sprite) => sprite.draw(ctx));
-    GAME_STATE.player.draw(ctx);
+    // GAME_STATE.player.draw(ctx);
+    drawYSorted(ctx, [GAME_STATE.player, GAME_STATE.papa]);
     foreground.draw(ctx);
   },
 };
