@@ -23,6 +23,7 @@ import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import { PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
 import gsap from "gsap";
 
 const IMG_MAP_BG = img("maps/overworld.png");
@@ -168,7 +169,11 @@ function interactHuazelei() {
   if (!GAME_STATE.sequence.meet_huazelei) {
     let shineHandle: ShineHandle | null = null;
 
-    DIALOGUE.show({ text: "F4 HUA ZE LEI: Hello Cheryl, naghahanap ka ng kiss?", color: "blue" });
+    DIALOGUE.show({
+      text: "F4 HUA ZE LEI: Hello Cheryl, naghahanap ka ng kiss?",
+      color: "blue",
+      portrait: PORTRAIT_HUAZELEI,
+    });
     DIALOGUE.effect(() => {
       playExclamation(GAME_STATE.player);
       shineHandle = playShine(GAME_STATE.player);

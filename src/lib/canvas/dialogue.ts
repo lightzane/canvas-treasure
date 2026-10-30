@@ -21,15 +21,26 @@ const FONT = `300 28px ${GAME_FONT_FAMILY}`;
 const READ_MORE_SIZE = 14;
 const READ_MORE_GAP = 8; // space between the last word and the indicator
 const READ_MORE_BLINK_INTERVAL = 0.5; // seconds
+const PORTRAIT_SIZE = 180; // diameter, px — tweak this directly to resize
+const PORTRAIT_MARGIN_LEFT = 64; // gap from the canvas's own left edge
+// Sits in the gap left of the box (BOX_LEFT itself, since the box is
+// centered — BOX_WIDTH < CANVAS_WIDTH on purpose), bottom-aligned with it.
+const PORTRAIT_LEFT = PORTRAIT_MARGIN_LEFT;
+const PORTRAIT_TOP = BOX_TOP + BOX_HEIGHT - PORTRAIT_SIZE;
 
 /** Resolves once the dialogue's pixel font is loaded — awaited by `GameEngine.start()` before the game loop begins. */
 export const dialogueFontReady = document.fonts.load(FONT);
 
-type DialogueInput = string | string[] | { text: string | string[]; color?: string };
+type DialogueInput =
+  | string
+  | string[]
+  | { text: string | string[]; color?: string; portrait?: string };
 interface DialogueMessage {
   kind: "message";
   text: string;
   color: string;
+  /** Image src for the circular portrait beside the box — `undefined` shows none. */
+  portrait: string | undefined;
 }
 interface DialogueEffect {
   kind: "effect";
@@ -47,6 +58,11 @@ class Dialogue {
   private color = "black";
   /** The most recently used color — what a `queue()`/`show()` call falls back to when it doesn't specify its own. */
   private lastColor = "black";
+  private portrait: string | undefined;
+  /** Same inheritance as `lastColor`, for `portrait`. */
+  private lastPortrait: string | undefined;
+  /** Lazily created once, reused for the app's life — shown/hidden/re-sourced in step with `portrait`, not recreated per message. */
+  private portraitEl: HTMLImageElement | null = null;
   /** True from the moment an effect starts running until its delay (if any) finishes and the next item is settled — blocks player input from advancing early. */
   private resolvingEffects = false;
   private revealedChars = 0;
@@ -66,6 +82,7 @@ class Dialogue {
     this.needsWrap = false;
     this.onComplete = () => {};
     this.lastColor = "black"; // a new conversation always starts from the default, not whatever the last one ended on
+    this.lastPortrait = undefined; // same reasoning — no carrying over the previous conversation's speaker
     GAME_STATE.movementLocked = true;
     this.enqueue(input);
   }
@@ -100,9 +117,11 @@ class Dialogue {
     const text = isPlain ? input : input.text;
     const color = isPlain ? this.lastColor : (input.color ?? this.lastColor);
     this.lastColor = color; // so a later queue() without its own color inherits this one, not the default
+    const portrait = isPlain ? this.lastPortrait : (input.portrait ?? this.lastPortrait);
+    this.lastPortrait = portrait; // same inheritance as color
     const texts = Array.isArray(text) ? text : [text];
 
-    for (const t of texts) this.pending.push({ kind: "message", text: t, color });
+    for (const t of texts) this.pending.push({ kind: "message", text: t, color, portrait });
 
     if (wasIdle) this.pullPending(); // nothing on screen yet — start showing this
   }
@@ -128,6 +147,8 @@ class Dialogue {
     if (!next) {
       this.resolvingEffects = false;
       this.pages = [];
+      this.portrait = undefined;
+      this.updatePortraitElement();
       GAME_STATE.movementLocked = false; // ahead of onComplete, so it can re-lock for its own purposes if it needs to
       this.onComplete();
       return;
@@ -171,6 +192,8 @@ class Dialogue {
       if (message?.kind === "message") {
         this.pages = this.wrap(ctx, message.text);
         this.color = message.color;
+        this.portrait = message.portrait;
+        this.updatePortraitElement();
         this.pageIndex = 0;
         this.needsWrap = false;
         this.revealedChars = 0;
@@ -207,6 +230,42 @@ class Dialogue {
       pages.push(lines.slice(i, i + MAX_LINES_PER_PAGE));
     }
     return pages.length > 0 ? pages : [[""]];
+  }
+
+  private ensurePortraitEl(): HTMLImageElement {
+    if (this.portraitEl) return this.portraitEl;
+
+    const el = document.createElement("img");
+    el.className = "game-effect-overlay";
+    el.style.width = `${PORTRAIT_SIZE}px`;
+    el.style.height = `${PORTRAIT_SIZE}px`;
+    el.style.borderRadius = "50%";
+    el.style.objectFit = "cover"; // crops to fill the circle rather than squashing — matters once a photo's aspect ratio isn't square
+    el.style.border = `${BOX_BORDER_WIDTH}px solid white`; // matches the dialogue box's own border
+    el.style.display = "none";
+    document.body.appendChild(el);
+
+    this.portraitEl = el;
+    return el;
+  }
+
+  /** Shows/hides/re-sources the portrait `<img>` to match `this.portrait` — the DOM counterpart to `this.color`, updated at the same point (`draw()`'s `needsWrap` branch, and on conversation end in `pullPending()`). */
+  private updatePortraitElement() {
+    const el = this.ensurePortraitEl();
+
+    if (!this.portrait) {
+      el.style.display = "none";
+      return;
+    }
+
+    // Same canvas-rect-plus-local-coordinate trick as the effects/ folder's
+    // DOM overlays (e.g. exclamation-bubble.ts) — the canvas renders 1:1
+    // with its CSS size, so no extra scale factor is needed.
+    const canvasRect = document.getElementById("treasure")?.getBoundingClientRect();
+    el.src = this.portrait;
+    el.style.left = `${(canvasRect?.left ?? 0) + PORTRAIT_LEFT}px`;
+    el.style.top = `${(canvasRect?.top ?? 0) + PORTRAIT_TOP}px`;
+    el.style.display = "block";
   }
 
   private drawBox(ctx: CanvasRenderingContext2D) {

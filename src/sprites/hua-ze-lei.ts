@@ -25,3 +25,5 @@ export const IMGS_HUAZELEI_IDLE: Record<Direction, AnimationSource> = {
   s: IMG_IDLE_DOWN,
   d: IMG_IDLE_RIGHT,
 };
+
+export const PORTRAIT_HUAZELEI = img("portraits/huazelei.jpeg");
