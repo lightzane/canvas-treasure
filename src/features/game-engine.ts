@@ -54,14 +54,29 @@ export class GameEngine {
   private cancelled = false;
 
   constructor(canvas: HTMLCanvasElement) {
-    canvas.width = CANVAS_WIDTH;
-    canvas.height = CANVAS_HEIGHT;
+    // Solving the blurredness on text:
+    // The canvas's backing pixel buffer must match the screen's actual
+    // physical pixel density, not just its CSS size — otherwise, on any
+    // display where devicePixelRatio > 1 (e.g. a Retina MacBook screen),
+    // the browser's own compositor upscales this whole bitmap to fill the
+    // real screen, and everything on it reads as softly blurred. That
+    // upscale happens *after* all our drawing — no drawImage/fillText
+    // setting (imageSmoothingEnabled, rounding coordinates, ...) can touch
+    // it, since it isn't something this code does; it's the browser
+    // stretching the finished canvas image to physical pixels. Text shows
+    // it more than pixel art because pixel art is already coarse/blocky, so
+    // a bit of softening there is far less noticeable.
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = CANVAS_WIDTH * dpr;
+    canvas.height = CANVAS_HEIGHT * dpr;
     canvas.style.width = `${CANVAS_WIDTH}px`;
     canvas.style.height = `${CANVAS_HEIGHT}px`;
 
     const ctx = canvas.getContext("2d");
 
     if (!ctx) throw new Error("2D context not supported");
+    ctx.scale(dpr, dpr); // every existing draw call keeps using the same CANVAS_WIDTH x CANVAS_HEIGHT coordinate space
     ctx.imageSmoothingEnabled = false;
     this.ctx = ctx;
 

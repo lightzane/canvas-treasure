@@ -170,7 +170,7 @@ function interactHuazelei() {
     let shineHandle: ShineHandle | null = null;
 
     DIALOGUE.show({
-      text: "F4 HUA ZE LEI: Hello Cheryl, naghahanap ka ng kiss?",
+      text: "F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?",
       color: "blue",
       portrait: PORTRAIT_HUAZELEI,
     });
