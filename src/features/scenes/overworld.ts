@@ -16,11 +16,14 @@ import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
+import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import gsap from "gsap";
 
 const IMG_MAP_BG = img("maps/overworld.png");
 const IMG_MAP_FG = img("maps/overworld-fg.png");
@@ -163,8 +166,23 @@ function interactPapa() {
 
 function interactHuazelei() {
   if (!GAME_STATE.sequence.meet_huazelei) {
+    let shineHandle: ShineHandle | null = null;
+
+    DIALOGUE.show({ text: "F4 HUA ZE LEI: Hello Cheryl, naghahanap ka ng kiss?", color: "blue" });
+    DIALOGUE.effect(() => {
+      playExclamation(GAME_STATE.player);
+      shineHandle = playShine(GAME_STATE.player);
+      gsap.delayedCall(8, () => shineHandle?.stop());
+    }, 0.5);
+    DIALOGUE.queue(`...si "DAO MING SI" naghahanap ng kiss?`);
+    DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
+    DIALOGUE.queue(`Ahh, hinahanap niya ang "keys" o susi niya...`);
+    DIALOGUE.queue(`Paumanhin ngunit wala naman sa akin ang mga keys niya.`);
+    DIALOGUE.onComplete = () => {
+      GAME_STATE.sequence.meet_huazelei = true;
+    };
     return;
   }
 
-  DIALOGUE.show({ text: `F4 HUA ZE LEI: Hello CHE!`, color: "blue" });
+  DIALOGUE.show({ text: `HUA ZE LEI: Hello CHE!`, color: "blue" });
 }

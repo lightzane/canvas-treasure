@@ -33,11 +33,11 @@ export type BagEntry = { type: "item"; quantity: number } | { type: "equip"; qua
 
 export const GAME_STATE = {
   camera: { x: 0, y: 0 },
-  sceneName: "home" as SceneName,
+  sceneName: "overworld" as SceneName,
   player: new PlayerSprite({
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
-    // moveSpeed: 500,
+    moveSpeed: 500,
   }),
   mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
   papa: new PlayerSprite({ sprites: { idle: IMGS_PAPA_IDLE } }),
@@ -84,13 +84,13 @@ export const GAME_STATE = {
   sceneElapsed: 0,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
-    intro: false,
-    mama_parcel: false,
-    meet_daomingsi: false,
+    intro: true,
+    mama_parcel: true,
+    meet_daomingsi: true,
     meet_huazelei: false,
   },
   bag: new Map<ItemName, BagEntry>([
-    ["parcel", { type: "item", quantity: 0 }],
+    ["parcel", { type: "item", quantity: 1 }],
     ["shoes", { type: "equip", quantity: 0 }],
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
