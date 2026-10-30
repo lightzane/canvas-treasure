@@ -1,7 +1,7 @@
 import { COLLISION_OVERWORLD } from "@/constants/collisions/overworld";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
 import { GAME_STATE } from "@/features/game-state";
-import { drawInteractPrompt, updateInteraction } from "@/features/interact";
+import { drawInteractPrompt, updateInteraction, type Interactable } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import type { PlayerSprite } from "@/features/sprite-player";
@@ -11,6 +11,7 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
+import { addOnce } from "@/lib/array";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
@@ -38,6 +39,8 @@ const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, sca
 /** This map's own static/animated decor — drawn after the background, before the player. */
 const DECORS: Sprite[] = [smallFountainA, smallFountainB, bigFountainA, bigFountainB];
 const NPCS: PlayerSprite[] = [GAME_STATE.papa];
+const INTERACTABLES: Interactable[] = [{ sprite: GAME_STATE.papa, label: "Talk" }];
+const HUAZELEI_INTERACTABLE: Interactable = { sprite: GAME_STATE.huazelei, label: "Talk" };
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   enter_home: {
@@ -84,7 +87,6 @@ export const overworldScene: Scene = {
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
     GAME_STATE.obstacles = NPCS;
-    GAME_STATE.interactables = [{ sprite: GAME_STATE.papa, label: "Talk" }];
 
     if (!GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = true;
@@ -99,10 +101,12 @@ export const overworldScene: Scene = {
       GAME_STATE.movementLocked = false; // no cutscene this time — nothing to wait for
     }
 
-    // Spawn Hua Ze Lei after meeting Dao Ming Si
+    // Spawn Hua Ze Lei after meeting Dao Ming Si. Re-checked on every
+    // re-entry (we don't know which visit is the first one after the flag
+    // flips), so both additions go through addOnce to stay idempotent.
     if (GAME_STATE.sequence.meet_daomingsi) {
-      NPCS.push(GAME_STATE.huazelei);
-      GAME_STATE.interactables.push({ sprite: GAME_STATE.huazelei, label: "Talk" });
+      addOnce(NPCS, GAME_STATE.huazelei);
+      addOnce(INTERACTABLES, HUAZELEI_INTERACTABLE);
       placeAtTile({ sprite: GAME_STATE.huazelei, tile: [81.5, 35] });
       GAME_STATE.huazelei.face("w");
     }
@@ -117,7 +121,7 @@ export const overworldScene: Scene = {
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
-    updateInteraction(interactions);
+    updateInteraction(INTERACTABLES, interactions);
   },
 
   draw(ctx) {
@@ -127,28 +131,40 @@ export const overworldScene: Scene = {
     // GAME_STATE.player.draw(ctx);
     drawYSorted(ctx, [GAME_STATE.player, ...NPCS]);
     drawViewportClamped(ctx, foreground);
-    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget);
+    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
   },
 };
 
 function interactions(target: Sprite | undefined) {
-  if (target === GAME_STATE.papa) {
-    if (!GAME_STATE.sequence.meet_daomingsi) {
-      DIALOGUE.show({
-        text: `
+  switch (target) {
+    case GAME_STATE.papa:
+      interactPapa();
+      break;
+    case GAME_STATE.huazelei:
+      interactHuazelei();
+      break;
+  }
+}
+
+function interactPapa() {
+  if (!GAME_STATE.sequence.meet_daomingsi) {
+    DIALOGUE.show({
+      text: `
         PAPA: Punta kayo sa mansion, daan sa kanan tapos taas.
         Meron daw pogi dun.
       `,
-        color: "blue",
-      });
-      return;
-    }
-
-    DIALOGUE.show({ text: "PAPA: Yes Ching?", color: "blue" });
+      color: "blue",
+    });
+    return;
   }
 
-  // Hua Ze Lei
-  if (target === GAME_STATE.huazelei) {
-    DIALOGUE.show({ text: `F4 HUA ZE LEI: Hello CHE!`, color: "blue" });
+  DIALOGUE.show({ text: "PAPA: Yes Ching?", color: "blue" });
+}
+
+function interactHuazelei() {
+  if (!GAME_STATE.sequence.meet_huazelei) {
+    return;
   }
+
+  DIALOGUE.show({ text: `F4 HUA ZE LEI: Hello CHE!`, color: "blue" });
 }

@@ -1,7 +1,7 @@
 import { COLLISION_MANSION } from "@/constants/collisions/mansion";
 import { TRIGGER_MANSION, type TriggerName } from "@/constants/triggers/mansion";
 import { GAME_STATE } from "@/features/game-state";
-import { drawInteractPrompt, updateInteraction } from "@/features/interact";
+import { drawInteractPrompt, updateInteraction, type Interactable } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
@@ -42,6 +42,10 @@ const COL_A = [STAFF_M1, STAFF_M2, STAFF_F1, STAFF_F2];
 const COL_B = [STAFF_M3, STAFF_M4, STAFF_F3, STAFF_F4];
 const NPCS: PlayerSprite[] = [GAME_STATE.daomingsi, BUTLER, ...COL_A, ...COL_B];
 
+// Fixed for the whole scene — nobody else ever becomes interactable here, so
+// this never needs rebuilding on re-entry.
+const INTERACTABLES: Interactable[] = [{ sprite: BUTLER, label: "Talk" }];
+
 const IMG_MAP_BG = img("maps/mansion.png");
 // const IMG_MAP_FG = img("maps/home-fg.png");
 
@@ -67,7 +71,6 @@ export const mansionScene: Scene = {
   enter() {
     GAME_STATE.boundaries = createBoundaries(COLLISION_MANSION);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_MANSION);
-    GAME_STATE.interactables = [{ sprite: BUTLER, label: "Talk" }];
 
     const spawnLocation: [number, number] = [11.5, 20];
 
@@ -112,7 +115,7 @@ export const mansionScene: Scene = {
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
-    updateInteraction(interactions);
+    updateInteraction(INTERACTABLES, interactions);
   },
 
   draw(ctx) {
@@ -123,7 +126,7 @@ export const mansionScene: Scene = {
     drawYSorted(ctx, [GAME_STATE.player, ...NPCS]);
     // foreground.draw(ctx);
 
-    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget);
+    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
   },
 };
 

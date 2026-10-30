@@ -41,12 +41,12 @@ function getFacingProbe({ box, facing, distance }: FacingProbeOptions): Rect {
   }
 }
 
-/** Shared lookup — no side effects. Whichever `GAME_STATE.interactables` entry the player is directly facing, within its own `probeDistance`, or `undefined`. */
-function resolveFacedInteractable(player: {
-  collisionBox: Rect;
-  facing: Direction;
-}): Interactable | undefined {
-  return GAME_STATE.interactables.find((interactable) => {
+/** Shared lookup — no side effects. Whichever of `interactables` the player is directly facing, within its own `probeDistance`, or `undefined`. */
+function resolveFacedInteractable(
+  player: { collisionBox: Rect; facing: Direction },
+  interactables: Interactable[],
+): Interactable | undefined {
+  return interactables.find((interactable) => {
     const distance = interactable.probeDistance ?? DEFAULT_PROBE_DISTANCE;
     const probe = getFacingProbe({ box: player.collisionBox, facing: player.facing, distance });
     return isColliding(probe, interactable.sprite.collisionBox);
@@ -54,14 +54,18 @@ function resolveFacedInteractable(player: {
 }
 
 /**
- * Finds whichever of `GAME_STATE.interactables` the player is directly
- * facing — a small probe just ahead of the player's own collision box, in
- * whichever direction *they're* facing, reaching out each interactable's
- * own `probeDistance` (so e.g. a parcel sitting across a table can still be
+ * Finds whichever of `interactables` the player is directly facing — a
+ * small probe just ahead of the player's own collision box, in whichever
+ * direction *they're* facing, reaching out each interactable's own
+ * `probeDistance` (so e.g. a parcel sitting across a table can still be
  * reached without widening everyone else's range). In a cluster (a queue, a
  * crowd), this naturally picks at most one — whoever's actually standing in
  * that reach — instead of needing a tie-breaker between several "nearby"
  * candidates.
+ *
+ * `interactables` is whichever list the current scene owns (its own
+ * module-level array — see e.g. `mansion.ts`), passed in explicitly rather
+ * than read from shared state, same as `checkTriggerZones` takes `zones`.
  *
  * Pure — no side effects, so it's fine to call every frame (e.g. to drive a
  * "you can interact with this" highlight via `drawInteractHighlight`), not
@@ -70,14 +74,14 @@ function resolveFacedInteractable(player: {
  * `facePlayer` default, which should only happen once, on the real press.
  *
  * @example
- * const target = findFacedTarget(GAME_STATE.player);
+ * const target = findFacedTarget(GAME_STATE.player, INTERACTABLES);
  * if (target) drawInteractHighlight(ctx, target);
  */
-export function findFacedTarget(player: {
-  collisionBox: Rect;
-  facing: Direction;
-}): Sprite | undefined {
-  return resolveFacedInteractable(player)?.sprite;
+export function findFacedTarget(
+  player: { collisionBox: Rect; facing: Direction },
+  interactables: Interactable[],
+): Sprite | undefined {
+  return resolveFacedInteractable(player, interactables)?.sprite;
 }
 
 /**
@@ -91,12 +95,15 @@ export function findFacedTarget(player: {
  *
  * @example
  * if (GAME_STATE.keys.justPressed.z) {
- *   const target = interact(GAME_STATE.player);
+ *   const target = interact(GAME_STATE.player, INTERACTABLES);
  *   if (target === GAME_STATE.mama) DIALOGUE.show("...");
  * }
  */
-export function interact(player: { collisionBox: Rect; facing: Direction }): Sprite | undefined {
-  const match = resolveFacedInteractable(player);
+export function interact(
+  player: { collisionBox: Rect; facing: Direction },
+  interactables: Interactable[],
+): Sprite | undefined {
+  const match = resolveFacedInteractable(player, interactables);
   if (!match) return undefined;
 
   if ((match.facePlayer ?? true) && match.sprite instanceof PlayerSprite) {
@@ -119,13 +126,18 @@ export function interact(player: { collisionBox: Rect; facing: Direction }): Spr
  * @example
  * update(dt) {
  *   // ...movement, trigger zones...
- *   updateInteraction(interactions);
+ *   updateInteraction(INTERACTABLES, interactions);
  * }
  */
-export function updateInteraction(onInteract: (target: Sprite | undefined) => void) {
+export function updateInteraction(
+  interactables: Interactable[],
+  onInteract: (target: Sprite | undefined) => void,
+) {
   const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
-  GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player) : undefined;
-  if (canAct && GAME_STATE.keys.justPressed.z) onInteract(interact(GAME_STATE.player));
+  GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player, interactables) : undefined;
+  if (canAct && GAME_STATE.keys.justPressed.z) {
+    onInteract(interact(GAME_STATE.player, interactables));
+  }
 }
 
 /**
@@ -133,15 +145,19 @@ export function updateInteraction(onInteract: (target: Sprite | undefined) => vo
  * `sprite`'s head — a "here's what pressing Z does" cue. Call it in a
  * scene's `draw()`, before drawing `sprite` itself, whenever
  * `findFacedTarget()` currently returns it. Looks up the label from this
- * sprite's own `Interactable` entry (`label`, default `"interact"`) — pass
- * just the sprite, same as `findFacedTarget`'s own return value. Purely
+ * sprite's own `Interactable` entry in `interactables` (`label`, default
+ * `"interact"`) — same list you'd pass to `updateInteraction`. Purely
  * visual; doesn't change any interaction logic. Also doubles as a live
  * debugging aid for `probeDistance`/collision-box tuning — you can
  * literally watch when the probe considers something targeted, instead of
  * guessing from screenshots.
  */
-export function drawInteractPrompt(ctx: CanvasRenderingContext2D, sprite: Sprite) {
-  const label = GAME_STATE.interactables.find((i) => i.sprite === sprite)?.label ?? "Interact";
+export function drawInteractPrompt(
+  ctx: CanvasRenderingContext2D,
+  sprite: Sprite,
+  interactables: Interactable[],
+) {
+  const label = interactables.find((i) => i.sprite === sprite)?.label ?? "Interact";
 
   const { x, y } = toScreen(sprite.position);
   const centerX = x + sprite.boxSize.width / 2;

@@ -1,6 +1,8 @@
+import { RUN_SPEED_BONUS } from "@/constants/game-settings";
 import { isColliding, type Rect } from "@/features/collisions";
 import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
+import { hasItem } from "@/lib/bag";
 
 /**
  * Shared movement/camera step for any walkable map scene: reads input,
@@ -16,15 +18,18 @@ export function movePlayer(dt: number): Rect | undefined {
   const player = GAME_STATE.player;
 
   if (GAME_STATE.movementLocked) {
-    updateAnimation(undefined); // forces idle — otherwise the player can look stuck mid-walk-frame
+    updateAnimation(); // forces idle — otherwise the player can look stuck mid-walk-frame
     player.update(dt); // keeps the idle animation itself playing, just blocks movement
     followCamera(); // still track the player (e.g. its freshly-placed spawn tile) — only movement is blocked, not the camera
     return undefined;
   }
 
   const direction = GAME_STATE.keys.pressed.at(-1);
+  // GAME_STATE.allowRunning takes priority over everything else — a cramped
+  // interior disables running outright, regardless of X held or shoes owned.
+  const running = GAME_STATE.allowRunning && GAME_STATE.keys.actions.x && hasItem("shoes");
 
-  updateAnimation(direction);
+  updateAnimation({ direction, running });
   player.update(dt);
 
   let playerBox: Rect | undefined;
@@ -35,7 +40,8 @@ export function movePlayer(dt: number): Rect | undefined {
     //
     // Sync with [Time-based]
     // movement 200px/sec — multiply with delta time
-    const distance = player.moveSpeed * dt;
+    const speed = player.moveSpeed + (running ? RUN_SPEED_BONUS : 0);
+    const distance = speed * dt;
     const { dx, dy } = getMoveDelta(direction, distance);
     playerBox = attemptMove(dx, dy);
   }
@@ -45,12 +51,19 @@ export function movePlayer(dt: number): Rect | undefined {
   return playerBox;
 }
 
-function updateAnimation(direction: Direction | undefined) {
+interface UpdateAnimationOptions {
+  /** @default undefined — no direction held, plays idle */
+  direction?: Direction;
+  /** @default false */
+  running?: boolean;
+}
+
+function updateAnimation({ direction, running = false }: UpdateAnimationOptions = {}) {
   const player = GAME_STATE.player;
 
   if (direction) {
     player.face(direction);
-    player.play("walk");
+    player.play(running ? "run" : "walk");
   } else {
     player.play("idle");
   }

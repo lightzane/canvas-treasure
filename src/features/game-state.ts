@@ -1,5 +1,4 @@
 import type { Direction } from "@/features/controller";
-import type { Interactable } from "@/features/interact";
 import type { SceneName } from "@/features/scene";
 import type { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
@@ -10,22 +9,35 @@ import { IMGS_HUAZELEI_IDLE, IMGS_HUAZELEI_WALK } from "@/sprites/hua-ze-lei";
 import { IMGS_MAMA_IDLE } from "@/sprites/mama";
 import { IMGS_MEIZUO_IDLE } from "@/sprites/mei-zuo";
 import { IMGS_PAPA_IDLE } from "@/sprites/papa";
-import { IMGS_PLAYER_IDLE, IMGS_PLAYER_WALK } from "@/sprites/player";
+import { IMGS_PLAYER_IDLE, IMGS_PLAYER_RUN, IMGS_PLAYER_WALK } from "@/sprites/player";
 
 /**
  * Every item the bag can hold — extend this union as new items get added,
- * e.g. once the shears exist: `"parcel" | "shears"`. Keeps
+ * e.g. once the shears exist: `"parcel" | "shears" | "shoes"`. Keeps
  * `GAME_STATE.bag.get`/`.set` calls typo-checked at compile time instead of
  * silently failing.
  */
-export type ItemName = "parcel";
+export type ItemName = "parcel" | "shoes";
+
+/**
+ * A bag slot's own value — `"item"` is stackable (a quantity you pick up
+ * more of, like the parcel), `"equip"` is a single worn piece (Running
+ * Shoes) with no meaningful count of its own. Use `hasItem()`
+ * (`@/features/bag`) to check "does the player have this" rather than
+ * reading `.quantity` directly — a present `"item"` entry at `quantity: 0`
+ * (not yet picked up) is a real, distinct case from not having the entry at
+ * all, and `.get(name)` alone being truthy doesn't tell them apart (the
+ * entry object itself is always truthy, even at quantity 0).
+ */
+export type BagEntry = { type: "item"; quantity: number } | { type: "equip"; quantity?: number };
 
 export const GAME_STATE = {
   camera: { x: 0, y: 0 },
+  sceneName: "home" as SceneName,
   player: new PlayerSprite({
-    sprites: { walk: IMGS_PLAYER_WALK, idle: IMGS_PLAYER_IDLE },
+    sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
-    moveSpeed: 350,
+    // moveSpeed: 500,
   }),
   mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
   papa: new PlayerSprite({ sprites: { idle: IMGS_PAPA_IDLE } }),
@@ -50,8 +62,6 @@ export const GAME_STATE = {
    */
   obstacles: [] as Sprite[],
   triggerZones: [] as TriggerZone[],
-  /** Everything the player can face-and-press-Z to interact with in the current scene (NPCs to talk to, chests, ...) — rebuilt fresh by each scene's `enter()`, same as `boundaries`/`triggerZones`. */
-  interactables: [] as Interactable[],
   /** Whatever `findFacedTarget()` currently returns — recomputed every frame by the active scene, read by `drawInteractHighlight()`. */
   facedTarget: undefined as Sprite | undefined,
   /**
@@ -70,7 +80,6 @@ export const GAME_STATE = {
     /** True for exactly one frame — the frame the key actually went down, not every frame it's held. Set by `Controller.keydown`, cleared once per frame by `GameEngine.tick`. */
     justPressed: { z: false, x: false },
   },
-  sceneName: "mansion" as SceneName,
   /** Seconds the current scene has been active — used by scenes with a `duration`. */
   sceneElapsed: 0,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
@@ -78,10 +87,16 @@ export const GAME_STATE = {
     intro: false,
     mama_parcel: false,
     meet_daomingsi: false,
+    meet_huazelei: false,
   },
-  bag: new Map<ItemName, number>([["parcel", 0]]),
+  bag: new Map<ItemName, BagEntry>([
+    ["parcel", { type: "item", quantity: 0 }],
+    ["shoes", { type: "equip", quantity: 0 }],
+  ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,
+  /** Whether running (hold X, with shoes) is allowed in the current scene — default on; a cramped interior (home, mansion) sets this `false` in its own `enter()`. Takes priority over everything else: no shoes, no X held, none of it matters here if this is `false`. */
+  allowRunning: true,
 };
 
 const { player, mama, papa } = GAME_STATE;

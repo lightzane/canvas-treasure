@@ -1,7 +1,7 @@
 import { COLLISION_HOME } from "@/constants/collisions/home";
 import { TRIGGER_HOME, type TriggerName } from "@/constants/triggers/home";
 import { GAME_STATE } from "@/features/game-state";
-import { drawInteractPrompt, updateInteraction } from "@/features/interact";
+import { drawInteractPrompt, updateInteraction, type Interactable } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import {
@@ -16,6 +16,7 @@ import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
+import { hasItem } from "@/lib/bag";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -29,6 +30,18 @@ const IMG_PARCEL = img("others/parcel.png");
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
 const parcel = new Sprite({ src: IMG_PARCEL, scale: 2, boxSize: { height: 64, width: 64 } });
+
+const MAMA_INTERACTABLE: Interactable = { sprite: GAME_STATE.mama, label: "Talk" };
+// Sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway.
+const PARCEL_INTERACTABLE: Interactable = {
+  sprite: parcel,
+  probeDistance: 32 * 4,
+  facePlayer: false,
+  label: "Get",
+};
+// Rebuilt each enter() (parcel presence depends on hasItem, not a fixed
+// story flag) and mutated in place on pickup — see interactions() below.
+let interactables: Interactable[] = [];
 
 let parcelBounce: AttentionBounceHandle | null = null;
 let parcelShine: ShineHandle | null = null;
@@ -70,10 +83,9 @@ export const homeScene: Scene = {
     placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
 
     GAME_STATE.obstacles = [GAME_STATE.mama]; // blocks walking through her, tracking wherever she currently is
-    GAME_STATE.interactables = [
-      { sprite: GAME_STATE.mama, label: "Talk" },
-      { sprite: parcel, probeDistance: 32 * 4, facePlayer: false, label: "Get" }, // sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway
-    ];
+    interactables = hasItem("parcel")
+      ? [MAMA_INTERACTABLE]
+      : [MAMA_INTERACTABLE, PARCEL_INTERACTABLE];
     GAME_STATE.movementLocked = false;
   },
 
@@ -85,7 +97,7 @@ export const homeScene: Scene = {
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
-    updateInteraction(interactions);
+    updateInteraction(interactables, interactions);
   },
 
   draw(ctx) {
@@ -96,15 +108,15 @@ export const homeScene: Scene = {
     drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
     drawViewportClamped(ctx, foreground);
 
-    if (!GAME_STATE.bag.get("parcel")) parcel.draw(ctx);
-    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget);
+    if (!hasItem("parcel")) parcel.draw(ctx);
+    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, interactables);
   },
 };
 
 function interactions(target: Sprite | undefined) {
   if (target === GAME_STATE.mama) {
     mamaFaceNorthTimer?.kill();
-    if (!GAME_STATE.bag.get("parcel"))
+    if (!hasItem("parcel"))
       DIALOGUE.show({ text: "MAMA: Paki kuha mo na ang parcel at tingnan.", color: "red" });
     else
       DIALOGUE.show({
@@ -114,7 +126,7 @@ function interactions(target: Sprite | undefined) {
     DIALOGUE.onComplete = scheduleMamaFaceNorth;
   }
 
-  if (target === parcel && !GAME_STATE.bag.get("parcel")) {
+  if (target === parcel && !hasItem("parcel")) {
     DIALOGUE.show("A parcel — kunin ko na...");
     DIALOGUE.effect(() => {
       playExclamation(GAME_STATE.player);
@@ -122,8 +134,11 @@ function interactions(target: Sprite | undefined) {
     });
     DIALOGUE.onComplete = () => {
       GAME_STATE.movementLocked = true;
-      GAME_STATE.bag.set("parcel", (GAME_STATE.bag.get("parcel") ?? 0) + 1);
-      GAME_STATE.interactables = GAME_STATE.interactables.filter((i) => i.sprite !== parcel);
+      GAME_STATE.bag.set("parcel", {
+        type: "item",
+        quantity: (GAME_STATE.bag.get("parcel")?.quantity ?? 0) + 1,
+      });
+      interactables = interactables.filter((i) => i.sprite !== parcel);
       parcelShine?.stop();
       parcelShine = null;
       parcelBounce?.stop(); // it's picked up now — stop the infinite tween, don't leave it running forever on a sprite nothing draws anymore
@@ -148,7 +163,7 @@ function revealParcel() {
 }
 
 function mamaParcelConversation() {
-  if (GAME_STATE.bag.get("parcel") || GAME_STATE.sequence.mama_parcel) return;
+  if (hasItem("parcel") || GAME_STATE.sequence.mama_parcel) return;
 
   GAME_STATE.movementLocked = true; // covers the pre-dialogue beat below; DIALOGUE.show() keeps it locked once the conversation itself starts
   GAME_STATE.mama.face("s");
@@ -189,7 +204,7 @@ function exitZone() {
     return; // no parcel yet — stay home
   }
 
-  if (!GAME_STATE.bag.get("parcel")) {
+  if (!hasItem("parcel")) {
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Paki kuha nitong parcel.", color: "red" });
     return; // no parcel yet — stay home
   }
