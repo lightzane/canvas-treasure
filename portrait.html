@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Portrait Cropper (dev tool)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #15161a;
+        --panel: #1e2026;
+        --border: #30333c;
+        --text: #e8e8ec;
+        --muted: #9a9ca5;
+        --accent: #5b8cff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.4 system-ui, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 32px 16px 64px;
+        gap: 20px;
+      }
+      h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+      }
+      p.hint {
+        margin: 0;
+        color: var(--muted);
+        text-align: center;
+        max-width: 480px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      /* The visible workspace — shows the whole photo, not just the crop. */
+      .crop-area {
+        position: relative;
+        width: 380px;
+        height: 380px;
+        overflow: hidden;
+        border-radius: 12px;
+        background: repeating-conic-gradient(#2a2d35 0% 25%, #24262c 0% 50%) 0 0 / 20px 20px;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+      }
+      .crop-area.dragging {
+        cursor: grabbing;
+      }
+      .crop-area.empty::after {
+        content: "Drop a photo here";
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted);
+        text-align: center;
+        padding: 0 32px;
+        pointer-events: none;
+      }
+
+      .photo {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform-origin: center center;
+        pointer-events: none; /* drag is handled on .crop-area, not the <img> itself */
+        display: none;
+      }
+
+      /* The spotlight: one box-shadow dims everything outside the circle. */
+      .crop-mask {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+        width: 280px;
+        height: 280px;
+        border-radius: 50%;
+        border: 2px dashed rgba(255, 255, 255, 0.85);
+        box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.6);
+        pointer-events: none;
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 380px;
+      }
+      .controls label {
+        color: var(--muted);
+        font-size: 13px;
+        white-space: nowrap;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--accent);
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        width: 420px;
+      }
+      .actions > * {
+        min-width: 120px;
+      }
+
+      button,
+      .file-button {
+        flex: 1;
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #262932;
+        color: var(--text);
+        font: inherit;
+        font-weight: 500;
+        cursor: pointer;
+        text-align: center;
+      }
+      button:hover,
+      .file-button:hover {
+        border-color: var(--accent);
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+      button.primary:disabled {
+        background: #262932;
+        color: var(--muted);
+        border-color: var(--border);
+      }
+
+      input[type="file"] {
+        display: none;
+      }
+
+      .filename {
+        color: var(--muted);
+        font-size: 13px;
+        max-width: 380px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Portrait Cropper</h1>
+    <p class="hint">
+      Upload a photo, drag it to reposition, scroll/slider to zoom — the dashed circle is the crop
+      area. Download exports a cropped square image (not a perfect circle file — the game's own
+      CSS clips it to a circle at display time) as PNG or JPG.
+    </p>
+
+    <div class="panel">
+      <div class="crop-area empty" id="cropArea">
+        <img class="photo" id="photo" draggable="false" alt="" />
+        <div class="crop-mask"></div>
+      </div>
+
+      <div class="controls">
+        <label for="zoom">Zoom</label>
+        <input type="range" id="zoom" min="1" max="2" step="0.01" value="1" disabled />
+      </div>
+
+      <div class="actions">
+        <label class="file-button" for="fileInput">Choose Photo</label>
+        <button id="downloadPngBtn" class="primary" disabled>Download PNG</button>
+        <button id="downloadJpgBtn" class="primary" disabled>Download JPG</button>
+      </div>
+
+      <div class="filename" id="filename"></div>
+      <input type="file" id="fileInput" accept="image/*" />
+    </div>
+
+    <script>
+      const FRAME_SIZE = 280; // crop circle diameter, px — matches .crop-mask's width/height
+      const EXPORT_SIZE = 512; // output PNG resolution, px — independent of on-screen preview size
+
+      const cropArea = document.getElementById("cropArea");
+      const photoEl = document.getElementById("photo");
+      const fileInput = document.getElementById("fileInput");
+      const zoomSlider = document.getElementById("zoom");
+      const downloadPngBtn = document.getElementById("downloadPngBtn");
+      const downloadJpgBtn = document.getElementById("downloadJpgBtn");
+      const filenameEl = document.getElementById("filename");
+
+      const state = {
+        img: null, // full-resolution HTMLImageElement, used as the draw source for export
+        baseName: "portrait",
+        scale: 1,
+        minScale: 1,
+        maxScale: 1,
+        offsetX: 0, // image center's distance from the frame's center, in on-screen px
+        offsetY: 0,
+        dragging: false,
+        lastX: 0,
+        lastY: 0,
+      };
+
+      function loadFile(file) {
+        if (!file || !file.type.startsWith("image/")) return;
+
+        state.baseName = file.name.replace(/\.[^.]+$/, "") || "portrait";
+        filenameEl.textContent = file.name;
+
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          state.img = img;
+          state.minScale = Math.max(FRAME_SIZE / img.naturalWidth, FRAME_SIZE / img.naturalHeight);
+          state.maxScale = state.minScale * 5;
+          state.scale = state.minScale;
+          state.offsetX = 0;
+          state.offsetY = 0;
+
+          photoEl.src = url;
+          photoEl.style.display = "block";
+          cropArea.classList.remove("empty");
+
+          zoomSlider.min = state.minScale;
+          zoomSlider.max = state.maxScale;
+          zoomSlider.step = (state.maxScale - state.minScale) / 200;
+          zoomSlider.disabled = false;
+          downloadPngBtn.disabled = false;
+          downloadJpgBtn.disabled = false;
+
+          render();
+        };
+        img.src = url;
+      }
+
+      function clampOffsets() {
+        const dispW = state.img.naturalWidth * state.scale;
+        const dispH = state.img.naturalHeight * state.scale;
+        const maxX = Math.max(0, (dispW - FRAME_SIZE) / 2);
+        const maxY = Math.max(0, (dispH - FRAME_SIZE) / 2);
+        state.offsetX = Math.min(maxX, Math.max(-maxX, state.offsetX));
+        state.offsetY = Math.min(maxY, Math.max(-maxY, state.offsetY));
+      }
+
+      function render() {
+        if (!state.img) return;
+        clampOffsets();
+
+        const dispW = state.img.naturalWidth * state.scale;
+        const dispH = state.img.naturalHeight * state.scale;
+
+        photoEl.style.width = `${dispW}px`;
+        photoEl.style.height = `${dispH}px`;
+        photoEl.style.transform = `translate(-50%, -50%) translate(${state.offsetX}px, ${state.offsetY}px)`;
+
+        zoomSlider.value = state.scale;
+      }
+
+      // --- drag to pan ---
+      cropArea.addEventListener("pointerdown", (e) => {
+        if (!state.img) return;
+        state.dragging = true;
+        state.lastX = e.clientX;
+        state.lastY = e.clientY;
+        cropArea.classList.add("dragging");
+        cropArea.setPointerCapture(e.pointerId);
+      });
+      cropArea.addEventListener("pointermove", (e) => {
+        if (!state.dragging) return;
+        state.offsetX += e.clientX - state.lastX;
+        state.offsetY += e.clientY - state.lastY;
+        state.lastX = e.clientX;
+        state.lastY = e.clientY;
+        render();
+      });
+      const endDrag = () => {
+        state.dragging = false;
+        cropArea.classList.remove("dragging");
+      };
+      cropArea.addEventListener("pointerup", endDrag);
+      cropArea.addEventListener("pointercancel", endDrag);
+
+      // --- wheel to zoom ---
+      cropArea.addEventListener(
+        "wheel",
+        (e) => {
+          if (!state.img) return;
+          e.preventDefault();
+          const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+          state.scale = Math.min(state.maxScale, Math.max(state.minScale, state.scale * factor));
+          render();
+        },
+        { passive: false },
+      );
+
+      // --- slider to zoom ---
+      zoomSlider.addEventListener("input", () => {
+        if (!state.img) return;
+        state.scale = Number(zoomSlider.value);
+        render();
+      });
+
+      // --- file input + drag-and-drop ---
+      fileInput.addEventListener("change", (e) => loadFile(e.target.files?.[0]));
+      cropArea.addEventListener("dragover", (e) => e.preventDefault());
+      cropArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        loadFile(e.dataTransfer?.files?.[0]);
+      });
+
+      // --- export ---
+
+      /** Renders the current crop (geometry scaled up from FRAME_SIZE to
+       * EXPORT_SIZE, drawn from the full-resolution source image rather than
+       * the downscaled on-screen <img>, so it stays crisp) onto a fresh
+       * off-screen canvas. Shared by both download buttons — only the
+       * output format/quality differs between them. */
+      function buildCroppedCanvas() {
+        const canvas = document.createElement("canvas");
+        canvas.width = EXPORT_SIZE;
+        canvas.height = EXPORT_SIZE;
+        const ctx = canvas.getContext("2d");
+
+        const ratio = EXPORT_SIZE / FRAME_SIZE;
+        const dispW = state.img.naturalWidth * state.scale * ratio;
+        const dispH = state.img.naturalHeight * state.scale * ratio;
+        const cx = EXPORT_SIZE / 2 + state.offsetX * ratio;
+        const cy = EXPORT_SIZE / 2 + state.offsetY * ratio;
+
+        ctx.drawImage(state.img, cx - dispW / 2, cy - dispH / 2, dispW, dispH);
+        return canvas;
+      }
+
+      function downloadAs(mimeType, extension, quality) {
+        if (!state.img) return;
+
+        buildCroppedCanvas().toBlob(
+          (blob) => {
+            if (!blob) return;
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `${state.baseName}-cropped.${extension}`;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          },
+          mimeType,
+          quality,
+        );
+      }
+
+      downloadPngBtn.addEventListener("click", () => downloadAs("image/png", "png"));
+      // quality 1 = highest — JPEG is still lossy even at max, but noticeably
+      // smaller than PNG for a real photo, which is what this crop always is.
+      downloadJpgBtn.addEventListener("click", () => downloadAs("image/jpeg", "jpg", 1));
+    </script>
+  </body>
+</html>

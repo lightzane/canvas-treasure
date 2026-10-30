@@ -26,4 +26,4 @@ export const IMGS_HUAZELEI_IDLE: Record<Direction, AnimationSource> = {
   d: IMG_IDLE_RIGHT,
 };
 
-export const PORTRAIT_HUAZELEI = img("portraits/huazelei.jpeg");
+export const PORTRAIT_HUAZELEI = img("portraits/huazelei.jpg");

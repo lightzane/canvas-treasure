@@ -21,8 +21,8 @@ const FONT = `300 28px ${GAME_FONT_FAMILY}`;
 const READ_MORE_SIZE = 14;
 const READ_MORE_GAP = 8; // space between the last word and the indicator
 const READ_MORE_BLINK_INTERVAL = 0.5; // seconds
-const PORTRAIT_SIZE = 180; // diameter, px — tweak this directly to resize
-const PORTRAIT_MARGIN_LEFT = 64; // gap from the canvas's own left edge
+const PORTRAIT_SIZE = 240; // diameter, px — tweak this directly to resize
+const PORTRAIT_MARGIN_LEFT = 32; // gap from the canvas's own left edge
 // Sits in the gap left of the box (BOX_LEFT itself, since the box is
 // centered — BOX_WIDTH < CANVAS_WIDTH on purpose), bottom-aligned with it.
 const PORTRAIT_LEFT = PORTRAIT_MARGIN_LEFT;

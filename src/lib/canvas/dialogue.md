@@ -41,6 +41,22 @@ DIALOGUE.show({ text: "Let's go, partner!", color: "blue" });
 DIALOGUE.show({ text: "You've got this!", color: "#e11d48" }); // hex works too
 ```
 
+**Portrait** — a circular "closer look" photo beside the box, same
+one-call/resets-on-next-`.show()` lifetime as `color`:
+
+```ts
+DIALOGUE.show({ text: "Where are my keys?", portrait: img("characters/dao-ming-si/portrait.png") });
+DIALOGUE.queue("Still looking..."); // keeps the same portrait — no need to repeat it
+```
+
+It sits in the empty gap to the left of the box (the box is narrower than the
+canvas on purpose), not inside it — the box's own text layout never changes,
+portrait or not. Crop a source photo to the right spot first with the
+`portrait.html` dev tool at the project root (open it directly in a browser;
+upload, drag/zoom to position, download a cropped PNG/JPG) — the game clips
+whatever image you pass to a circle via CSS at display time, so the file
+itself just needs to be a reasonably square crop, not a perfect circle.
+
 **Multiple messages from one speaker** — shown one after another, each fully
 wrapped/paginated on its own:
 
