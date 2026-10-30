@@ -4,6 +4,9 @@ import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
 import { hasItem } from "@/lib/bag";
 
+/** Edge-detects `GAME_STATE.movementLocked` turning on, so `movePlayer` only forces idle once per lock, not every frame — see the comment where it's read. */
+let wasLocked = false;
+
 /**
  * Shared movement/camera step for any walkable map scene: reads input,
  * switches walk/idle animation, advances the player, blocks movement
@@ -18,11 +21,21 @@ export function movePlayer(dt: number): Rect | undefined {
   const player = GAME_STATE.player;
 
   if (GAME_STATE.movementLocked) {
-    updateAnimation(); // forces idle — otherwise the player can look stuck mid-walk-frame
-    player.update(dt); // keeps the idle animation itself playing, just blocks movement
-    followCamera(); // still track the player (e.g. its freshly-placed spawn tile) — only movement is blocked, not the camera
+    // Force idle only on the frame locking *begins*, not every frame it
+    // stays locked — otherwise this fights anything else driving the
+    // player's animation during the lock (e.g. a scripted `walk()` call),
+    // stomping its "walk" state back to idle next frame, forever. The
+    // original point of forcing idle at all still holds: without it, a
+    // player who was mid-walk-frame right as locking engaged (e.g. still
+    // holding a direction key into a trigger zone) would stay visibly
+    // stuck on that frame, since nothing advances it further on its own.
+    if (!wasLocked) updateAnimation();
+    wasLocked = true;
+    player.update(dt); // keeps whatever animation is current playing, just blocks movement
+    followCamera(); // still track the player (e.g. its freshly-placed spawn tile, or a scripted walk() tweening its position) — only input-driven movement is blocked, not the camera
     return undefined;
   }
+  wasLocked = false;
 
   const direction = GAME_STATE.keys.pressed.at(-1);
   // GAME_STATE.allowRunning takes priority over everything else — a cramped
@@ -69,8 +82,8 @@ function updateAnimation({ direction, running = false }: UpdateAnimationOptions 
   }
 }
 
-/** How far to move on each axis for one frame of holding `direction`. */
-function getMoveDelta(direction: Direction, distance: number): { dx: number; dy: number } {
+/** How far to move on each axis for `distance` px in `direction` — exported for `walk`'s relative-steps legs, same direction semantics as the player's own per-frame movement. */
+export function getMoveDelta(direction: Direction, distance: number): { dx: number; dy: number } {
   if (direction === "w") return { dx: 0, dy: -distance };
   if (direction === "a") return { dx: -distance, dy: 0 };
   if (direction === "s") return { dx: 0, dy: distance };

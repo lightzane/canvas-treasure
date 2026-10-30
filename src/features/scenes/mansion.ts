@@ -20,7 +20,7 @@ import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
-import { walkToTile, type WalkHandle } from "@/lib/walk-to-tile";
+import { walk, type WalkHandle } from "@/lib/walk";
 import { IMGS_BUTLER_IDLE } from "@/sprites/butler";
 import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
 import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
@@ -167,7 +167,7 @@ function nearMissConversation() {
   DIALOGUE.queue(`Liu— ihanda mo ang almusal ko nagugutom na ako!`);
   DIALOGUE.queue(`Hahanapin ko lang ang keys ko...`);
   DIALOGUE.effect(() => {
-    daoMingSiWalk = walkToTile(GAME_STATE.daomingsi, [[23, 4]], { animated: true });
+    daoMingSiWalk = walk(GAME_STATE.daomingsi, [[23, 4]], { animated: true });
   }, 1);
   DIALOGUE.effect(() => {
     BUTLER.face("d");
@@ -192,7 +192,7 @@ function nearMissConversation() {
     Basta alam ko yung keys ko naiwan ko lang yun kay LEI, 
     o kay XI MEN man o MEI ZUO. Bahala ka na jan mauna na ako umalis...!`);
   DIALOGUE.effect(() => {
-    walkToTile(GAME_STATE.daomingsi, [[25, 4]], { animated: true });
+    walk(GAME_STATE.daomingsi, [25, 4], { animated: true });
     gsap.delayedCall(0.5, () => BUTLER.face("s"));
   }, 1);
   DIALOGUE.effect(() => playExclamation(BUTLER), 0.5);

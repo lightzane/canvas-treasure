@@ -33,7 +33,6 @@ export type BagEntry = { type: "item"; quantity: number } | { type: "equip"; qua
 
 export const GAME_STATE = {
   camera: { x: 0, y: 0 },
-  sceneName: "overworld" as SceneName,
   player: new PlayerSprite({
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
@@ -82,11 +81,12 @@ export const GAME_STATE = {
   },
   /** Seconds the current scene has been active — used by scenes with a `duration`. */
   sceneElapsed: 0,
+  sceneName: "mansion" as SceneName,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
     intro: true,
     mama_parcel: true,
-    meet_daomingsi: true,
+    meet_daomingsi: false,
     meet_huazelei: false,
   },
   bag: new Map<ItemName, BagEntry>([

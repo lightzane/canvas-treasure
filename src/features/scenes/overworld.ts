@@ -23,6 +23,7 @@ import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import { walk } from "@/lib/walk";
 import { PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
 import gsap from "gsap";
 
@@ -168,6 +169,15 @@ function interactPapa() {
 function interactHuazelei() {
   if (!GAME_STATE.sequence.meet_huazelei) {
     let shineHandle: ShineHandle | null = null;
+
+    walk(
+      GAME_STATE.player,
+      [
+        { direction: "s", steps: 2 },
+        { direction: "d", steps: 2 },
+      ],
+      { animated: true },
+    );
 
     DIALOGUE.show({
       text: "F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?",
