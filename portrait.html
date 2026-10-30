@@ -26,19 +26,8 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        padding: 32px 16px 64px;
-        gap: 20px;
-      }
-      h1 {
-        font-size: 18px;
-        font-weight: 600;
-        margin: 0;
-      }
-      p.hint {
-        margin: 0;
-        color: var(--muted);
-        text-align: center;
-        max-width: 480px;
+        justify-content: center;
+        padding: 16px;
       }
 
       .panel {
@@ -67,8 +56,12 @@
       .crop-area.dragging {
         cursor: grabbing;
       }
+      /* Empty: click-or-drop target, not yet the drag-to-pan surface. */
+      .crop-area.empty {
+        cursor: pointer;
+      }
       .crop-area.empty::after {
-        content: "Drop a photo here";
+        content: "Click or drop a photo here";
         position: absolute;
         inset: 0;
         display: flex;
@@ -94,6 +87,7 @@
         position: absolute;
         inset: 0;
         margin: auto;
+        /* When adjusting size, see also "FRAME_SIZE" in script */
         width: 280px;
         height: 280px;
         border-radius: 50%;
@@ -125,7 +119,10 @@
         width: 420px;
       }
       .actions > * {
-        min-width: 120px;
+        min-width: 136px;
+      }
+      .actions > *:first-child {
+        min-width: 100%;
       }
 
       button,
@@ -172,16 +169,37 @@
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+
+      .url-row {
+        display: flex;
+        width: 380px;
+      }
+      input[type="text"] {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: #15161a;
+        color: var(--text);
+        font: inherit;
+      }
+      input[type="text"]::placeholder {
+        color: var(--muted);
+      }
+
+      .status {
+        color: #ff8a8a;
+        font-size: 13px;
+        text-align: center;
+        max-width: 380px;
+        display: none;
+      }
+      .status.visible {
+        display: block;
+      }
     </style>
   </head>
   <body>
-    <h1>Portrait Cropper</h1>
-    <p class="hint">
-      Upload a photo, drag it to reposition, scroll/slider to zoom — the dashed circle is the crop
-      area. Download exports a cropped square image (not a perfect circle file — the game's own
-      CSS clips it to a circle at display time) as PNG or JPG.
-    </p>
-
     <div class="panel">
       <div class="crop-area empty" id="cropArea">
         <img class="photo" id="photo" draggable="false" alt="" />
@@ -192,6 +210,16 @@
         <label for="zoom">Zoom</label>
         <input type="range" id="zoom" min="1" max="2" step="0.01" value="1" disabled />
       </div>
+
+      <div class="controls">
+        <label for="rotation">Rotate</label>
+        <input type="range" id="rotation" min="-180" max="180" step="1" value="0" disabled />
+      </div>
+
+      <div class="url-row">
+        <input type="text" id="urlInput" placeholder="Or paste an image URL, then press Enter" />
+      </div>
+      <div class="status" id="status"></div>
 
       <div class="actions">
         <label class="file-button" for="fileInput">Choose Photo</label>
@@ -210,10 +238,13 @@
       const cropArea = document.getElementById("cropArea");
       const photoEl = document.getElementById("photo");
       const fileInput = document.getElementById("fileInput");
+      const urlInput = document.getElementById("urlInput");
       const zoomSlider = document.getElementById("zoom");
+      const rotationSlider = document.getElementById("rotation");
       const downloadPngBtn = document.getElementById("downloadPngBtn");
       const downloadJpgBtn = document.getElementById("downloadJpgBtn");
       const filenameEl = document.getElementById("filename");
+      const statusEl = document.getElementById("status");
 
       const state = {
         img: null, // full-resolution HTMLImageElement, used as the draw source for export
@@ -223,40 +254,86 @@
         maxScale: 1,
         offsetX: 0, // image center's distance from the frame's center, in on-screen px
         offsetY: 0,
+        rotation: 0, // degrees, around the image's own center
         dragging: false,
         lastX: 0,
         lastY: 0,
       };
 
+      function showStatus(message) {
+        statusEl.textContent = message;
+        statusEl.classList.add("visible");
+      }
+      function hideStatus() {
+        statusEl.classList.remove("visible");
+      }
+
+      /** Common "an image finished loading" setup, shared by file/drop and URL loading — everything past this point doesn't care which source it came from. */
+      function applyImage(img, baseName, displaySrc) {
+        state.img = img;
+        state.baseName = baseName;
+        state.minScale = Math.max(FRAME_SIZE / img.naturalWidth, FRAME_SIZE / img.naturalHeight);
+        state.maxScale = state.minScale * 5;
+        state.scale = state.minScale;
+        state.offsetX = 0;
+        state.offsetY = 0;
+        state.rotation = 0;
+
+        photoEl.src = displaySrc;
+        photoEl.style.display = "block";
+        cropArea.classList.remove("empty");
+        hideStatus();
+
+        zoomSlider.min = state.minScale;
+        zoomSlider.max = state.maxScale;
+        zoomSlider.step = (state.maxScale - state.minScale) / 200;
+        zoomSlider.disabled = false;
+        rotationSlider.value = 0;
+        rotationSlider.disabled = false;
+        downloadPngBtn.disabled = false;
+        downloadJpgBtn.disabled = false;
+
+        render();
+      }
+
       function loadFile(file) {
         if (!file || !file.type.startsWith("image/")) return;
 
-        state.baseName = file.name.replace(/\.[^.]+$/, "") || "portrait";
         filenameEl.textContent = file.name;
-
         const url = URL.createObjectURL(file);
         const img = new Image();
-        img.onload = () => {
-          state.img = img;
-          state.minScale = Math.max(FRAME_SIZE / img.naturalWidth, FRAME_SIZE / img.naturalHeight);
-          state.maxScale = state.minScale * 5;
-          state.scale = state.minScale;
-          state.offsetX = 0;
-          state.offsetY = 0;
+        img.onload = () => applyImage(img, file.name.replace(/\.[^.]+$/, "") || "portrait", url);
+        img.src = url;
+      }
 
-          photoEl.src = url;
-          photoEl.style.display = "block";
-          cropArea.classList.remove("empty");
+      /**
+       * Loads an image from a remote URL instead of a local file. `crossOrigin`
+       * has to be set *before* `src` — it only has an effect on the request
+       * that's about to be made, not one already in flight. Even with that,
+       * the image will often still *display* fine but fail to *export*: a
+       * canvas that's drawn a cross-origin image becomes "tainted" unless
+       * that server sends CORS headers allowing it, and a tainted canvas
+       * refuses to produce a blob at all (download.toBlob() for this is
+       * guarded separately, in downloadAs) — there's no way to detect that
+       * in advance from here, only once the export is actually attempted.
+       */
+      function loadFromUrl(url) {
+        if (!url) return;
 
-          zoomSlider.min = state.minScale;
-          zoomSlider.max = state.maxScale;
-          zoomSlider.step = (state.maxScale - state.minScale) / 200;
-          zoomSlider.disabled = false;
-          downloadPngBtn.disabled = false;
-          downloadJpgBtn.disabled = false;
+        let baseName = "portrait";
+        try {
+          const path = new URL(url).pathname;
+          const last = path.split("/").filter(Boolean).pop();
+          if (last) baseName = last.replace(/\.[^.]+$/, "");
+        } catch {
+          // not a valid absolute URL — keep the "portrait" fallback
+        }
 
-          render();
-        };
+        filenameEl.textContent = url;
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => applyImage(img, baseName, url);
+        img.onerror = () => showStatus("Couldn't load that URL — check it's a direct link to an image.");
         img.src = url;
       }
 
@@ -278,7 +355,10 @@
 
         photoEl.style.width = `${dispW}px`;
         photoEl.style.height = `${dispH}px`;
-        photoEl.style.transform = `translate(-50%, -50%) translate(${state.offsetX}px, ${state.offsetY}px)`;
+        // translate first (position the image), rotate last — with
+        // transform-origin: center center (set in CSS), that rotates it in
+        // place around its own center, wherever it's currently positioned.
+        photoEl.style.transform = `translate(-50%, -50%) translate(${state.offsetX}px, ${state.offsetY}px) rotate(${state.rotation}deg)`;
 
         zoomSlider.value = state.scale;
       }
@@ -327,12 +407,29 @@
         render();
       });
 
-      // --- file input + drag-and-drop ---
+      // --- slider to rotate ---
+      rotationSlider.addEventListener("input", () => {
+        if (!state.img) return;
+        state.rotation = Number(rotationSlider.value);
+        render();
+      });
+
+      // --- file input + click-or-drop ---
       fileInput.addEventListener("change", (e) => loadFile(e.target.files?.[0]));
       cropArea.addEventListener("dragover", (e) => e.preventDefault());
       cropArea.addEventListener("drop", (e) => {
         e.preventDefault();
         loadFile(e.dataTransfer?.files?.[0]);
+      });
+      // Only while empty — once a photo's loaded, a click here is the start
+      // of a drag-to-pan, not a request to pick a new file.
+      cropArea.addEventListener("click", () => {
+        if (!state.img) fileInput.click();
+      });
+
+      urlInput.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        loadFromUrl(urlInput.value.trim());
       });
 
       // --- export ---
@@ -354,25 +451,49 @@
         const cx = EXPORT_SIZE / 2 + state.offsetX * ratio;
         const cy = EXPORT_SIZE / 2 + state.offsetY * ratio;
 
-        ctx.drawImage(state.img, cx - dispW / 2, cy - dispH / 2, dispW, dispH);
+        // A single export-time save/restore — this runs once per download
+        // click, nothing like the game's own per-frame canvas, so there's no
+        // cost concern here (see docs/canvas-performance-gotchas.md for why
+        // that's a real issue elsewhere and not this).
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate((state.rotation * Math.PI) / 180);
+        ctx.drawImage(state.img, -dispW / 2, -dispH / 2, dispW, dispH);
+        ctx.restore();
+
         return canvas;
       }
 
       function downloadAs(mimeType, extension, quality) {
         if (!state.img) return;
 
-        buildCroppedCanvas().toBlob(
-          (blob) => {
-            if (!blob) return;
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = `${state.baseName}-cropped.${extension}`;
-            a.click();
-            URL.revokeObjectURL(a.href);
-          },
-          mimeType,
-          quality,
-        );
+        const canvas = buildCroppedCanvas();
+        try {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                showStatus(
+                  "Couldn't export — this image's source blocks cross-origin downloads. Save it to your computer and upload the file instead.",
+                );
+                return;
+              }
+              hideStatus();
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(blob);
+              a.download = `${state.baseName}-cropped.${extension}`;
+              a.click();
+              URL.revokeObjectURL(a.href);
+            },
+            mimeType,
+            quality,
+          );
+        } catch {
+          // Some browsers throw synchronously on toBlob() for a tainted canvas
+          // instead of calling back with null — same cause, same message.
+          showStatus(
+            "Couldn't export — this image's source blocks cross-origin downloads. Save it to your computer and upload the file instead.",
+          );
+        }
       }
 
       downloadPngBtn.addEventListener("click", () => downloadAs("image/png", "png"));
