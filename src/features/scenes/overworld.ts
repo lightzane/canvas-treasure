@@ -79,7 +79,13 @@ export const overworldScene: Scene = {
     // Default here is "arrived from home" — whichever scene set spawnLocation
     // (e.g. mansion's exit) takes priority; consumed so it doesn't leak into
     // a later, unrelated entry (e.g. a straight game boot into overworld).
-    placeAtTile({ sprite: GAME_STATE.player, tile: GAME_STATE.spawnLocation ?? [58.9, 42] });
+    // spriteSize pins this to the player's stable boxSize — see the same
+    // comment in home.ts, or spriteSize's own doc in positioning.ts.
+    placeAtTile({
+      sprite: GAME_STATE.player,
+      tile: GAME_STATE.spawnLocation ?? [58.9, 42],
+      spriteSize: GAME_STATE.player.boxSize,
+    });
     placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
     GAME_STATE.spawnLocation = undefined;
     placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });

@@ -78,7 +78,16 @@ export const homeScene: Scene = {
       GAME_STATE.player.face("a");
     }
 
-    placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
+    // spriteSize pins this to the player's stable boxSize — its `run` clip
+    // is a different pixel size than walk/idle (unlike every other sprite
+    // here), so the default sprite.size would center differently depending
+    // on whichever animation was active when this ran. See spriteSize's own
+    // doc in positioning.ts for the full reasoning.
+    placeAtTile({
+      sprite: GAME_STATE.player,
+      tile: spawnLocation,
+      spriteSize: GAME_STATE.player.boxSize,
+    });
     placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
     placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
 

@@ -93,12 +93,33 @@ interface PlaceAtTileParams {
   tile: [number, number];
   /** World position the tile grid is measured from. @default the map's own origin, {x:0,y:0}. */
   origin?: Position;
+  /**
+   * Overrides what `sprite.size` would otherwise give. `sprite.size` is
+   * derived live from whichever clip's raw image is *currently* loaded —
+   * fine for a single-clip `Sprite` (parcel, the fountains — only one image
+   * ever loaded, `.size` can't change) or a `PlayerSprite` whose clips all
+   * happen to share the same per-frame pixel size (mama/papa: idle only;
+   * daomingsi/huazelei: idle and walk both 64x96). It only becomes a problem
+   * for a `PlayerSprite` with a clip whose own sheet is a genuinely
+   * different size from its others — currently just the player itself, whose
+   * `run` sheet is 132x132/frame vs. 64x96 for its own walk/idle. For that
+   * one case, centering lands in a different spot purely depending on
+   * whichever animation happened to be active the instant this runs — not on
+   * the tile you asked for. Pass `GAME_STATE.player.boxSize` here to pin it
+   * to a stable value regardless of animation state (`PlayerSprite` itself
+   * already pins `boxSize` to its `initialSprite` clip's size at
+   * construction — see `PlayerSprite`'s constructor — so this only needs to
+   * be threaded through explicitly at spots like `placeAtTile`, which reads
+   * the live `.size` instead). @default sprite.size
+   */
+  spriteSize?: { width: number; height: number };
 }
 
 /**
  * Sets `sprite.position` to a Tiled `[col, row]`, centered on the tile — a
  * thin wrapper over `getPosSpawnTile` that infers `spriteSize` from the
- * sprite itself, so call sites only ever need to supply the tile.
+ * sprite itself by default, so most call sites only ever need to supply the
+ * tile.
  *
  * Only moves the sprite — it doesn't add it to a scene's `decor`/entity
  * list, so the sprite still needs to be in that list to actually draw/update.
@@ -107,6 +128,11 @@ interface PlaceAtTileParams {
  * once that's guaranteed — e.g. from a scene's `enter()`, which `GameEngine`
  * runs after the scene's `ready` promise resolves.
  */
-export function placeAtTile({ sprite, tile, origin = { x: 0, y: 0 } }: PlaceAtTileParams) {
-  sprite.position = getPosSpawnTile({ tile, spriteSize: sprite.size, origin });
+export function placeAtTile({
+  sprite,
+  tile,
+  origin = { x: 0, y: 0 },
+  spriteSize,
+}: PlaceAtTileParams) {
+  sprite.position = getPosSpawnTile({ tile, spriteSize: spriteSize ?? sprite.size, origin });
 }

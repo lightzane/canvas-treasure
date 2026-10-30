@@ -74,7 +74,13 @@ export const mansionScene: Scene = {
 
     const spawnLocation: [number, number] = [11.5, 20];
 
-    placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation });
+    // spriteSize pins this to the player's stable boxSize — see the same
+    // comment in home.ts, or spriteSize's own doc in positioning.ts.
+    placeAtTile({
+      sprite: GAME_STATE.player,
+      tile: spawnLocation,
+      spriteSize: GAME_STATE.player.boxSize,
+    });
 
     // Once he's left (see removeNpc in nearMissConversation), he's out of NPCS for
     // good — skip re-placing/re-adding him on a later re-entry to this scene.
@@ -132,7 +138,7 @@ export const mansionScene: Scene = {
 
 function exitZone() {
   GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
-  GAME_STATE.spawnLocation = [86.4, 16.5]; // rough placeholder, just south of enter_mansion's own tile — adjust to taste
+  GAME_STATE.spawnLocation = [86.5, 16.5]; // rough placeholder, just south of enter_mansion's own tile — adjust to taste
   GAME_STATE.sceneName = "overworld";
 }
 
