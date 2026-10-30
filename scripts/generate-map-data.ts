@@ -46,6 +46,22 @@ interface TiledMap {
   layers: TiledLayer[];
 }
 
+/** An object layer `findObjectLayers` matched, plus how it was matched. */
+interface MatchedObjectLayer {
+  layer: TiledObjectLayer;
+  /**
+   * Set only when this layer was matched via a containing group (not by its
+   * own exact name) — the layer's own name, meant to prefix each of its
+   * objects' names with (`${keyPrefix}_${objectName}`), since a bare object
+   * name alone can collide across sub-layers in the same folder ("home" and
+   * "mansion" under both an "enter" layer and a "sound" layer, say).
+   * `undefined` for a layer matched directly by name — its objects' own
+   * names are already the full key, unprefixed, same as before this folder
+   * form existed.
+   */
+  keyPrefix?: string;
+}
+
 /**
  * Tiled nests layers inside `group`-type layers, so object layers aren't
  * always top-level. Collects every object layer matching `name`, not just
@@ -53,12 +69,32 @@ interface TiledMap {
  * so splitting one logical set of objects across several same-named layers
  * (e.g. by color, for organization in the editor) is a reasonable way to
  * work there. All of them get merged back into one here.
+ *
+ * Also matches by *folder*: once recursion enters a `group` layer whose own
+ * name is `name` (e.g. a "trigger_zones" group), every object layer inside
+ * it counts regardless of its own name — so you can organize that folder's
+ * contents into meaningfully-named sub-layers ("enter", "sound", ...)
+ * instead of naming every single one "trigger_zones" literally. The two
+ * matching rules combine: a plain object layer named `name` still matches
+ * anywhere, folder-matching or not — see `MatchedObjectLayer.keyPrefix` for
+ * how each matched layer tells its caller which rule matched it.
  */
-function findObjectLayers(layers: TiledLayer[], name: string): TiledObjectLayer[] {
-  const found: TiledObjectLayer[] = [];
+function findObjectLayers(
+  layers: TiledLayer[],
+  name: string,
+  insideMatchingGroup = false,
+): MatchedObjectLayer[] {
+  const found: MatchedObjectLayer[] = [];
   for (const layer of layers) {
-    if (layer.type === "objectgroup" && layer.name === name) found.push(layer);
-    if (layer.type === "group") found.push(...findObjectLayers(layer.layers, name));
+    if (layer.type === "objectgroup") {
+      if (insideMatchingGroup) found.push({ layer, keyPrefix: layer.name });
+      else if (layer.name === name) found.push({ layer });
+    }
+    if (layer.type === "group") {
+      found.push(
+        ...findObjectLayers(layer.layers, name, insideMatchingGroup || layer.name === name),
+      );
+    }
   }
   return found;
 }
@@ -121,7 +157,7 @@ function generateMapData(mapName: string) {
   if (collisionLayers.length > 0) {
     const outputPath = path.join(COLLISIONS_OUTPUT_DIR, `${mapName}.ts`);
     const rects = collisionLayers
-      .flatMap((layer) => layer.objects)
+      .flatMap(({ layer }) => layer.objects)
       .map(({ x, y, width, height }) => ({ x, y, width, height }));
     emitConstFile(outputPath, `COLLISION_${mapName.toUpperCase()}`, rects, [
       "x",
@@ -139,9 +175,15 @@ function generateMapData(mapName: string) {
   const triggerLayers = findObjectLayers(map.layers, "trigger_zones");
   if (triggerLayers.length > 0) {
     const outputPath = path.join(TRIGGERS_OUTPUT_DIR, `${mapName}.ts`);
-    const zones = triggerLayers
-      .flatMap((layer) => layer.objects)
-      .map(({ name, x, y, width, height }) => ({ name, x, y, width, height }));
+    const zones = triggerLayers.flatMap(({ layer, keyPrefix }) =>
+      layer.objects.map(({ name, x, y, width, height }) => ({
+        name: keyPrefix ? `${keyPrefix}_${name}` : name,
+        x,
+        y,
+        width,
+        height,
+      })),
+    );
     emitConstFile(
       outputPath,
       `TRIGGER_${mapName.toUpperCase()}`,

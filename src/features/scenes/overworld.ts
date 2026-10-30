@@ -102,6 +102,7 @@ export const overworldScene: Scene = {
     // Spawn Hua Ze Lei after meeting Dao Ming Si
     if (GAME_STATE.sequence.meet_daomingsi) {
       NPCS.push(GAME_STATE.huazelei);
+      GAME_STATE.interactables.push({ sprite: GAME_STATE.huazelei, label: "Talk" });
       placeAtTile({ sprite: GAME_STATE.huazelei, tile: [81.5, 35] });
       GAME_STATE.huazelei.face("w");
     }
@@ -144,5 +145,10 @@ function interactions(target: Sprite | undefined) {
     }
 
     DIALOGUE.show({ text: "PAPA: Yes Ching?", color: "blue" });
+  }
+
+  // Hua Ze Lei
+  if (target === GAME_STATE.huazelei) {
+    DIALOGUE.show({ text: `F4 HUA ZE LEI: Hello CHE!`, color: "blue" });
   }
 }

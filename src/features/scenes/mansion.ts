@@ -187,7 +187,7 @@ function nearMissConversation() {
   DIALOGUE.effect(() => gsap.delayedCall(0.5, () => GAME_STATE.daomingsi.face("s")));
   DIALOGUE.queue(`
     Basta alam ko yung keys ko naiwan ko lang yun kay LEI, 
-    o kay XI MEN man o MEI ZUO. Bahala ka na jan mauna na ako!`);
+    o kay XI MEN man o MEI ZUO. Bahala ka na jan mauna na ako umalis...!`);
   DIALOGUE.effect(() => {
     walkToTile(GAME_STATE.daomingsi, [[25, 4]], { animated: true });
     gsap.delayedCall(0.5, () => BUTLER.face("s"));
