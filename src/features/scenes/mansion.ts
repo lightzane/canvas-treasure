@@ -27,16 +27,20 @@ import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
 import gsap from "gsap";
 
 let daoMingSiWalk: WalkHandle | null = null;
+const staffCfg = {
+  boxSize: { width: 64 },
+  shadowOffset: { y: -5 },
+};
 
-const BUTLER = new PlayerSprite({ sprites: { idle: IMGS_BUTLER_IDLE } });
-const STAFF_M1 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } });
-const STAFF_M2 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } });
-const STAFF_M3 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } });
-const STAFF_M4 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } });
-const STAFF_F1 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE } });
-const STAFF_F2 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE } });
-const STAFF_F3 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE } });
-const STAFF_F4 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE } });
+const BUTLER = new PlayerSprite({ sprites: { idle: IMGS_BUTLER_IDLE }, ...staffCfg });
+const STAFF_M1 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE }, ...staffCfg });
+const STAFF_M2 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE }, ...staffCfg });
+const STAFF_M3 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE }, ...staffCfg });
+const STAFF_M4 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE }, ...staffCfg });
+const STAFF_F1 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE }, ...staffCfg });
+const STAFF_F2 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE }, ...staffCfg });
+const STAFF_F3 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE }, ...staffCfg });
+const STAFF_F4 = new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE }, ...staffCfg });
 
 const COL_A = [STAFF_M1, STAFF_M2, STAFF_F1, STAFF_F2];
 const COL_B = [STAFF_M3, STAFF_M4, STAFF_F3, STAFF_F4];
@@ -85,23 +89,23 @@ export const mansionScene: Scene = {
     // Once he's left (see removeNpc in nearMissConversation), he's out of NPCS for
     // good — skip re-placing/re-adding him on a later re-entry to this scene.
     if (!GAME_STATE.sequence.meet_daomingsi) {
-      placeAtTile({ sprite: BUTLER, tile: [11, 6] });
+      placeAtTile({ sprite: BUTLER, tile: [11.25, 6] });
       placeAtTile({ sprite: GAME_STATE.daomingsi, tile: [11.5, 4] });
       BUTLER.face("w");
     } else {
-      placeAtTile({ sprite: BUTLER, tile: [11, 17] });
+      placeAtTile({ sprite: BUTLER, tile: [11.25, 17] });
       BUTLER.face("s");
     }
 
     let col = 21;
     for (const npc of COL_A) {
-      placeAtTile({ sprite: npc, tile: [10, col] });
+      placeAtTile({ sprite: npc, tile: [10.25, col] });
       col--;
     }
 
     col = 21;
     for (const npc of COL_B) {
-      placeAtTile({ sprite: npc, tile: [13, col] });
+      placeAtTile({ sprite: npc, tile: [13.25, col] });
       col--;
     }
 

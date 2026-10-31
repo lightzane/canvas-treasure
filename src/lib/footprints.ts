@@ -39,52 +39,86 @@ const FACING_ROTATION: Record<Direction, number> = {
   d: (Math.PI * 3) / 2,
 };
 
+interface TrailState {
+  lastFrameVal: number;
+  lastSide: 1 | -1;
+}
+
 let footprints: Footprint[] = [];
-let lastFrameVal = -1;
-let lastSide: 1 | -1 = 1;
 let clock = 0;
 
-function spawn(player: PlayerSprite) {
-  lastSide *= -1;
+// Keyed per-sprite — not a couple of shared module-level variables — so the
+// player and any number of NPCs can each leave their own trail (e.g. an NPC
+// scripted-walked across sand via walk()) without fighting over whose turn
+// it is for left/right or stomping each other's last-seen frame. Same
+// reasoning `walk.ts` already follows by keeping no shared state at all;
+// unlike a GSAP timeline, this needs to persist *something* between frames,
+// so a WeakMap keyed by the sprite itself is the equivalent.
+const trailState = new WeakMap<PlayerSprite, TrailState>();
+
+function getTrailState(sprite: PlayerSprite): TrailState {
+  let state = trailState.get(sprite);
+  if (!state) {
+    state = { lastFrameVal: -1, lastSide: 1 };
+    trailState.set(sprite, state);
+  }
+  return state;
+}
+
+function spawn(sprite: PlayerSprite, state: TrailState) {
+  state.lastSide *= -1;
 
   // Perpendicular to the direction of travel: facing a/d (horizontal
   // movement) offsets vertically; facing s/w (vertical movement) offsets
   // horizontally.
   const perpendicular =
-    player.facing === "a" || player.facing === "d"
-      ? { x: 0, y: SIDE_OFFSET * lastSide }
-      : { x: SIDE_OFFSET * lastSide, y: 0 };
+    sprite.facing === "a" || sprite.facing === "d"
+      ? { x: 0, y: SIDE_OFFSET * state.lastSide }
+      : { x: SIDE_OFFSET * state.lastSide, y: 0 };
 
   footprints.push({
     position: {
-      x: player.position.x + player.boxSize.width / 2 + perpendicular.x,
-      y: player.position.y + player.boxSize.height + perpendicular.y,
+      x: sprite.position.x + sprite.boxSize.width / 2 + perpendicular.x,
+      y: sprite.position.y + sprite.boxSize.height + perpendicular.y,
     },
-    facing: player.facing,
+    facing: sprite.facing,
     spawnedAt: clock,
   });
 }
 
 /**
- * Call once per frame, unconditionally, from a scene's own `update()` —
- * ages out expired footprints and, while `active` (e.g. the player is
- * standing on "soft" ground — see the `sand` trigger-zone counter in
- * `overworld.ts`), spawns a new one each time `player`'s current animation
- * crosses one of `FOOT_DOWN_FRAMES`.
+ * Call exactly once per frame, unconditionally, from a scene's own
+ * `update()` — ages out expired footprints. Separate from `trackFootstep`
+ * below (which can run any number of times per frame, once per sprite)
+ * so the shared aging clock only ever advances by `dt` once per frame
+ * no matter how many sprites are being tracked.
+ */
+export function updateFootprints(dt: number) {
+  clock += dt;
+  footprints = footprints.filter((f) => clock - f.spawnedAt < LIFESPAN);
+}
+
+/**
+ * Call once per frame per sprite that might be leaving footprints — the
+ * player, and/or any NPC currently being walked via `walk()`. Spawns a new
+ * footstep under `sprite` each time its current animation crosses one of
+ * `FOOT_DOWN_FRAMES`, but only while `active` (e.g. that sprite is standing
+ * on "soft" ground — see the `sand` trigger-zone counter in `overworld.ts`).
+ * Safe to call for several different sprites the same frame — each tracks
+ * its own frame-crossing/alternation state independently (see `trailState`).
  *
  * Idle has only one frame (`frames.max === 1`), so `frames.val` never
  * changes while standing still — nothing spawns then, with no separate
  * "is moving" check needed.
  */
-export function updateFootprints(dt: number, player: PlayerSprite, active: boolean) {
-  clock += dt;
-  footprints = footprints.filter((f) => clock - f.spawnedAt < LIFESPAN);
+export function trackFootstep(sprite: PlayerSprite, active: boolean) {
+  const state = getTrailState(sprite);
 
-  const frameVal = player.frames.val;
-  const crossed = frameVal !== lastFrameVal && FOOT_DOWN_FRAMES.includes(frameVal);
-  lastFrameVal = frameVal;
+  const frameVal = sprite.frames.val;
+  const crossed = frameVal !== state.lastFrameVal && FOOT_DOWN_FRAMES.includes(frameVal);
+  state.lastFrameVal = frameVal;
 
-  if (active && crossed) spawn(player);
+  if (active && crossed) spawn(sprite, state);
 }
 
 /**
@@ -100,6 +134,9 @@ export function updateFootprints(dt: number, player: PlayerSprite, active: boole
  */
 export function drawFootprints(ctx: CanvasRenderingContext2D) {
   if (footprints.length === 0) return;
+
+  // Tweak this so that the footprints are drawn near the sprite's feet
+  const FOOTPRINT_PLACEMENT_OFFSET = -10;
 
   // Manually snapshot/restore just the two properties touched here, rather
   // than ctx.save()/restore() — see the same tradeoff in Sprite.drawShadow().
@@ -119,7 +156,15 @@ export function drawFootprints(ctx: CanvasRenderingContext2D) {
     const { x, y } = toScreen(f.position);
     ctx.globalAlpha = opacity * 0.25;
     ctx.beginPath();
-    ctx.ellipse(x, y, WIDTH / 2, HEIGHT / 2, FACING_ROTATION[f.facing], 0, Math.PI * 2);
+    ctx.ellipse(
+      x,
+      y + FOOTPRINT_PLACEMENT_OFFSET,
+      WIDTH / 2,
+      HEIGHT / 2,
+      FACING_ROTATION[f.facing],
+      0,
+      Math.PI * 2,
+    );
     ctx.fill();
   }
 

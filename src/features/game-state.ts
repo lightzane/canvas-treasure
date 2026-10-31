@@ -36,15 +36,18 @@ export const GAME_STATE = {
   player: new PlayerSprite({
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
+    shadowOffset: { y: -3 },
     // moveSpeed: 500,
   }),
   mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
   papa: new PlayerSprite({ sprites: { idle: IMGS_PAPA_IDLE } }),
   daomingsi: new PlayerSprite({
     sprites: { idle: IMGS_DAOMINGSI_IDLE, walk: IMGS_DAOMINGSI_WALK },
+    shadowOffset: { y: -3 },
   }),
   huazelei: new PlayerSprite({
     sprites: { idle: IMGS_HUAZELEI_IDLE, walk: IMGS_HUAZELEI_WALK },
+    shadowOffset: { y: -3 },
   }),
   meizuo: new PlayerSprite({ sprites: { idle: IMGS_MEIZUO_IDLE } }),
   ximen: new PlayerSprite({ sprites: { idle: IMGS_DAOMINGSI_IDLE } }),
@@ -63,6 +66,14 @@ export const GAME_STATE = {
   triggerZones: [] as TriggerZone[],
   /** Whatever `findFacedTarget()` currently returns — recomputed every frame by the active scene, read by `drawInteractHighlight()`. */
   facedTarget: undefined as Sprite | undefined,
+  keys: {
+    pressed: [] as Direction[],
+    actions: { z: false, x: false },
+    /** True for exactly one frame — the frame the key actually went down, not every frame it's held. Set by `Controller.keydown`, cleared once per frame by `GameEngine.tick`. */
+    justPressed: { z: false, x: false },
+  },
+  /** Seconds the current scene has been active — used by scenes with a `duration`. */
+  sceneElapsed: 0,
   /**
    * Where the player should spawn next — set by the *exiting* scene right
    * before it changes `sceneName` (e.g. mansion's exit sets this to
@@ -73,15 +84,7 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  keys: {
-    pressed: [] as Direction[],
-    actions: { z: false, x: false },
-    /** True for exactly one frame — the frame the key actually went down, not every frame it's held. Set by `Controller.keydown`, cleared once per frame by `GameEngine.tick`. */
-    justPressed: { z: false, x: false },
-  },
-  /** Seconds the current scene has been active — used by scenes with a `duration`. */
-  sceneElapsed: 0,
-  sceneName: "overworld" as SceneName,
+  sceneName: "mansion" as SceneName,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
     intro: true,

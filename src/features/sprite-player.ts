@@ -46,10 +46,12 @@ interface PlayerProps {
   initialSprite?: string;
   facing?: Direction;
   moveSpeed?: number;
-  /** Fixed size for camera/drawing. Defaults to the starting sprite's own rendered size. */
-  boxSize?: { width: number; height: number };
+  /** Fixed size for camera/drawing. Each axis defaults independently to the starting sprite's own rendered size. */
+  boxSize?: { width?: number; height?: number };
   /** Smaller rect used only for wall-collision checks. See `Sprite`'s `collisionBox` for details. */
-  collisionBox?: { width: number; height: number; anchor?: "top" | "center" | "bottom" };
+  collisionBox?: { width?: number; height?: number; anchor?: "top" | "center" | "bottom" };
+  /** Nudges this sprite's shadow — see `Sprite`'s `shadowOffset` for details. @default { x: 0, y: 0 } */
+  shadowOffset?: { x?: number; y?: number };
   /** Multiplier applied to the drawn size only — never affects frame cropping. @default 1 */
   scale?: number;
 }
@@ -78,6 +80,7 @@ export class PlayerSprite extends Sprite {
     moveSpeed = 200,
     boxSize,
     collisionBox,
+    shadowOffset,
     scale = 1,
   }: PlayerProps) {
     const clips = loadClips(sprites);
@@ -93,8 +96,12 @@ export class PlayerSprite extends Sprite {
       position,
       frames: initialClip.frames,
       boxSize: resolvedBoxSize,
-      collisionBox: collisionBox ?? DEFAULT_COLLISION_BOX,
+      // Merged, not replaced by `??` — overriding just one axis (e.g.
+      // `{ width: 20 }`) would otherwise silently drop the default
+      // `anchor`/other axis instead of only overriding what was given.
+      collisionBox: { ...DEFAULT_COLLISION_BOX, ...collisionBox },
       shadow: true,
+      shadowOffset,
       scale,
     });
 

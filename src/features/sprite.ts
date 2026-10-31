@@ -19,20 +19,31 @@ interface SpriteProps {
   frames?: SpriteFrames;
   /**
    * Fixed size used for camera/drawing math, independent of the current
-   * frame's own pixel size. Defaults to the current frame's own size when
-   * omitted — so most sprites never need to set this at all.
+   * frame's own pixel size. Each axis defaults independently to the current
+   * frame's own rendered size when omitted — so overriding just `width` (or
+   * just `height`) doesn't force you to also supply the other.
    */
-  boxSize?: { width: number; height: number };
+  boxSize?: { width?: number; height?: number };
   /**
    * Smaller rect used only for wall-collision checks — independent of
    * `boxSize`, which keeps driving the camera and drawing. Always centered
    * horizontally inside `boxSize`; `anchor` picks where it sits vertically
-   * (e.g. `"bottom"` for a feet-only hitbox under a taller sprite). Defaults
-   * to `boxSize` itself (anchored at `position`) when omitted.
+   * (e.g. `"bottom"` for a feet-only hitbox under a taller sprite). Each axis
+   * defaults independently to `boxSize`'s own size when omitted, same as
+   * `boxSize` itself does against the render size.
    */
-  collisionBox?: { width: number; height: number; anchor?: "top" | "center" | "bottom" };
+  collisionBox?: { width?: number; height?: number; anchor?: "top" | "center" | "bottom" };
   /** A flat ellipse drawn under the sprite, anchored to `boxSize`'s bottom edge. @default false */
   shadow?: boolean;
+  /**
+   * Nudges the shadow independently of `boxSize`'s own feet-anchor math.
+   * Different sprite sheets don't all place the feet at the same relative
+   * spot within their own frame, so the shadow (always anchored off
+   * `boxSize`'s bottom edge) can land visibly off a particular sprite's
+   * feet — tune this per-instance to correct just that one. Each axis
+   * defaults independently to 0 when omitted. @default { x: 0, y: 0 }
+   */
+  shadowOffset?: { x?: number; y?: number };
   /** Multiplier applied to the drawn size only — never affects frame cropping. @default 1 */
   scale?: number;
 }
@@ -60,9 +71,10 @@ export class Sprite {
   frames: Required<NonNullable<SpriteProps["frames"]>>;
   opacity = 1;
   scale: number;
-  private readonly _boxSize?: { width: number; height: number };
+  private readonly _boxSize?: { width?: number; height?: number };
   private readonly _collisionBoxSize?: SpriteProps["collisionBox"];
   private readonly shadow: boolean;
+  private readonly _shadowOffset: { x: number; y: number };
 
   constructor({
     src,
@@ -71,6 +83,7 @@ export class Sprite {
     boxSize,
     collisionBox,
     shadow = false,
+    shadowOffset,
     scale = 1,
   }: SpriteProps) {
     this.image = loadImage(src);
@@ -79,6 +92,7 @@ export class Sprite {
     this._boxSize = boxSize;
     this._collisionBoxSize = collisionBox;
     this.shadow = shadow;
+    this._shadowOffset = { x: shadowOffset?.x ?? 0, y: shadowOffset?.y ?? 0 };
     this.scale = scale;
   }
 
@@ -105,12 +119,16 @@ export class Sprite {
     };
   }
 
-  /** Fixed box for camera/drawing — defaults to the current frame's own rendered size. */
-  get boxSize() {
-    return this._boxSize ?? this.renderSize;
+  /** Fixed box for camera/drawing — each axis defaults independently to the current frame's own rendered size. */
+  get boxSize(): { width: number; height: number } {
+    const render = this.renderSize;
+    return {
+      width: this._boxSize?.width ?? render.width,
+      height: this._boxSize?.height ?? render.height,
+    };
   }
 
-  /** Rect used for wall-collision checks. Defaults to `boxSize` (anchored at `position`) when `collisionBox` isn't set. */
+  /** Rect used for wall-collision checks. Each axis defaults independently to `boxSize`'s own size (anchored at `position`) when `collisionBox` isn't set. */
   get collisionBox(): { position: Position; width: number; height: number } {
     const box = this.boxSize;
     const size = this._collisionBoxSize;
@@ -123,20 +141,23 @@ export class Sprite {
       };
     }
 
+    const width = size.width ?? box.width;
+    const height = size.height ?? box.height;
+
     const y =
       size.anchor === "top"
         ? 0
         : size.anchor === "center"
-          ? (box.height - size.height) / 2
-          : box.height - size.height;
+          ? (box.height - height) / 2
+          : box.height - height;
 
     return {
       position: {
-        x: this.position.x + (box.width - size.width) / 2,
+        x: this.position.x + (box.width - width) / 2,
         y: this.position.y + y,
       },
-      width: size.width,
-      height: size.height,
+      width,
+      height,
     };
   }
 
@@ -204,8 +225,13 @@ export class Sprite {
     const shadowLength = shadowWidth * SHADOW_LENGTH_RATIO * 0.3;
 
     // Pulled up so the ellipse hugs the feet instead of hanging below them.
-    const groundX = x + box.width / 2 + SHADOW_DIRECTION.x * shadowLength;
-    const groundY = y + box.height - shadowHeight * 0.5 + SHADOW_DIRECTION.y * shadowLength;
+    const groundX = x + box.width / 2 + SHADOW_DIRECTION.x * shadowLength + this._shadowOffset.x;
+    const groundY =
+      y +
+      box.height -
+      shadowHeight * 0.5 +
+      SHADOW_DIRECTION.y * shadowLength +
+      this._shadowOffset.y;
 
     // Manually snapshot/restore just the two properties touched here, rather than
     // ctx.save()/restore() — a full state push/pop for two values measured as

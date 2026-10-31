@@ -19,7 +19,7 @@ import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
-import { drawFootprints, updateFootprints } from "@/lib/footprints";
+import { drawFootprints, trackFootstep, updateFootprints } from "@/lib/footprints";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -144,7 +144,8 @@ export const overworldScene: Scene = {
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
-    updateFootprints(dt, GAME_STATE.player, sandZoneCount > 0);
+    updateFootprints(dt);
+    trackFootstep(GAME_STATE.player, sandZoneCount > 0);
     updateInteraction(INTERACTABLES, interactions);
   },
 
