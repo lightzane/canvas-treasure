@@ -22,9 +22,11 @@ export interface AttentionBounceHandle {
 /**
  * A small "look over here" cue — bounces `sprite` straight up and back down
  * in place, e.g. right before it starts talking, to draw the player's eye to
- * it. Tweens the sprite's own `position.y` directly (not a separate draw
- * offset) and restores it exactly when done, so nothing else needs to know
- * this ran — call it on any NPC, no setup required.
+ * it. Tweens `sprite.bounceOffset` (nudges only the drawn image, not
+ * `position`) rather than `position.y` itself, so the shadow stays planted
+ * on the ground and shrinks as the sprite rises instead of following it up —
+ * see `Sprite.draw()`/`drawShadow()`. Restores exactly when done, so nothing
+ * else needs to know this ran — call it on any NPC, no setup required.
  *
  * @example playAttentionBounce(npc);
  * @example playAttentionBounce(npc, { hops: 2, height: 20 });
@@ -38,19 +40,18 @@ export function playAttentionBounce(
   options: AttentionBounceOptions = {},
 ): AttentionBounceHandle {
   const { height = 12, duration = 0.15, hops = 1, delay = 0, onComplete } = options;
-  const baseY = sprite.position.y;
 
   let active: gsap.core.Tween | null = null;
 
   const start = () => {
-    active = gsap.to(sprite.position, {
-      y: baseY - height,
+    active = gsap.to(sprite, {
+      bounceOffset: -height,
       duration,
       ease: "power1.out",
       yoyo: true,
       repeat: hops === "infinite" ? -1 : hops * 2 - 1, // each hop is an up-leg + a yoyo'd down-leg
       onComplete: () => {
-        sprite.position.y = baseY; // guards against float drift from repeated yoyo tweens
+        sprite.bounceOffset = 0; // guards against float drift from repeated yoyo tweens
         onComplete?.();
       },
     });
@@ -62,7 +63,7 @@ export function playAttentionBounce(
   return {
     stop: () => {
       active?.kill();
-      sprite.position.y = baseY;
+      sprite.bounceOffset = 0;
     },
   };
 }

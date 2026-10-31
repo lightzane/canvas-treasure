@@ -71,6 +71,8 @@ export class Sprite {
   frames: Required<NonNullable<SpriteProps["frames"]>>;
   opacity = 1;
   scale: number;
+  /** Px nudge applied only to the drawn image (e.g. by `playAttentionBounce`) — unlike `position`, never affects the shadow, collision, or camera. @default 0 */
+  bounceOffset = 0;
   private readonly _boxSize?: { width?: number; height?: number };
   private readonly _collisionBoxSize?: SpriteProps["collisionBox"];
   private readonly shadow: boolean;
@@ -199,7 +201,7 @@ export class Sprite {
       this.height,
       // (destination) paint here — scaled
       x + offset.x,
-      y + offset.y,
+      y + offset.y + this.bounceOffset,
       render.width,
       render.height,
     );
@@ -226,12 +228,7 @@ export class Sprite {
 
     // Pulled up so the ellipse hugs the feet instead of hanging below them.
     const groundX = x + box.width / 2 + SHADOW_DIRECTION.x * shadowLength + this._shadowOffset.x;
-    const groundY =
-      y +
-      box.height -
-      shadowHeight * 0.5 +
-      SHADOW_DIRECTION.y * shadowLength +
-      this._shadowOffset.y;
+    const groundY = y + box.height - shadowHeight * 0.5 + SHADOW_DIRECTION.y * shadowLength + this._shadowOffset.y; // prettier-ignore
 
     // Manually snapshot/restore just the two properties touched here, rather than
     // ctx.save()/restore() — a full state push/pop for two values measured as
@@ -240,10 +237,21 @@ export class Sprite {
     // frame for the player + one NPC — far more than the shadow draw itself).
     const prevAlpha = ctx.globalAlpha;
     const prevFillStyle = ctx.fillStyle;
+    // Shrinks as the sprite rises (bounceOffset is negative going up) —
+    // clamped so it never shrinks past half size even on a tall hop.
+    const shrink = 1 - Math.min(Math.abs(this.bounceOffset) / 80, 0.5);
     ctx.globalAlpha = 0.3;
     ctx.fillStyle = "black";
     ctx.beginPath();
-    ctx.ellipse(groundX, groundY, shadowWidth / 2, shadowHeight / 2, 0, 0, Math.PI * 2);
+    ctx.ellipse(
+      groundX,
+      groundY,
+      (shadowWidth / 2) * shrink,
+      (shadowHeight / 2) * shrink,
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.fill();
     ctx.globalAlpha = prevAlpha;
     ctx.fillStyle = prevFillStyle;

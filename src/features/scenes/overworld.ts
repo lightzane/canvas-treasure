@@ -16,6 +16,7 @@ import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
@@ -24,7 +25,6 @@ import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
-import { walk } from "@/lib/walk";
 import { PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
 import gsap from "gsap";
 
@@ -191,15 +191,6 @@ function interactHuazelei() {
   if (!GAME_STATE.sequence.meet_huazelei) {
     let shineHandle: ShineHandle | null = null;
 
-    walk(
-      GAME_STATE.player,
-      [
-        { direction: "s", steps: 2 },
-        { direction: "d", steps: 2 },
-      ],
-      { animated: true },
-    );
-
     DIALOGUE.show({
       text: "F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?",
       color: "blue",
@@ -207,6 +198,7 @@ function interactHuazelei() {
     });
     DIALOGUE.effect(() => {
       playExclamation(GAME_STATE.player);
+      playAttentionBounce(GAME_STATE.player, { hops: 3, duration: 0.1 });
       shineHandle = playShine(GAME_STATE.player);
       gsap.delayedCall(8, () => shineHandle?.stop());
     }, 0.5);
