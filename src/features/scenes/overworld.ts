@@ -212,5 +212,5 @@ function interactHuazelei() {
     return;
   }
 
-  DIALOGUE.show({ text: `HUA ZE LEI: Hello CHE!`, color: "blue", portrait: PORTRAIT_HUAZELEI });
+  DIALOGUE.show({ text: `HUA ZE LEI: Hello CHERYL!`, color: "blue", portrait: PORTRAIT_HUAZELEI });
 }

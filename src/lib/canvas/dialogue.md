@@ -111,6 +111,26 @@ accidentally fire again.
 `isActive` stays `true` for the whole delay, so anything gated on it (see
 below) keeps treating the conversation as still in progress.
 
+### Hiding the portrait during a pause
+
+A portrait inherits across `.queue()`/`.effect()` calls the same way `color`
+does — but during an `.effect()` pause (e.g. a speaker walking off before the
+conversation continues), nobody's actually speaking, and the previous
+message's portrait just sitting there looks wrong. Call `.clearPortrait()`
+from inside that `effect()` to hide it for just that pause; the box's current
+page keeps showing as usual, only the portrait goes away. It stays hidden
+(even through a later `.queue()` that doesn't specify its own) until some
+later message explicitly sets a portrait again:
+
+```ts
+DIALOGUE.show({ text: "...hold on.", portrait: NPC_PORTRAIT });
+DIALOGUE.effect(() => {
+  DIALOGUE.clearPortrait();
+  walk(npc, [[10, 4]], { animated: true });
+}, 1);
+DIALOGUE.queue({ text: "Okay, back.", portrait: NPC_PORTRAIT }); // has to be set again
+```
+
 ## Controls
 
 - **Hold Z or X**: reveal the current page faster.

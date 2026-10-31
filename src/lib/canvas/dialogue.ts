@@ -110,6 +110,29 @@ class Dialogue {
     if (wasIdle) this.pullPending(); // nothing else in progress — this can run right away
   }
 
+  /**
+   * Hides the portrait immediately — the box's current page keeps showing
+   * (frozen) as usual, only the portrait goes away. For a pause where
+   * nobody's speaking (e.g. an NPC walking off before the conversation
+   * continues): call this from inside the same `effect()` that starts that
+   * pause. Stays hidden — including through the inheritance a later
+   * `queue()`/`show()` without its own `portrait` would otherwise fall back
+   * to — until some later message explicitly sets a portrait again.
+   *
+   * @example
+   * DIALOGUE.show("...hold on.");
+   * DIALOGUE.effect(() => {
+   *   DIALOGUE.clearPortrait();
+   *   walk(npc, [[10, 4]], { animated: true });
+   * }, 1);
+   * DIALOGUE.queue({ text: "Okay, back.", portrait: NPC_PORTRAIT });
+   */
+  clearPortrait() {
+    this.portrait = undefined;
+    this.lastPortrait = undefined;
+    this.updatePortraitElement();
+  }
+
   private enqueue(input: DialogueInput) {
     const wasIdle = !this.isActive;
     if (wasIdle) this.onComplete = () => {}; // same reasoning as effect() above

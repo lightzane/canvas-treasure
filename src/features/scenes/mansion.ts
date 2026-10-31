@@ -21,7 +21,8 @@ import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 import { walk, type WalkHandle } from "@/lib/walk";
-import { IMGS_BUTLER_IDLE } from "@/sprites/butler";
+import { IMGS_BUTLER_IDLE, PORTRAIT_BUTLER } from "@/sprites/butler";
+import { PORTRAIT_DAOMINGSI, PORTRAIT_DAOMINGSI_INTIMIDATE } from "@/sprites/dao-ming-si";
 import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
 import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
 import gsap from "gsap";
@@ -154,15 +155,22 @@ function removeNpc(npc: PlayerSprite) {
 
 function interactions(target: Sprite | undefined) {
   if (target === BUTLER) {
-    DIALOGUE.show({ text: "BUTLER LIU: Binibining CHE! Wala po dito si Young Master..." });
+    DIALOGUE.show({
+      text: "BUTLER LIU: Binibining CHE! Wala po dito si Young Master...",
+      portrait: PORTRAIT_BUTLER,
+    });
   }
 }
 
 function nearMissConversation() {
   if (GAME_STATE.sequence.meet_daomingsi) return; // already met him (and he's gone) — don't replay this
 
-  DIALOGUE.show({ text: `BUTLER LIU: Young Master, saan po natin ilalagay ang ke—k!` });
+  DIALOGUE.show({
+    text: `BUTLER LIU: Young Master, saan po natin ilalagay ang ke#&@—k!`,
+    portrait: PORTRAIT_BUTLER,
+  });
   DIALOGUE.effect(() => {
+    DIALOGUE.clearPortrait();
     playAttentionBounce(GAME_STATE.daomingsi, { hops: 5, duration: 0.1 });
     playExclamation(GAME_STATE.daomingsi);
     gsap.delayedCall(0.5, () => {
@@ -171,12 +179,17 @@ function nearMissConversation() {
       playExclamation(BUTLER);
     });
   }, 0.5);
-  DIALOGUE.queue({ text: `F4 DAO MING SI: Saan ilalagay ang "keys"?`, color: "red" });
+  DIALOGUE.queue({
+    text: `F4 DAO MING SI: Saan ilalagay ang "keys"?`,
+    color: "red",
+    portrait: PORTRAIT_DAOMINGSI,
+  });
   DIALOGUE.effect(() => BUTLER.face("w"));
   DIALOGUE.effect(() => playAttentionBounce(GAME_STATE.daomingsi, { hops: 2 }));
   DIALOGUE.queue(`Liu— ihanda mo ang almusal ko nagugutom na ako!`);
   DIALOGUE.queue(`Hahanapin ko lang ang keys ko...`);
   DIALOGUE.effect(() => {
+    DIALOGUE.clearPortrait();
     daoMingSiWalk = walk(GAME_STATE.daomingsi, [[23, 4]], { animated: true });
   }, 1);
   DIALOGUE.effect(() => {
@@ -186,6 +199,7 @@ function nearMissConversation() {
   DIALOGUE.queue({
     text: `BUTLER LIU: Pero ang alam ko ay hindi naman po nawawala ang keys niyo...`,
     color: "black",
+    portrait: PORTRAIT_BUTLER,
   });
   DIALOGUE.effect(() => playExclamation(GAME_STATE.daomingsi), 0.5);
   DIALOGUE.effect(() => {
@@ -196,12 +210,20 @@ function nearMissConversation() {
       playExclamation(BUTLER);
     });
   }, 0.5);
-  DIALOGUE.queue({ text: `DAO MING SI: Hinihingi ko ba ang opinyon mo HA?`, color: "red" });
+  DIALOGUE.queue({
+    text: `DAO MING SI: Hinihingi ko ba ang opinyon mo HA?`,
+    color: "red",
+    portrait: PORTRAIT_DAOMINGSI_INTIMIDATE,
+  });
   DIALOGUE.effect(() => gsap.delayedCall(0.5, () => GAME_STATE.daomingsi.face("s")));
-  DIALOGUE.queue(`
+  DIALOGUE.queue({
+    text: `
     Basta alam ko yung keys ko naiwan ko lang yun kay LEI, 
-    o kay XI MEN man o MEI ZUO. Bahala ka na jan mauna na ako umalis...!`);
+    o kay XI MEN man o MEI ZUO. Bahala ka na jan mauna na ako umalis...!`,
+    portrait: PORTRAIT_DAOMINGSI,
+  });
   DIALOGUE.effect(() => {
+    DIALOGUE.clearPortrait();
     walk(GAME_STATE.daomingsi, [25, 4], { animated: true });
     gsap.delayedCall(0.5, () => BUTLER.face("s"));
   }, 1);
@@ -213,6 +235,7 @@ function nearMissConversation() {
       Kung maaari po tulungan po ninyo siya mahanap ang keys niya.
     `,
     color: "black",
+    portrait: PORTRAIT_BUTLER,
   });
   DIALOGUE.onComplete = () => {
     GAME_STATE.sequence.meet_daomingsi = true;

@@ -25,3 +25,6 @@ export const IMGS_DAOMINGSI_IDLE: Record<Direction, AnimationSource> = {
   s: IMG_IDLE_DOWN,
   d: IMG_IDLE_RIGHT,
 };
+
+export const PORTRAIT_DAOMINGSI = img("portraits/daomingsi.jpg");
+export const PORTRAIT_DAOMINGSI_INTIMIDATE = img("portraits/daomingsi-intimidate.jpg");

@@ -84,12 +84,12 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "overworld" as SceneName,
+  sceneName: "mansion" as SceneName,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
     intro: true,
     mama_parcel: true,
-    meet_daomingsi: true,
+    meet_daomingsi: false,
     meet_huazelei: false,
   },
   bag: new Map<ItemName, BagEntry>([

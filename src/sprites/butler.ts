@@ -14,3 +14,5 @@ export const IMGS_BUTLER_IDLE: Record<Direction, AnimationSource> = {
   s: IMG_IDLE_DOWN,
   d: IMG_IDLE_RIGHT,
 };
+
+export const PORTRAIT_BUTLER = img("portraits/liu.jpg");
