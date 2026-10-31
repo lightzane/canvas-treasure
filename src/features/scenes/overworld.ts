@@ -19,6 +19,7 @@ import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
+import { drawFootprints, updateFootprints } from "@/lib/footprints";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -47,6 +48,12 @@ const NPCS: PlayerSprite[] = [GAME_STATE.papa];
 const INTERACTABLES: Interactable[] = [{ sprite: GAME_STATE.papa, label: "Talk" }];
 const HUAZELEI_INTERACTABLE: Interactable = { sprite: GAME_STATE.huazelei, label: "Talk" };
 
+// Incremented/decremented by the "sand" trigger below, not a plain boolean —
+// several same-named "sand" rectangles approximate one irregular beach
+// shape (see triggers/overworld.ts), so this is the count of how many of
+// them the player is currently inside, with ">0" meaning "on sand" overall.
+let sandZoneCount = 0;
+
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   enter_home: {
     onEnter: () => {
@@ -59,6 +66,10 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
       GAME_STATE.sceneName = "mansion";
       GAME_STATE.movementLocked = true;
     },
+  },
+  sand: {
+    onEnter: () => sandZoneCount++,
+    onLeave: () => sandZoneCount--,
   },
 };
 
@@ -98,6 +109,7 @@ export const overworldScene: Scene = {
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
     GAME_STATE.obstacles = NPCS;
+    sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
 
     if (!GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = true;
@@ -132,6 +144,7 @@ export const overworldScene: Scene = {
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
+    updateFootprints(dt, GAME_STATE.player, sandZoneCount > 0);
     updateInteraction(INTERACTABLES, interactions);
   },
 
@@ -139,6 +152,7 @@ export const overworldScene: Scene = {
     drawViewportClamped(ctx, background);
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
     DECORS.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
+    drawFootprints(ctx);
     // GAME_STATE.player.draw(ctx);
     drawYSorted(ctx, [GAME_STATE.player, ...NPCS]);
     drawViewportClamped(ctx, foreground);

@@ -36,7 +36,7 @@ export const GAME_STATE = {
   player: new PlayerSprite({
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
-    moveSpeed: 500,
+    // moveSpeed: 500,
   }),
   mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
   papa: new PlayerSprite({ sprites: { idle: IMGS_PAPA_IDLE } }),
@@ -81,7 +81,7 @@ export const GAME_STATE = {
   },
   /** Seconds the current scene has been active — used by scenes with a `duration`. */
   sceneElapsed: 0,
-  sceneName: "mansion" as SceneName,
+  sceneName: "overworld" as SceneName,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
     intro: true,

@@ -105,6 +105,23 @@ function toLiteral(obj: Record<string, string | number>, keys: string[]): string
 }
 
 /**
+ * The emitted trigger name for one object: `${keyPrefix}_${objectName}`,
+ * except where that would be redundant —
+ * - no `keyPrefix` at all (direct layer-name match, not folder-matched):
+ *   the object's own name is already the full key, unchanged.
+ * - the object's name is empty (many identical rectangles under one
+ *   "sand" layer, say, where naming each one individually is pointless):
+ *   just `keyPrefix` alone, not `"sand_"` with a trailing underscore.
+ * - the object's name exactly matches `keyPrefix` (same idea, but each
+ *   rectangle *is* named "sand" too): just `keyPrefix`, not `"sand_sand"`.
+ */
+function triggerName(keyPrefix: string | undefined, objectName: string): string {
+  if (!keyPrefix) return objectName;
+  if (!objectName || objectName === keyPrefix) return keyPrefix;
+  return `${keyPrefix}_${objectName}`;
+}
+
+/**
  * Writes `export const <exportName> = scaleTiledObjects([...])`, then
  * formats it with oxfmt. If `nameTypeExport` is given, also emits
  * `export type <nameTypeExport> = "a" | "b" | ...` — the exact literal
@@ -177,7 +194,7 @@ function generateMapData(mapName: string) {
     const outputPath = path.join(TRIGGERS_OUTPUT_DIR, `${mapName}.ts`);
     const zones = triggerLayers.flatMap(({ layer, keyPrefix }) =>
       layer.objects.map(({ name, x, y, width, height }) => ({
-        name: keyPrefix ? `${keyPrefix}_${name}` : name,
+        name: triggerName(keyPrefix, name),
         x,
         y,
         width,

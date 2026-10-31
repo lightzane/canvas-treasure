@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="163" nextobjectid="9">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="164" nextobjectid="42">
  <editorsettings>
   <export target="overworld.json" format="json"/>
  </editorsettings>
@@ -12618,6 +12618,33 @@
   <objectgroup color="#fffb00" id="156" name="enter">
    <object id="1" name="home" x="1883.81" y="1290.27" width="33" height="40.5487"/>
    <object id="4" name="mansion" x="2764.5" y="474.5" width="38" height="47.5"/>
+  </objectgroup>
+  <objectgroup color="#ffffff" id="163" name="sand">
+   <object id="9" name="sand" x="331.451" y="2351.79" width="450.325" height="453.89"/>
+   <object id="11" name="sand" x="782.496" y="2381.73" width="226.631" height="423.771"/>
+   <object id="14" name="sand" x="1010.89" y="2415.12" width="284.08" height="387.619"/>
+   <object id="15" name="sand" x="1295.93" y="2442.37" width="338.533" height="523.693"/>
+   <object id="16" name="sand" x="1903.76" y="2508.42" width="110.469" height="458.002"/>
+   <object id="17" name="sand" x="1775.43" y="2379.07" width="96.9418" height="63.4619"/>
+   <object id="18" name="sand" x="1422.65" y="2415.05" width="225.365" height="28.4829"/>
+   <object id="20" name="sand" x="1456.18" y="2384.11" width="160.796" height="30.6646"/>
+   <object id="21" name="sand" x="1484.78" y="2351.38" width="132.708" height="32.7261"/>
+   <object id="23" name="sand" x="782.301" y="2351.33" width="194.395" height="30.9735"/>
+   <object id="24" name="sand" x="815.634" y="2318.58" width="129.794" height="32.7434"/>
+   <object id="25" name="sand" x="1103.33" y="2383.76" width="65.7616" height="30.3811"/>
+   <object id="26" name="sand" x="365.632" y="2156.92" width="386.512" height="194.145"/>
+   <object id="27" name="sand" x="752.081" y="2223.17" width="31.6456" height="65.0017"/>
+   <object id="29" name="sand" x="331.727" y="1804.89" width="389.727" height="357.477"/>
+   <object id="31" name="sand" x="720.447" y="1933.99" width="65.0632" height="67.2564"/>
+   <object id="33" name="sand" x="720.813" y="2094.82" width="64.3322" height="34.3592"/>
+   <object id="34" name="sand" x="720.447" y="2001.24" width="35.8213" height="95.4017"/>
+   <object id="35" name="sand" x="720.813" y="1868.92" width="33.6282" height="67.2564"/>
+   <object id="36" name="sand" x="366.255" y="1742.82" width="194.093" height="62.8701"/>
+   <object id="37" name="sand" x="398.786" y="1709.92" width="99.4225" height="33.9937"/>
+   <object id="38" name="sand" x="559.617" y="1774.62" width="128.299" height="31.0695"/>
+   <object id="39" name="sand" x="1628.05" y="2617.35" width="278.273" height="350.564"/>
+   <object id="40" name="sand" x="1756.26" y="2439.45" width="150.271" height="186.935"/>
+   <object id="41" name="sand" x="1632.33" y="2443.58" width="128.066" height="88.3036"/>
   </objectgroup>
   <objectgroup color="#00fdff" id="161" name="sound">
    <object id="5" name="fountain_mansion" x="2508.44" y="661.948" width="544.845" height="170.954"/>
