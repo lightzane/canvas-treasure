@@ -1,7 +1,12 @@
 import { COLLISION_OVERWORLD } from "@/constants/collisions/overworld";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
 import { GAME_STATE } from "@/features/game-state";
-import { drawInteractPrompt, updateInteraction, type Interactable } from "@/features/interact";
+import {
+  drawInteractPrompt,
+  removeInteractable,
+  updateInteraction,
+  type Interactable,
+} from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import type { PlayerSprite } from "@/features/sprite-player";
@@ -11,11 +16,12 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
-import { addOnce } from "@/lib/array";
+import { addOnce, remove } from "@/lib/array";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { drift } from "@/lib/drift";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
@@ -32,6 +38,9 @@ const IMG_MAP_BG = img("maps/overworld.png");
 const IMG_MAP_FG = img("maps/overworld-fg.png");
 const IMG_FOUNTAIN_SMALL = img("others/fountain-small.png");
 const IMG_FOUNTAIN_BIG = img("others/fountain-big.png");
+const IMG_PAPER_SINGLE = img("others/paper-single.png");
+const IMG_PAPER_MULTI = img("others/paper-multi.png");
+const IMG_PAPER_WIND = img("others/paper-wind.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 /** Drawn on top of the player (tree canopies, roof overhangs, etc). */
@@ -41,12 +50,20 @@ const smallFountainA = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 },
 const smallFountainB = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
 const bigFountainA = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
+const paperSingle = new Sprite({ src: IMG_PAPER_SINGLE, scale: 2 });
+const paperMulti = new Sprite({
+  src: IMG_PAPER_MULTI,
+  scale: 2,
+  boxSize: { width: 32, height: 32 },
+});
+const paperWind = new Sprite({ src: IMG_PAPER_WIND, scale: 2, frames: { max: 8, hold: 180 } });
 
 /** This map's own static/animated decor — drawn after the background, before the player. */
 const DECORS: Sprite[] = [smallFountainA, smallFountainB, bigFountainA, bigFountainB];
 const NPCS: PlayerSprite[] = [GAME_STATE.papa];
 const INTERACTABLES: Interactable[] = [{ sprite: GAME_STATE.papa, label: "Talk" }];
 const HUAZELEI_INTERACTABLE: Interactable = { sprite: GAME_STATE.huazelei, label: "Talk" };
+let paperWindAnimating = false;
 
 // Incremented/decremented by the "sand" trigger below, not a plain boolean —
 // several same-named "sand" rectangles approximate one irregular beach
@@ -133,12 +150,20 @@ export const overworldScene: Scene = {
       placeAtTile({ sprite: GAME_STATE.huazelei, tile: [81.5, 35] });
       GAME_STATE.huazelei.face("w");
     }
+
+    if (!GAME_STATE.sequence.meet_huazelei) {
+      placeAtTile({ sprite: paperWind, tile: [81.25, 34] });
+      placeAtTile({ sprite: paperMulti, tile: [82, 44] });
+      placeAtTile({ sprite: paperSingle, tile: [81, 34] });
+      addOnce(DECORS, paperSingle);
+    }
   },
 
   update(dt) {
     DECORS.filter(isInViewport).forEach((sprite) => sprite.update(dt));
-    NPCS.forEach((n) => n.update(dt));
+    NPCS.filter(isInViewport).forEach((n) => n.update(dt));
 
+    if (paperWindAnimating) paperWind.update(dt);
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
 
     const playerBox = movePlayer(dt);
@@ -155,9 +180,11 @@ export const overworldScene: Scene = {
     DECORS.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
     drawFootprints(ctx);
     // GAME_STATE.player.draw(ctx);
-    drawYSorted(ctx, [GAME_STATE.player, ...NPCS]);
+    drawYSorted(ctx, [GAME_STATE.player, ...NPCS.filter(isInViewport)]);
     drawViewportClamped(ctx, foreground);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
+
+    if (paperWindAnimating) paperWind.draw(ctx);
   },
 };
 
@@ -168,6 +195,9 @@ function interactions(target: Sprite | undefined) {
       break;
     case GAME_STATE.huazelei:
       interactHuazelei();
+      break;
+    case paperMulti:
+      interactPaperMulti();
       break;
   }
 }
@@ -184,33 +214,99 @@ function interactPapa() {
     return;
   }
 
+  if (!GAME_STATE.sequence.meet_huazelei) {
+    DIALOGUE.show({
+      text: `
+        PAPA: Punta ka sa park, daan sa kanan. May pogi rin dun!
+      `,
+      color: "blue",
+    });
+    return;
+  }
+
   DIALOGUE.show({ text: "PAPA: Yes Ching?", color: "blue" });
 }
 
 function interactHuazelei() {
   if (!GAME_STATE.sequence.meet_huazelei) {
-    let shineHandle: ShineHandle | null = null;
-
-    DIALOGUE.show({
-      text: "F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?",
-      color: "blue",
-      portrait: PORTRAIT_HUAZELEI,
-    });
-    DIALOGUE.effect(() => {
-      playExclamation(GAME_STATE.player);
-      playAttentionBounce(GAME_STATE.player, { hops: 3, duration: 0.1 });
-      shineHandle = playShine(GAME_STATE.player);
-      gsap.delayedCall(8, () => shineHandle?.stop());
-    }, 0.5);
-    DIALOGUE.queue(`...si "DAO MING SI" naghahanap ng kiss?`);
-    DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
-    DIALOGUE.queue(`Ahh, hinahanap niya ang "keys" o susi niya...`);
-    DIALOGUE.queue(`Paumanhin ngunit wala naman sa akin ang mga keys niya.`);
-    DIALOGUE.onComplete = () => {
-      GAME_STATE.sequence.meet_huazelei = true;
-    };
+    meetLeiConversation();
     return;
   }
 
   DIALOGUE.show({ text: `HUA ZE LEI: Hello CHERYL!`, color: "blue", portrait: PORTRAIT_HUAZELEI });
+}
+
+function meetLeiConversation() {
+  let shineHandle: ShineHandle | null = null;
+
+  DIALOGUE.show({
+    text: "F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?",
+    color: "blue",
+    portrait: PORTRAIT_HUAZELEI,
+  });
+  DIALOGUE.effect(() => {
+    playExclamation(GAME_STATE.player);
+    playAttentionBounce(GAME_STATE.player, { hops: 3, duration: 0.1 });
+    shineHandle = playShine(GAME_STATE.player);
+    gsap.delayedCall(8, () => shineHandle?.stop());
+  }, 0.5);
+  DIALOGUE.queue(`...si "DAO MING SI" naghahanap ng kiss?`);
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
+  DIALOGUE.queue(`Ahh, hinahanap niya ang "keys" o susi niya...`);
+  DIALOGUE.queue(`Paumanhin ngunit wala naman sa akin ang mga keys niya.`);
+  DIALOGUE.effect(() => {
+    DIALOGUE.clearPortrait();
+    DIALOGUE.hideBox();
+    playExclamation(GAME_STATE.huazelei);
+    playAttentionBounce(paperSingle, { hops: 8, delay: 1, onComplete: removePaperSingle });
+
+    function removePaperSingle() {
+      remove(DECORS, paperSingle);
+      paperWindAnimating = true;
+      gsap.delayedCall(1.5, () => {
+        GAME_STATE.huazelei.face("s");
+        GAME_STATE.player.face("s");
+      });
+      drift(paperWind, {
+        to: [82, 45],
+        waypoints: 8,
+        wobble: 150,
+        delay: 0.5,
+        duration: 5,
+        onComplete: () => {
+          paperWindAnimating = false;
+          addOnce(DECORS, paperMulti);
+          addOnce(INTERACTABLES, {
+            sprite: paperMulti,
+            label: "Pick up",
+          });
+        },
+      });
+    }
+  }, 8);
+
+  DIALOGUE.queue(`Nako, nilipad na ng hangin ang 3 pages ko na sketch!`);
+  DIALOGUE.queue(`Hayaan na makita ng ibang tao ang sketch ko.`);
+  DIALOGUE.effect(
+    () =>
+      gsap.delayedCall(0.5, () => {
+        playExclamation(GAME_STATE.player);
+        playAttentionBounce(GAME_STATE.player, { hops: 2 });
+      }),
+    1,
+  );
+  DIALOGUE.queue({
+    text: `YOU: [thinking] Kunin ko na lang rin para makita ko ang ginagawa ni LEI!`,
+    color: "green",
+    portrait: null,
+  });
+
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.sequence.meet_huazelei = true;
+  };
+}
+
+function interactPaperMulti() {
+  remove(DECORS, paperMulti);
+  removeInteractable(INTERACTABLES, paperMulti);
 }

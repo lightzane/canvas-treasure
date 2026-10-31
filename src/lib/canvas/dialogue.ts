@@ -34,7 +34,17 @@ export const dialogueFontReady = document.fonts.load(FONT);
 type DialogueInput =
   | string
   | string[]
-  | { text: string | string[]; color?: string; portrait?: string };
+  | {
+      text: string | string[];
+      color?: string;
+      /**
+       * Omit to inherit whatever the previous message in this conversation
+       * used. Pass `null` to explicitly show no portrait for just this
+       * message instead — the cleared state then keeps inheriting forward
+       * until some later message sets a portrait again.
+       */
+      portrait?: string | null;
+    };
 interface DialogueMessage {
   kind: "message";
   text: string;
@@ -65,6 +75,8 @@ class Dialogue {
   private portraitEl: HTMLImageElement | null = null;
   /** True from the moment an effect starts running until its delay (if any) finishes and the next item is settled — blocks player input from advancing early. */
   private resolvingEffects = false;
+  /** True for the current pause only — see `hideBox()`. Reset automatically the moment the next message is ready to show. */
+  private hidden = false;
   private revealedChars = 0;
   private wasHeld = false;
   private blinkElapsed = 0;
@@ -83,6 +95,7 @@ class Dialogue {
     this.onComplete = () => {};
     this.lastColor = "black"; // a new conversation always starts from the default, not whatever the last one ended on
     this.lastPortrait = undefined; // same reasoning — no carrying over the previous conversation's speaker
+    this.hidden = false; // in case a previous conversation got interrupted mid-hideBox()
     GAME_STATE.movementLocked = true;
     this.enqueue(input);
   }
@@ -133,6 +146,26 @@ class Dialogue {
     this.updatePortraitElement();
   }
 
+  /**
+   * Hides the whole dialogue box (not just the portrait) for the current
+   * pause — for when something needs the full screen, not just the portrait
+   * gone (e.g. an animation the box would otherwise sit on top of). Call
+   * from inside the same `effect()` that starts the pause. Unlike
+   * `clearPortrait()`, there's nothing to re-set afterward — it comes back
+   * on its own the moment the next message is ready to show.
+   *
+   * @example
+   * DIALOGUE.show("Watch this.");
+   * DIALOGUE.effect(() => {
+   *   DIALOGUE.hideBox();
+   *   drift(paperWind, { to: [58, 40] });
+   * }, 1.5);
+   * DIALOGUE.queue("...oh!"); // box is back for this one
+   */
+  hideBox() {
+    this.hidden = true;
+  }
+
   private enqueue(input: DialogueInput) {
     const wasIdle = !this.isActive;
     if (wasIdle) this.onComplete = () => {}; // same reasoning as effect() above
@@ -140,7 +173,9 @@ class Dialogue {
     const text = isPlain ? input : input.text;
     const color = isPlain ? this.lastColor : (input.color ?? this.lastColor);
     this.lastColor = color; // so a later queue() without its own color inherits this one, not the default
-    const portrait = isPlain ? this.lastPortrait : (input.portrait ?? this.lastPortrait);
+    // Omitted (undefined) inherits; explicit `null` clears it instead of inheriting.
+    const portrait =
+      isPlain || input.portrait === undefined ? this.lastPortrait : (input.portrait ?? undefined);
     this.lastPortrait = portrait; // same inheritance as color
     const texts = Array.isArray(text) ? text : [text];
 
@@ -220,10 +255,12 @@ class Dialogue {
         this.pageIndex = 0;
         this.needsWrap = false;
         this.revealedChars = 0;
+        this.hidden = false; // a new message always comes back into view, even if a prior pause hid the box
       }
     }
 
     if (this.pages.length === 0) return; // mid-effect-delay, nothing wrapped yet — stay blank rather than draw an empty box
+    if (this.hidden) return; // explicitly hidden for this pause — see hideBox()
 
     this.drawBox(ctx);
     this.drawPage(ctx);

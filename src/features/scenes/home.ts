@@ -10,13 +10,13 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
+import { hasItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
-import { hasItem } from "@/lib/bag";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -161,7 +161,7 @@ function revealParcel() {
   DIALOGUE.effect(() => gsap.delayedCall(1, () => GAME_STATE.mama.face("d")));
   GAME_STATE.movementLocked = true;
   DIALOGUE.queue({
-    text: "Ma, yung parcel meron maliit na chest tapos invitation lang rin ang laman.",
+    text: "YOU: Ma, yung parcel meron maliit na chest tapos invitation lang rin ang laman.",
     color: "teal",
   });
   DIALOGUE.queue({

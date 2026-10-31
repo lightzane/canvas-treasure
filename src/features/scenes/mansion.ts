@@ -11,7 +11,9 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
+import { remove } from "@/lib/array";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
+import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
@@ -87,8 +89,8 @@ export const mansionScene: Scene = {
       spriteSize: GAME_STATE.player.boxSize,
     });
 
-    // Once he's left (see removeNpc in nearMissConversation), he's out of NPCS for
-    // good — skip re-placing/re-adding him on a later re-entry to this scene.
+    // Once he's left (see `remove()` in nearMissConversation), he's out of
+    // NPCS for good — skip re-placing/re-adding him on a later re-entry.
     if (!GAME_STATE.sequence.meet_daomingsi) {
       placeAtTile({ sprite: BUTLER, tile: [11.25, 6] });
       placeAtTile({ sprite: GAME_STATE.daomingsi, tile: [11.5, 4] });
@@ -121,7 +123,7 @@ export const mansionScene: Scene = {
 
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
-    NPCS.forEach((n) => n.update(dt));
+    NPCS.filter(isInViewport).forEach((n) => n.update(dt));
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
@@ -134,7 +136,7 @@ export const mansionScene: Scene = {
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
-    drawYSorted(ctx, [GAME_STATE.player, ...NPCS]);
+    drawYSorted(ctx, [GAME_STATE.player, ...NPCS.filter(isInViewport)]);
     // foreground.draw(ctx);
 
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
@@ -145,12 +147,6 @@ function exitZone() {
   GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
   GAME_STATE.spawnLocation = [86.5, 16.5]; // rough placeholder, just south of enter_mansion's own tile — adjust to taste
   GAME_STATE.sceneName = "overworld";
-}
-
-/** Drops `npc` from this scene's cast — out of `NPCS`, so it stops drawing and updating, and out of `GAME_STATE.obstacles` for free, since that's assigned the same array (not a copy). Use when an NPC has scripted-walked off and shouldn't still be standing there (or blocking the player) once the camera catches up. */
-function removeNpc(npc: PlayerSprite) {
-  const i = NPCS.indexOf(npc);
-  if (i !== -1) NPCS.splice(i, 1);
 }
 
 function interactions(target: Sprite | undefined) {
@@ -190,6 +186,7 @@ function nearMissConversation() {
   DIALOGUE.queue(`Hahanapin ko lang ang keys ko...`);
   DIALOGUE.effect(() => {
     DIALOGUE.clearPortrait();
+    DIALOGUE.hideBox();
     daoMingSiWalk = walk(GAME_STATE.daomingsi, [[23, 4]], { animated: true });
   }, 1);
   DIALOGUE.effect(() => {
@@ -239,6 +236,6 @@ function nearMissConversation() {
   });
   DIALOGUE.onComplete = () => {
     GAME_STATE.sequence.meet_daomingsi = true;
-    removeNpc(GAME_STATE.daomingsi); // he's left — also drops him from GAME_STATE.obstacles, same array reference
+    remove(NPCS, GAME_STATE.daomingsi); // he's left — also drops him from GAME_STATE.obstacles, same array reference
   };
 }

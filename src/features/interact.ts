@@ -22,6 +22,21 @@ export interface Interactable {
   label?: string;
 }
 
+/**
+ * Drops whichever `Interactable` entry wraps `sprite` out of `list`, in
+ * place — the `Interactable[]` counterpart to `remove()` (`lib/array.ts`).
+ * Plain `remove()` can't do this itself: a scene's interactables list holds
+ * wrapper objects (`{ sprite, label }`), not the sprites themselves, so
+ * `remove(list, sprite)` can never find a match — it'd need the *exact*
+ * wrapper object reference, which usually isn't kept around anywhere (e.g.
+ * one built inline at `addOnce(INTERACTABLES, { sprite, label: "..." })`).
+ * A no-op if no entry wraps `sprite`.
+ */
+export function removeInteractable(list: Interactable[], sprite: Sprite) {
+  const i = list.findIndex((entry) => entry.sprite === sprite);
+  if (i !== -1) list.splice(i, 1);
+}
+
 interface FacingProbeOptions {
   box: Rect;
   facing: Direction;

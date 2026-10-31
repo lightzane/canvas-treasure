@@ -57,6 +57,20 @@ upload, drag/zoom to position, download a cropped PNG/JPG) — the game clips
 whatever image you pass to a circle via CSS at display time, so the file
 itself just needs to be a reasonably square crop, not a perfect circle.
 
+Omitting `portrait` inherits whichever one the previous message used. Pass
+`null` instead of omitting it to explicitly show no portrait for that
+message — same inheritance mechanics as `color`, it just keeps inheriting
+"none" forward from there until some later message sets a portrait again:
+
+```ts
+DIALOGUE.show({ text: "Where are my keys?", portrait: DAOMINGSI_PORTRAIT });
+DIALOGUE.queue({ text: "[thinking] Hmm, unrelated thought.", portrait: null }); // no portrait from here on...
+DIALOGUE.queue("Still looking..."); // ...still none, unless this one sets its own
+```
+
+(For hiding the portrait/box during an `.effect()` pause rather than a
+message, see `.clearPortrait()`/`.hideBox()` further below instead.)
+
 **Multiple messages from one speaker** — shown one after another, each fully
 wrapped/paginated on its own:
 
@@ -129,6 +143,23 @@ DIALOGUE.effect(() => {
   walk(npc, [[10, 4]], { animated: true });
 }, 1);
 DIALOGUE.queue({ text: "Okay, back.", portrait: NPC_PORTRAIT }); // has to be set again
+```
+
+### Hiding the whole box during a pause
+
+Sometimes the portrait isn't the problem — the box itself sits on top of
+something that needs the full screen during a pause (e.g. an animation).
+Call `.hideBox()` from inside that `effect()` instead. Unlike
+`clearPortrait()`, there's nothing to re-set afterward — it comes back on
+its own the moment the next message is ready to show:
+
+```ts
+DIALOGUE.show("Watch this.");
+DIALOGUE.effect(() => {
+  DIALOGUE.hideBox();
+  drift(paperWind, { to: [58, 40] });
+}, 1.5);
+DIALOGUE.queue("...oh!"); // box is back automatically for this one
 ```
 
 ## Controls
