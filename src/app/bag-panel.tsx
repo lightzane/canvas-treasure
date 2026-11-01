@@ -1,12 +1,14 @@
-import { GAME_STATE, type ItemName } from "@/features/game-state";
-import { hasItem } from "@/lib/bag";
+import { JournalPanel } from "@/app/journal-panel";
+import { ParcelViewer } from "@/app/parcel-viewer";
+import { GAME_STATE } from "@/features/game-state";
+import { hasItem, type ItemName } from "@/lib/bag";
 import { img } from "@/lib/img";
 import { useState } from "react";
 
 const ITEM_LABEL: Record<ItemName, string> = {
+  journal: "Journal",
   parcel: "Parcel",
   shoes: "Running Shoes",
-  journal: "Journal",
 };
 
 interface ItemIcon {
@@ -26,28 +28,21 @@ interface ItemIcon {
 // Only items with their own art get a real icon — anything else falls back
 // to a plain text label in its slot.
 const ITEM_ICON: Partial<Record<ItemName, ItemIcon>> = {
+  journal: { src: img("others/book-and-pencil.png"), scale: 0.8 },
   parcel: { src: img("others/parcel.png"), scale: 1.5 },
   shoes: { src: img("others/shoes.png"), scale: 0.6 },
-  journal: { src: img("others/book-and-pencil.png"), scale: 0.8 },
 };
-
-// Real photos, not pixel art — no [image-rendering:pixelated] on these two.
-const PARCEL_PHOTO = img("others/chest-empty.png");
-const PARCEL_PHOTO_CLOSEUP = img("others/chest-empty-closeup.png");
 
 export function BagPanel({ onClose }: { onClose: () => void }) {
   // Purely local UI state — nothing on the canvas side needs to know these
   // popups are open, unlike bagOpen/bagIconVisible (which exist specifically
   // so scene code can trigger a React re-render). No GAME_STATE field needed
   // for either.
-  const [journalOpen, setJournalOpen] = useState(false);
+  // Starts true: BagPanel is only ever mounted via {bagOpen && <BagPanel/>}
+  // in layout.tsx, so it fully remounts fresh every time the bag opens —
+  // this makes the journal open automatically alongside it, every time.
+  const [journalOpen, setJournalOpen] = useState(true);
   const [parcelOpen, setParcelOpen] = useState(false);
-  const [parcelZoomed, setParcelZoomed] = useState(false);
-
-  function closeParcel() {
-    setParcelOpen(false);
-    setParcelZoomed(false); // always reopens at the far view, not wherever it was left
-  }
 
   // Few/specific items are clickable, each with its own distinct effect —
   // not every entry, and not a blanket rule off BagEntry's own `type`. Items
@@ -128,62 +123,8 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {journalOpen && (
-        <div
-          className="fixed inset-0 flex items-center justify-center bg-black/40 z-10"
-          onClick={() => setJournalOpen(false)}
-        >
-          <div
-            className="w-80 rounded-xl border-slate-800 bg-linear-to-b from-[#fdf3dd] to-[#ecd9ab] p-5 shadow-[0_0_10px_black]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-center justify-between border-b-2 border-amber-800/40 pb-2">
-              <span className="font-game text-lg uppercase tracking-wider text-amber-950">
-                Journal
-              </span>
-              <button
-                type="button"
-                onClick={() => setJournalOpen(false)}
-                className="font-game text-sm text-amber-950/70 hover:text-amber-950"
-              >
-                Close
-              </button>
-            </div>
-            {/* Placeholder — no quest/task data model exists yet. */}
-            <div className="font-game text-sm italic text-amber-950/50">No tasks yet.</div>
-          </div>
-        </div>
-      )}
-
-      {parcelOpen && (
-        <div
-          className="fixed inset-0 z-10 flex items-center justify-center bg-black/60"
-          onClick={closeParcel}
-        >
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
-            <div className="w-[min(85vw,1024px)] aspect-video overflow-hidden rounded-xl border-2 border-amber-800 shadow-[0_0_24px_rgba(0,0,0,0.6)]">
-              <img
-                src={parcelZoomed ? PARCEL_PHOTO_CLOSEUP : PARCEL_PHOTO}
-                alt="A chest, with an empty slot where a photo should be"
-                onClick={() => setParcelZoomed((zoomed) => !zoomed)}
-                className={`w-full h-full object-contain ${
-                  parcelZoomed ? "cursor-zoom-out" : "cursor-zoom-in"
-                }`}
-              />
-            </div>
-            <div className="mt-2 text-center font-game text-xs text-amber-50/80 text-shadow-lg">
-              Click to zoom {parcelZoomed ? "out" : "in"}
-            </div>
-            <button
-              type="button"
-              onClick={closeParcel}
-              className="absolute -top-3 -right-3 size-8 rounded-full border-2 border-amber-800 bg-amber-50 font-game text-lg leading-none text-amber-950 shadow-[2px_2px_0_rgba(0,0,0,0.3)] hover:bg-amber-100"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
+      {journalOpen && <JournalPanel onClose={() => setJournalOpen(false)} />}
+      {parcelOpen && <ParcelViewer onClose={() => setParcelOpen(false)} />}
     </>
   );
 }

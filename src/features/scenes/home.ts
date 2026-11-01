@@ -16,21 +16,29 @@ import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewpo
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
+import {
+  playQuestCompleteBanner,
+  playQuestToast,
+  type QuestToastHandle,
+} from "@/lib/effects/quest-toast";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import { QUESTS, setQuestStatus } from "@/lib/quests";
 import gsap from "gsap";
 
 const IMG_MAP_BG = img("maps/home.png");
 const IMG_MAP_FG = img("maps/home-fg.png");
 const IMG_PARCEL = img("others/parcel.png");
+const IMG_JOURNAL = img("others/book-and-pencil.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
 const parcel = new Sprite({ src: IMG_PARCEL, scale: 2, boxSize: { height: 64, width: 64 } });
+const journal = new Sprite({ src: IMG_JOURNAL, scale: 2 });
 
 const MAMA_INTERACTABLE: Interactable = { sprite: GAME_STATE.mama, label: "Talk" };
 // Sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway.
@@ -44,8 +52,10 @@ const PARCEL_INTERACTABLE: Interactable = {
 // story flag) and mutated in place on pickup — see interactions() below.
 let interactables: Interactable[] = [];
 
+let firstQuest: QuestToastHandle | undefined;
 let parcelBounce: AttentionBounceHandle | null = null;
 let parcelShine: ShineHandle | null = null;
+let journalShine: ShineHandle | null = null;
 let mamaFaceNorthTimer: gsap.core.Tween | null = null;
 function scheduleMamaFaceNorth() {
   if (hasItem("parcel")) hudSetBagIconVisible(true);
@@ -95,6 +105,7 @@ export const homeScene: Scene = {
     });
     placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
     placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
+    placeAtTile({ sprite: journal, tile: [7, 4] });
 
     GAME_STATE.obstacles = [GAME_STATE.mama]; // blocks walking through her, tracking wherever she currently is
     interactables = hasItem("parcel")
@@ -105,7 +116,6 @@ export const homeScene: Scene = {
 
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
-    // parcel.update(dt);
     GAME_STATE.mama.update(dt);
 
     const playerBox = movePlayer(dt);
@@ -123,6 +133,7 @@ export const homeScene: Scene = {
     drawViewportClamped(ctx, foreground);
 
     if (!hasItem("parcel")) parcel.draw(ctx);
+    if (!hasItem("journal")) journal.draw(ctx);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, interactables);
   },
 };
@@ -144,21 +155,39 @@ function interactions(target: Sprite | undefined) {
 
   if (target === parcel && !hasItem("parcel")) {
     DIALOGUE.show("A parcel — kunin ko na...");
+
     DIALOGUE.effect(() => {
-      playExclamation(GAME_STATE.player);
-      playAttentionBounce(GAME_STATE.player);
-    });
-    DIALOGUE.onComplete = () => {
-      GAME_STATE.movementLocked = true;
+      DIALOGUE.hideBox();
+      firstQuest?.stop();
+      const quest = QUESTS.get("parcel")!;
+      playQuestToast({ description: quest.description, resolved: true });
+      playQuestCompleteBanner(`Completed. A Journey Begins...!`);
+      setQuestStatus(quest, "resolved");
+
       GAME_STATE.bag.set("parcel", {
         type: "item",
         quantity: (GAME_STATE.bag.get("parcel")?.quantity ?? 0) + 1,
+      });
+      GAME_STATE.bag.set("journal", {
+        type: "item",
+        quantity: 1,
       });
       interactables = interactables.filter((i) => i.sprite !== parcel);
       parcelShine?.stop();
       parcelShine = null;
       parcelBounce?.stop(); // it's picked up now — stop the infinite tween, don't leave it running forever on a sprite nothing draws anymore
       parcelBounce = null;
+      journalShine?.stop();
+      journalShine = null;
+    }, 5);
+
+    DIALOGUE.effect(() => {
+      playExclamation(GAME_STATE.player);
+      playAttentionBounce(GAME_STATE.player);
+    });
+
+    DIALOGUE.onComplete = () => {
+      GAME_STATE.movementLocked = true;
       gsap.delayedCall(0.5, revealParcel);
     };
   }
@@ -172,9 +201,20 @@ function revealParcel() {
     color: "teal",
   });
   DIALOGUE.queue({
-    text: "MAMA: Sige makapag marites na lang ako sa labas mamaya kung anung event meron.",
+    text: "MAMA: Mga marites sa labas— sabi treasure-hunting, meron daw prize yung makahanap ng missing gold treasure hidden sa isang lugar.",
     color: "red",
   });
+  DIALOGUE.queue(
+    `Palagay ko meron event ng treasure-hunting at ang reward ay yung gold mismo na laman ng chest!`,
+  );
+  DIALOGUE.queue(`Iyan usap-usapan ngayon, mag marites ulit ako sa labas mamaya.`);
+  DIALOGUE.effect(() => {
+    DIALOGUE.hideBox();
+    const quest = QUESTS.get("invitation_postcard")!;
+    playQuestToast({ description: quest.description });
+    setQuestStatus(quest, "active");
+    playQuestCompleteBanner(`Treasure Hunt Begins...!`);
+  }, 3.5);
   DIALOGUE.effect(() => {
     DIALOGUE.hideBox();
     gsap.delayedCall(0.8, () => {
@@ -184,12 +224,10 @@ function revealParcel() {
     });
   }, 0.8);
   DIALOGUE.queue({
-    text: `
-      Check ko na lang sa bag (top-right corner)
-      yung mga gusto ko gawin.
-    `,
+    text: `Yung mga gusto ko maalala na gawin ay...`,
     color: "black",
   });
+  DIALOGUE.queue(`...check ko na lang sa bag (Press ENTER or click sa top-right corner).`);
   DIALOGUE.onComplete = scheduleMamaFaceNorth;
 }
 
@@ -218,7 +256,17 @@ function mamaParcelConversation() {
       GAME_STATE.mama.face("d");
       playExclamation(GAME_STATE.mama, { hold: 1 });
     }, 1);
-    DIALOGUE.queue(`Paki tingin naman ng parcel.`);
+    DIALOGUE.effect(() => (journalShine = playShine(journal)));
+    DIALOGUE.queue(
+      `Paki tingin naman muna ng parcel. Kunin mo na rin notebook mo sa table bago mo pa malimutan.`,
+    );
+
+    DIALOGUE.effect(() => {
+      firstQuest = playQuestToast({
+        description: QUESTS.get("parcel")!.description,
+        hold: "infinite",
+      });
+    });
 
     DIALOGUE.onComplete = () => {
       parcelBounce = playAttentionBounce(parcel, { hops: "infinite", duration: 0.25 });

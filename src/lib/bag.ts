@@ -1,4 +1,24 @@
-import { GAME_STATE, type ItemName } from "@/features/game-state";
+import { GAME_STATE } from "@/features/game-state";
+
+/**
+ * Every item the bag can hold — extend this union as new items get added,
+ * e.g. once the shears exist: `"parcel" | "shears" | "shoes"`. Keeps
+ * `GAME_STATE.bag.get`/`.set` calls typo-checked at compile time instead of
+ * silently failing.
+ */
+export type ItemName = "parcel" | "shoes" | "journal";
+
+/**
+ * A bag slot's own value — `"item"` is stackable (a quantity you pick up
+ * more of, like the parcel), `"equip"` is a single worn piece (Running
+ * Shoes) with no meaningful count of its own. Use `hasItem()` to check
+ * "does the player have this" rather than reading `.quantity` directly — a
+ * present `"item"` entry at `quantity: 0` (not yet picked up) is a real,
+ * distinct case from not having the entry at all, and `.get(name)` alone
+ * being truthy doesn't tell them apart (the entry object itself is always
+ * truthy, even at quantity 0).
+ */
+export type BagEntry = { type: "item"; quantity: number } | { type: "equip"; quantity?: number };
 
 /**
  * Whether the bag currently has at least one of `name` — an owned `"equip"`

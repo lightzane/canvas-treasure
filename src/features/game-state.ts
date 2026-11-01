@@ -3,33 +3,15 @@ import type { SceneEvent, SceneName } from "@/features/scene";
 import type { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
 import type { TriggerZone, Zone } from "@/features/zone";
+import type { BagEntry, ItemName } from "@/lib/bag";
 import { preload } from "@/lib/preload";
+import { QUESTS } from "@/lib/quests";
 import { IMGS_DAOMINGSI_IDLE, IMGS_DAOMINGSI_WALK } from "@/sprites/dao-ming-si";
 import { IMGS_HUAZELEI_IDLE, IMGS_HUAZELEI_WALK } from "@/sprites/hua-ze-lei";
 import { IMGS_MAMA_IDLE } from "@/sprites/mama";
 import { IMGS_MEIZUO_IDLE } from "@/sprites/mei-zuo";
 import { IMGS_PAPA_IDLE } from "@/sprites/papa";
 import { IMGS_PLAYER_IDLE, IMGS_PLAYER_RUN, IMGS_PLAYER_WALK } from "@/sprites/player";
-
-/**
- * Every item the bag can hold — extend this union as new items get added,
- * e.g. once the shears exist: `"parcel" | "shears" | "shoes"`. Keeps
- * `GAME_STATE.bag.get`/`.set` calls typo-checked at compile time instead of
- * silently failing.
- */
-export type ItemName = "parcel" | "shoes" | "journal";
-
-/**
- * A bag slot's own value — `"item"` is stackable (a quantity you pick up
- * more of, like the parcel), `"equip"` is a single worn piece (Running
- * Shoes) with no meaningful count of its own. Use `hasItem()`
- * (`@/features/bag`) to check "does the player have this" rather than
- * reading `.quantity` directly — a present `"item"` entry at `quantity: 0`
- * (not yet picked up) is a real, distinct case from not having the entry at
- * all, and `.get(name)` alone being truthy doesn't tell them apart (the
- * entry object itself is always truthy, even at quantity 0).
- */
-export type BagEntry = { type: "item"; quantity: number } | { type: "equip"; quantity?: number };
 
 export const GAME_STATE = {
   camera: { x: 0, y: 0 },
@@ -84,14 +66,15 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "overworld" as SceneName,
+  sceneName: "home" as SceneName,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
-    intro: true,
-    mama_parcel: true,
-    meet_daomingsi: true,
+    intro: false,
+    mama_parcel: false,
+    meet_daomingsi: false,
     meet_huazelei: false,
   },
+  quests: QUESTS,
   /**
    * Whether the bag/inventory *icon itself* currently shows at all — e.g.
    * hide it during a cutscene or a scene where opening the bag makes no
@@ -114,14 +97,9 @@ export const GAME_STATE = {
    */
   bagOpen: false,
   bag: new Map<ItemName, BagEntry>([
-    ["parcel", { type: "item", quantity: 1 }],
-    ["shoes", { type: "equip", quantity: 0 }], // TODO: comment this OUT on production
-    // Always carried from the start, not something found — GDD lists it as
-    // a standing system ("Journal — auto-updating tasks"), not an event
-    // reward. `"item"`, not `"equip"` — it's not equipment, just the one
-    // existing BagEntry shape that fits "singular, always owned" without
-    // inventing a third variant for this alone.
-    ["journal", { type: "item", quantity: 1 }],
+    ["journal", { type: "item", quantity: 0 }],
+    ["parcel", { type: "item", quantity: 0 }],
+    ["shoes", { type: "equip" }], // TODO: comment this OUT on production
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,
