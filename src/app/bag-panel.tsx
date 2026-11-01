@@ -12,6 +12,7 @@ const ITEM_LABEL: Record<ItemName, string> = {
   paper1: "ZZ's Tracing Paper 1",
   paper2: "ZZ's Tracing Paper 2",
   paper3: "ZZ's Tracing Paper 3",
+  shears: "Garden Shears",
 };
 
 interface ItemIcon {
@@ -37,6 +38,7 @@ const ITEM_ICON: Partial<Record<ItemName, ItemIcon>> = {
   paper1: { src: img("others/paper-single.png"), scale: 1.5 },
   paper2: { src: img("others/paper-single.png"), scale: 1.5 },
   paper3: { src: img("others/paper-single.png"), scale: 1.5 },
+  shears: { src: img("others/garden-shears.png"), scale: 0.8 },
 };
 
 export function BagPanel({ onClose }: { onClose: () => void }) {

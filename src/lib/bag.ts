@@ -6,7 +6,7 @@ import { GAME_STATE } from "@/features/game-state";
  * `GAME_STATE.bag.get`/`.set` calls typo-checked at compile time instead of
  * silently failing.
  */
-export type ItemName = "parcel" | "shoes" | "journal" | "paper1" | "paper2" | "paper3";
+export type ItemName = "parcel" | "shoes" | "journal" | "paper1" | "paper2" | "paper3" | "shears";
 
 /**
  * A bag slot's own value — `"item"` is stackable (a quantity you pick up

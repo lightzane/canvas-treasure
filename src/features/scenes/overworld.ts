@@ -18,7 +18,7 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { addOnce, remove } from "@/lib/array";
-import { bagIncItem } from "@/lib/bag";
+import { bagHasItem, bagIncItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
@@ -47,28 +47,50 @@ const IMG_FOUNTAIN_BIG = img("others/fountain-big.png");
 const IMG_PAPER_SINGLE = img("others/paper-single.png");
 const IMG_PAPER_MULTI = img("others/paper-multi.png");
 const IMG_PAPER_WIND = img("others/paper-wind.png");
+const IMG_WILD_BUSH_CENTER = img("others/wild-bush-center.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 /** Drawn on top of the player (tree canopies, roof overhangs, etc). */
 const foreground = new Sprite({ src: IMG_MAP_FG });
 
+// static decors
 const smallFountainA = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
 const smallFountainB = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
 const bigFountainA = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
+
+// removable decors
+const wildBushPaper = new Sprite({
+  src: IMG_WILD_BUSH_CENTER,
+  scale: 2,
+  boxSize: { height: 32 },
+  collisionBox: { height: 32, anchor: "center" },
+});
+
 const paperSingle = new Sprite({ src: IMG_PAPER_SINGLE, scale: 2 });
 const paperMulti = new Sprite({
   src: IMG_PAPER_MULTI,
   scale: 2,
   boxSize: { width: 32, height: 32 },
 });
+
+// temp decors
 const paperWind1 = new Sprite({ src: IMG_PAPER_WIND, scale: 2, frames: { max: 8, hold: 180 } });
 const paperWind2 = new Sprite({ src: IMG_PAPER_WIND, scale: 2, frames: { max: 8, hold: 180 } });
 
 /** This map's own static/animated decor — drawn after the background, before the player. */
-const DECORS: Sprite[] = [smallFountainA, smallFountainB, bigFountainA, bigFountainB];
+const DECORS: Sprite[] = [
+  smallFountainA,
+  smallFountainB,
+  bigFountainA,
+  bigFountainB,
+  wildBushPaper,
+];
 const NPCS: PlayerSprite[] = [GAME_STATE.papa];
-const INTERACTABLES: Interactable[] = [{ sprite: GAME_STATE.papa, label: "Talk" }];
+const INTERACTABLES: Interactable[] = [
+  { sprite: GAME_STATE.papa, label: "Talk" },
+  { sprite: wildBushPaper },
+];
 const HUAZELEI_INTERACTABLE: Interactable = { sprite: GAME_STATE.huazelei, label: "Talk" };
 let paperWindAnimating = false;
 
@@ -78,19 +100,25 @@ let paperWindAnimating = false;
 // them the player is currently inside, with ">0" meaning "on sand" overall.
 let sandZoneCount = 0;
 
+let tracingPaper2ShineHandle: ShineHandle | undefined;
+
+function exitMap() {
+  hudSetBagIconVisible(false);
+  GAME_STATE.movementLocked = true;
+  tracingPaper2ShineHandle?.stop();
+}
+
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   enter_home: {
     onEnter: () => {
-      hudSetBagIconVisible(false);
       GAME_STATE.sceneName = "home";
-      GAME_STATE.movementLocked = true;
+      exitMap();
     },
   },
   enter_mansion: {
     onEnter: () => {
-      hudSetBagIconVisible(false);
       GAME_STATE.sceneName = "mansion";
-      GAME_STATE.movementLocked = true;
+      exitMap();
     },
   },
   sand: {
@@ -112,6 +140,8 @@ export const overworldScene: Scene = {
   ]).then(() => prepareViewportClamped([background, foreground])),
 
   enter() {
+    sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
+
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(overworldScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
@@ -135,12 +165,12 @@ export const overworldScene: Scene = {
     placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
     placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
     placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
+    placeAtTile({ sprite: wildBushPaper, tile: [42, 73.5] });
 
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
-    GAME_STATE.obstacles = NPCS;
-    sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
+    GAME_STATE.obstacles = [...NPCS, wildBushPaper];
 
     if (!GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = true;
@@ -178,7 +208,6 @@ export const overworldScene: Scene = {
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
     DECORS.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
     drawFootprints(ctx);
-    // GAME_STATE.player.draw(ctx);
     drawYSorted(ctx, [GAME_STATE.player, ...NPCS.filter(isInViewport)]);
     drawViewportClamped(ctx, foreground);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
@@ -190,6 +219,7 @@ export const overworldScene: Scene = {
 function initQuests() {
   initQuestsDaomingsi();
   initQuestsHuazelei();
+  initTracingPaper2();
 }
 
 function initQuestsDaomingsi() {
@@ -223,6 +253,37 @@ function initQuestsHuazelei() {
   }
 }
 
+function initTracingPaper2() {
+  if (questCatchSheets.qty !== 1) return;
+
+  const { chasing_sheet_2, retrieving_sheet_2 } = GAME_STATE.sequence;
+
+  let spawnLocation: [number, number] | null = null;
+
+  // Spawn tracing paper #2 (part 1)
+  if (!chasing_sheet_2 && !retrieving_sheet_2) {
+    spawnLocation = [37, 43];
+  }
+
+  // Part 2
+  if (chasing_sheet_2 && !retrieving_sheet_2) {
+    spawnLocation = [42, 72];
+  }
+
+  if (spawnLocation) {
+    placeAtTile({ sprite: paperSingle, tile: spawnLocation });
+    placeAtTile({ sprite: paperWind1, tile: spawnLocation });
+    addOnce(DECORS, paperSingle);
+    addOnce(INTERACTABLES, {
+      sprite: paperSingle,
+      label: "Pick up",
+      probeDistance: 16,
+    });
+    tracingPaper2ShineHandle?.stop();
+    tracingPaper2ShineHandle = playShine(paperSingle, { color: "#fff", mode: "hidden", size: 32 });
+  }
+}
+
 function interactions(target: Sprite | undefined) {
   switch (target) {
     case GAME_STATE.papa:
@@ -233,6 +294,14 @@ function interactions(target: Sprite | undefined) {
       break;
     case paperMulti:
       interactPaperMulti();
+      break;
+    case paperSingle:
+      const { chasing_sheet_2, retrieving_sheet_2 } = GAME_STATE.sequence;
+      if (!chasing_sheet_2 && !retrieving_sheet_2) interactPaper2Part1();
+      if (chasing_sheet_2 && !retrieving_sheet_2) interactPaper2Part2();
+      break;
+    case wildBushPaper:
+      interactWildBushPaper();
       break;
   }
 }
@@ -464,6 +533,7 @@ function interactPaperMulti() {
       incQuestProgress(questCatchSheets, 1);
       playQuestToast(questCatchSheets);
       bagIncItem("paper1");
+      initTracingPaper2();
       remove(DECORS, paperWind1);
       remove(DECORS, paperWind2);
     };
@@ -476,4 +546,51 @@ function spawnPaperMulti() {
     sprite: paperMulti,
     label: "Pick up",
   });
+}
+
+function interactPaper2Part1() {
+  if (questCatchSheets.qty !== 1) return;
+  tracingPaper2ShineHandle?.stop();
+  remove(DECORS, paperSingle);
+  removeInteractable(INTERACTABLES, paperSingle);
+  gsap.delayedCall(0.5, () => {
+    GAME_STATE.player.face("s");
+    playAttentionBounce(GAME_STATE.player);
+    playExclamation(GAME_STATE.player);
+  });
+  DIALOGUE.effect(() => {
+    paperWindAnimating = true;
+    hudSetBagIconVisible(false);
+    drift(paperWind1, {
+      to: { direction: "s", distance: 11 * TILE_SIZE },
+      waypoints: 6,
+      wobble: 120,
+      duration: 3,
+      onComplete: () => {
+        paperWindAnimating = false;
+        GAME_STATE.sequence.chasing_sheet_2 = true;
+        initTracingPaper2();
+      },
+    });
+  }, 2.5);
+  GAME_STATE.movementLocked = true;
+  DIALOGUE.queue(`Oh no! Hinangin na naman!`);
+}
+
+function interactPaper2Part2() {
+  if (questCatchSheets.qty !== 1) return;
+}
+
+function interactWildBushPaper() {
+  if (!bagHasItem("shears")) {
+    DIALOGUE.show(`Seems like this wild bush can be cut...`);
+    return;
+  }
+
+  DIALOGUE.show(`Using garden shears to remove the wild bush...`);
+  DIALOGUE.onComplete = () => {
+    removeInteractable(INTERACTABLES, wildBushPaper);
+    remove(DECORS, wildBushPaper);
+    remove(GAME_STATE.boundaries, wildBushPaper);
+  };
 }

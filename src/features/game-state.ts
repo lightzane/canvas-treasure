@@ -73,6 +73,8 @@ export const GAME_STATE = {
     mama_parcel: true,
     meet_daomingsi: true,
     meet_huazelei: true,
+    chasing_sheet_2: false,
+    retrieving_sheet_2: false,
   },
   quests: QUESTS,
   /**
@@ -100,6 +102,7 @@ export const GAME_STATE = {
     ["journal", { type: "item", quantity: 1 }],
     ["parcel", { type: "item", quantity: 1 }],
     ["paper1", { type: "item", quantity: 1 }],
+    ["shears", { type: "item", quantity: 1 }],
     ["shoes", { type: "equip" }], // TODO: comment this OUT on production
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
