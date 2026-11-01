@@ -6,7 +6,7 @@ import { GAME_STATE } from "@/features/game-state";
  * `GAME_STATE.bag.get`/`.set` calls typo-checked at compile time instead of
  * silently failing.
  */
-export type ItemName = "parcel" | "shoes" | "journal";
+export type ItemName = "parcel" | "shoes" | "journal" | "paper1" | "paper2" | "paper3";
 
 /**
  * A bag slot's own value — `"item"` is stackable (a quantity you pick up
@@ -28,8 +28,15 @@ export type BagEntry = { type: "item"; quantity: number } | { type: "equip"; qua
  * plain truthiness check on the entry itself can't tell "not picked up yet"
  * apart from "owns some."
  */
-export function hasItem(name: ItemName): boolean {
+export function bagHasItem(name: ItemName): boolean {
   const entry = GAME_STATE.bag.get(name);
   if (!entry) return false;
   return entry.type === "equip" || entry.quantity > 0;
+}
+
+export function bagIncItem(name: ItemName, qty = 1) {
+  const entry = GAME_STATE.bag.get(name);
+  if (!entry) return false;
+  if (!entry.quantity) entry.quantity = 0;
+  entry.quantity += qty;
 }

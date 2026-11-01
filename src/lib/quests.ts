@@ -62,16 +62,16 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
       status: "active",
     },
   ],
-  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "active" }],
+  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
   ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "active" }],
   ["meet_ximen", { description: "Find and meet XI MEN", status: "active" }],
   [
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 0,
+      qty: 1,
       totalQty: 3,
-      status: "inactive",
+      status: "active",
     },
   ],
   [
@@ -101,4 +101,12 @@ export function setQuestStatus(quest: QuestId | QuestEntry, status: QuestStatus)
 export function setQuestProgress(quest: QuestId | QuestEntry, qty: number) {
   const entry = typeof quest === "string" ? GAME_STATE.quests.get(quest) : quest;
   if (entry) entry.qty = qty;
+}
+
+export function incQuestProgress(quest: QuestId | QuestEntry, qty: number) {
+  const entry = typeof quest === "string" ? GAME_STATE.quests.get(quest) : quest;
+  if (entry) {
+    if (!entry.qty) entry.qty = 0;
+    entry.qty += qty;
+  }
 }

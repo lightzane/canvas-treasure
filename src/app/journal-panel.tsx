@@ -52,38 +52,55 @@ export function JournalPanel({ onClose }: { onClose: () => void }) {
             {tab === "active" ? "No active quests." : "No completed quests yet."}
           </div>
         )}
-        {questEntries.map(([id, quest]) => (
-          <div key={id} className="flex items-start gap-2.5 leading-5">
-            {/* size-5 (20px) exactly matches the row's own leading-5 (1.25rem/20px) above
-                — top/bottom edges land on the first line's top/bottom edges by
-                construction (align-items: flex-start), no eyeballed margin
-                nudge needed. Same fix as quest-toast.ts's own circle/text
-                alignment — see that file's LINE_HEIGHT comment for the full
-                reasoning (this font's default line-height doesn't center
-                predictably on its own). */}
-            <div
-              className={`flex size-5 shrink-0 items-center justify-center rounded-md border-2 border-amber-800 ${
-                quest.status === "resolved" ? "bg-amber-800" : "bg-transparent"
-              }`}
-            >
-              {quest.status === "resolved" && (
-                <span className="font-game text-xs leading-none text-amber-50">✓</span>
-              )}
+        {questEntries.map(([id, quest]) => {
+          // Same clockwise conic-gradient pie as quest-toast.ts's own
+          // circle — ported over, just re-tinted for this light cream
+          // background instead of that one's dark glass pill.
+          const hasProgress =
+            quest.status !== "resolved" && quest.qty !== undefined && quest.totalQty !== undefined;
+          const pieBackground =
+            hasProgress && quest.totalQty! > 0
+              ? (() => {
+                  const deg = Math.round((quest.qty! / quest.totalQty!) * 360);
+                  return `conic-gradient(#92400e ${deg}deg, transparent ${deg}deg 360deg)`;
+                })()
+              : undefined;
+
+          return (
+            <div key={id} className="flex items-start gap-2.5 leading-5">
+              {/* size-5 (20px) exactly matches the row's own leading-5 (1.25rem/20px) above
+                  — top/bottom edges land on the first line's top/bottom edges by
+                  construction (align-items: flex-start), no eyeballed margin
+                  nudge needed. Same fix as quest-toast.ts's own circle/text
+                  alignment — see that file's LINE_HEIGHT comment for the full
+                  reasoning (this font's default line-height doesn't center
+                  predictably on its own). rounded-full, not rounded-md — this
+                  is a circle, not a rounded square. */}
+              <div
+                className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-amber-800 ${
+                  quest.status === "resolved" ? "bg-amber-800" : "bg-transparent"
+                }`}
+                style={pieBackground ? { background: pieBackground } : undefined}
+              >
+                {quest.status === "resolved" && (
+                  <span className="font-game text-xs leading-none text-amber-50">✓</span>
+                )}
+              </div>
+              <span
+                className={`font-game text-sm ${
+                  quest.status === "resolved" ? "text-amber-950/50 line-through" : "text-amber-950"
+                }`}
+              >
+                {quest.qty !== undefined && quest.totalQty !== undefined && (
+                  <span className="mr-1 font-bold opacity-70">
+                    ({quest.qty}/{quest.totalQty})
+                  </span>
+                )}
+                {quest.description}
+              </span>
             </div>
-            <span
-              className={`font-game text-sm ${
-                quest.status === "resolved" ? "text-amber-950/50 line-through" : "text-amber-950"
-              }`}
-            >
-              {quest.qty !== undefined && quest.totalQty !== undefined && (
-                <span className="mr-1 font-bold opacity-70">
-                  ({quest.qty}/{quest.totalQty})
-                </span>
-              )}
-              {quest.description}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

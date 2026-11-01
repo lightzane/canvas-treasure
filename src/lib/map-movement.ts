@@ -2,7 +2,7 @@ import { RUN_SPEED_BONUS } from "@/constants/game-settings";
 import { isColliding, type Rect } from "@/features/collisions";
 import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
-import { hasItem } from "@/lib/bag";
+import { bagHasItem } from "@/lib/bag";
 
 /** Edge-detects `GAME_STATE.movementLocked` turning on, so `movePlayer` only forces idle once per lock, not every frame — see the comment where it's read. */
 let wasLocked = false;
@@ -40,7 +40,7 @@ export function movePlayer(dt: number): Rect | undefined {
   const direction = GAME_STATE.keys.pressed.at(-1);
   // GAME_STATE.allowRunning takes priority over everything else — a cramped
   // interior disables running outright, regardless of X held or shoes owned.
-  const running = GAME_STATE.allowRunning && GAME_STATE.keys.actions.x && hasItem("shoes");
+  const running = GAME_STATE.allowRunning && GAME_STATE.keys.actions.x && bagHasItem("shoes");
 
   updateAnimation({ direction, running });
   player.update(dt);

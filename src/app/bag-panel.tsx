@@ -1,7 +1,7 @@
 import { JournalPanel } from "@/app/journal-panel";
 import { ParcelViewer } from "@/app/parcel-viewer";
 import { GAME_STATE } from "@/features/game-state";
-import { hasItem, type ItemName } from "@/lib/bag";
+import { bagHasItem, type ItemName } from "@/lib/bag";
 import { img } from "@/lib/img";
 import { useState } from "react";
 
@@ -9,6 +9,9 @@ const ITEM_LABEL: Record<ItemName, string> = {
   journal: "Journal",
   parcel: "Parcel",
   shoes: "Running Shoes",
+  paper1: "ZZ's Tracing Paper 1",
+  paper2: "ZZ's Tracing Paper 2",
+  paper3: "ZZ's Tracing Paper 3",
 };
 
 interface ItemIcon {
@@ -31,6 +34,9 @@ const ITEM_ICON: Partial<Record<ItemName, ItemIcon>> = {
   journal: { src: img("others/book-and-pencil.png"), scale: 0.8 },
   parcel: { src: img("others/parcel.png"), scale: 1.5 },
   shoes: { src: img("others/shoes.png"), scale: 0.6 },
+  paper1: { src: img("others/paper-single.png"), scale: 1.5 },
+  paper2: { src: img("others/paper-single.png"), scale: 1.5 },
+  paper3: { src: img("others/paper-single.png"), scale: 1.5 },
 };
 
 export function BagPanel({ onClose }: { onClose: () => void }) {
@@ -52,7 +58,7 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
     parcel: () => setParcelOpen(true),
   };
 
-  const entries = Array.from(GAME_STATE.bag.entries()).filter(([name]) => hasItem(name));
+  const entries = Array.from(GAME_STATE.bag.entries()).filter(([name]) => bagHasItem(name));
 
   return (
     <>

@@ -10,7 +10,7 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
-import { hasItem } from "@/lib/bag";
+import { bagHasItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
@@ -58,7 +58,7 @@ let parcelShine: ShineHandle | null = null;
 let journalShine: ShineHandle | null = null;
 let mamaFaceNorthTimer: gsap.core.Tween | null = null;
 function scheduleMamaFaceNorth() {
-  if (hasItem("parcel")) hudSetBagIconVisible(true);
+  if (bagHasItem("parcel")) hudSetBagIconVisible(true);
   mamaFaceNorthTimer?.kill(); // cancel any earlier pending one — e.g. from spam-talking — so only the latest survives
   mamaFaceNorthTimer = gsap.delayedCall(2, () => GAME_STATE.mama.face("w"));
 }
@@ -76,7 +76,7 @@ export const homeScene: Scene = {
   ),
 
   enter() {
-    if (hasItem("parcel") && !GAME_STATE.bagIconVisible)
+    if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible)
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
     GAME_STATE.boundaries = createBoundaries(COLLISION_HOME);
@@ -108,7 +108,7 @@ export const homeScene: Scene = {
     placeAtTile({ sprite: journal, tile: [7, 4] });
 
     GAME_STATE.obstacles = [GAME_STATE.mama]; // blocks walking through her, tracking wherever she currently is
-    interactables = hasItem("parcel")
+    interactables = bagHasItem("parcel")
       ? [MAMA_INTERACTABLE]
       : [MAMA_INTERACTABLE, PARCEL_INTERACTABLE];
     GAME_STATE.movementLocked = false;
@@ -132,8 +132,8 @@ export const homeScene: Scene = {
     drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
     drawViewportClamped(ctx, foreground);
 
-    if (!hasItem("parcel")) parcel.draw(ctx);
-    if (!hasItem("journal")) journal.draw(ctx);
+    if (!bagHasItem("parcel")) parcel.draw(ctx);
+    if (!bagHasItem("journal")) journal.draw(ctx);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, interactables);
   },
 };
@@ -142,7 +142,7 @@ function interactions(target: Sprite | undefined) {
   if (target === GAME_STATE.mama) {
     hudSetBagIconVisible(false);
     mamaFaceNorthTimer?.kill();
-    if (!hasItem("parcel"))
+    if (!bagHasItem("parcel"))
       DIALOGUE.show({ text: "MAMA: Paki kuha mo na ang parcel at tingnan.", color: "red" });
     else {
       DIALOGUE.show({
@@ -153,7 +153,7 @@ function interactions(target: Sprite | undefined) {
     DIALOGUE.onComplete = scheduleMamaFaceNorth;
   }
 
-  if (target === parcel && !hasItem("parcel")) {
+  if (target === parcel && !bagHasItem("parcel")) {
     DIALOGUE.show("A parcel — kunin ko na...");
 
     DIALOGUE.effect(() => {
@@ -232,7 +232,7 @@ function revealParcel() {
 }
 
 function mamaParcelConversation() {
-  if (hasItem("parcel") || GAME_STATE.sequence.mama_parcel) return;
+  if (bagHasItem("parcel") || GAME_STATE.sequence.mama_parcel) return;
 
   GAME_STATE.movementLocked = true; // covers the pre-dialogue beat below; DIALOGUE.show() keeps it locked once the conversation itself starts
   GAME_STATE.mama.face("s");
@@ -285,7 +285,7 @@ function exitZone() {
     return; // no parcel yet — stay home
   }
 
-  if (!hasItem("parcel")) {
+  if (!bagHasItem("parcel")) {
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Paki kuha nitong parcel.", color: "red" });
     return; // no parcel yet — stay home
   }

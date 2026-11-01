@@ -72,7 +72,7 @@ export const GAME_STATE = {
     intro: true,
     mama_parcel: true,
     meet_daomingsi: true,
-    meet_huazelei: false,
+    meet_huazelei: true,
   },
   quests: QUESTS,
   /**
@@ -99,6 +99,7 @@ export const GAME_STATE = {
   bag: new Map<ItemName, BagEntry>([
     ["journal", { type: "item", quantity: 1 }],
     ["parcel", { type: "item", quantity: 1 }],
+    ["paper1", { type: "item", quantity: 1 }],
     ["shoes", { type: "equip" }], // TODO: comment this OUT on production
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
