@@ -1,3 +1,4 @@
+import { BagPanel } from "@/app/bag-panel";
 import { GameEngine } from "@/features/game-engine";
 import { GAME_STATE } from "@/features/game-state";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -24,7 +25,15 @@ export default function Layout() {
   // variable sidesteps that same staleness for the open-guard below.
   const setBagOpen = useCallback((open: boolean) => {
     if (open && !GAME_STATE.bagIconVisible) return; // see the comment on bagIconVisible in game-state.ts — nothing left to close it otherwise
+    // Also refuse to open while movement is already locked for some other
+    // reason (mid-dialogue — DIALOGUE.show() itself sets this; a cutscene;
+    // a scene transition). That's what makes the unconditional unlock below
+    // safe on close: opening only ever succeeds from an already-unlocked
+    // state, so closing can't accidentally release a lock something else
+    // still needs.
+    if (open && GAME_STATE.movementLocked) return;
     GAME_STATE.bagOpen = open;
+    GAME_STATE.movementLocked = open; // lock player movement while the bag is open
     setBagOpenState(open);
   }, []);
 
@@ -87,12 +96,7 @@ export default function Layout() {
           </button>
         )}
 
-        {bagOpen && (
-          <div className="absolute inset-x-4 bottom-4 rounded-xl border-4 border-green-900 bg-[#f8f0d8] p-4 font-game text-green-950 shadow-[4px_4px_0_rgba(0,0,0,0.25)]">
-            <div className="mb-1.5 text-lg uppercase">Bag</div>
-            <div className="text-sm opacity-70">Empty</div>
-          </div>
-        )}
+        {bagOpen && <BagPanel onClose={() => setBagOpen(false)} />}
       </div>
     </div>
   );

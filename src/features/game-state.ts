@@ -17,7 +17,7 @@ import { IMGS_PLAYER_IDLE, IMGS_PLAYER_RUN, IMGS_PLAYER_WALK } from "@/sprites/p
  * `GAME_STATE.bag.get`/`.set` calls typo-checked at compile time instead of
  * silently failing.
  */
-export type ItemName = "parcel" | "shoes";
+export type ItemName = "parcel" | "shoes" | "journal";
 
 /**
  * A bag slot's own value — `"item"` is stackable (a quantity you pick up
@@ -116,6 +116,12 @@ export const GAME_STATE = {
   bag: new Map<ItemName, BagEntry>([
     ["parcel", { type: "item", quantity: 1 }],
     ["shoes", { type: "equip", quantity: 0 }], // TODO: comment this OUT on production
+    // Always carried from the start, not something found — GDD lists it as
+    // a standing system ("Journal — auto-updating tasks"), not an event
+    // reward. `"item"`, not `"equip"` — it's not equipment, just the one
+    // existing BagEntry shape that fits "singular, always owned" without
+    // inventing a third variant for this alone.
+    ["journal", { type: "item", quantity: 1 }],
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,

@@ -151,14 +151,20 @@ export class GameEngine {
 
     FADE.draw(this.ctx);
 
-    // A universal shortcut, not tied to any one scene — same gating as
-    // updateInteraction's own canAct check (interact.ts), so it can't pop
-    // the bag open over mid-dialogue text or a locked cutscene. Fires
-    // unconditionally otherwise (even while the icon is hidden) — the
-    // open-guard in layout.tsx's setBagOpen is the single place that's
-    // actually enforced, so there's nothing extra to check here.
-    if (GAME_STATE.keys.justPressed.enter && !DIALOGUE.isActive && !GAME_STATE.movementLocked) {
-      this.on?.({ type: "menu:bag.open", open: !GAME_STATE.bagOpen });
+    // A universal shortcut, not tied to any one scene. Closing is always
+    // allowed, regardless of movementLocked — once the bag is open, IT is
+    // the thing holding that lock (see setBagOpen in layout.tsx), so
+    // gating the close on it too would make Enter unable to ever close its
+    // own panel. Opening still gates on !DIALOGUE.isActive/!movementLocked
+    // (same as updateInteraction's own canAct check in interact.ts) so it
+    // can't pop the bag open over mid-dialogue text or a locked cutscene —
+    // the open-guard in layout.tsx's setBagOpen double-checks this anyway,
+    // this just avoids firing the event pointlessly.
+    if (GAME_STATE.keys.justPressed.enter) {
+      if (GAME_STATE.bagOpen) this.on?.({ type: "menu:bag.open", open: false });
+      else if (!DIALOGUE.isActive && !GAME_STATE.movementLocked) {
+        this.on?.({ type: "menu:bag.open", open: true });
+      }
     }
 
     // Spent for this frame — a keydown sets it again for the next one.

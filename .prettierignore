@@ -2,3 +2,4 @@
 # shipped game — keep it out of formatting passes (oxfmt reads this file
 # automatically, including via the pre-commit lint-staged "**/*" pattern).
 portrait.html
+keepsake.html
