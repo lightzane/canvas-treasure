@@ -18,6 +18,7 @@ import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewpo
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
+import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -76,6 +77,9 @@ export const mansionScene: Scene = {
   ]).then(() => prepareViewportClamped([background])),
 
   enter() {
+    if (!GAME_STATE.bagIconVisible)
+      gsap.delayedCall(mansionScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
+
     GAME_STATE.boundaries = createBoundaries(COLLISION_MANSION);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_MANSION);
 
@@ -144,6 +148,7 @@ export const mansionScene: Scene = {
 };
 
 function exitZone() {
+  hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
   GAME_STATE.spawnLocation = [86.5, 16.5]; // rough placeholder, just south of enter_mansion's own tile — adjust to taste
   GAME_STATE.sceneName = "overworld";
@@ -160,6 +165,7 @@ function interactions(target: Sprite | undefined) {
 
 function nearMissConversation() {
   if (GAME_STATE.sequence.meet_daomingsi) return; // already met him (and he's gone) — don't replay this
+  hudSetBagIconVisible(false);
 
   DIALOGUE.show({
     text: `BUTLER LIU: Young Master, saan po natin ilalagay ang ke#&@—k!`,
@@ -221,6 +227,7 @@ function nearMissConversation() {
   });
   DIALOGUE.effect(() => {
     DIALOGUE.clearPortrait();
+    DIALOGUE.hideBox();
     walk(GAME_STATE.daomingsi, [25, 4], { animated: true });
     gsap.delayedCall(0.5, () => BUTLER.face("s"));
   }, 1);
@@ -235,6 +242,7 @@ function nearMissConversation() {
     portrait: PORTRAIT_BUTLER,
   });
   DIALOGUE.onComplete = () => {
+    hudSetBagIconVisible(true);
     GAME_STATE.sequence.meet_daomingsi = true;
     remove(NPCS, GAME_STATE.daomingsi); // he's left — also drops him from GAME_STATE.obstacles, same array reference
   };

@@ -1,5 +1,5 @@
 import type { Direction } from "@/features/controller";
-import type { SceneName } from "@/features/scene";
+import type { SceneEvent, SceneName } from "@/features/scene";
 import type { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
 import type { TriggerZone, Zone } from "@/features/zone";
@@ -68,9 +68,9 @@ export const GAME_STATE = {
   facedTarget: undefined as Sprite | undefined,
   keys: {
     pressed: [] as Direction[],
-    actions: { z: false, x: false },
+    actions: { z: false, x: false, enter: false },
     /** True for exactly one frame — the frame the key actually went down, not every frame it's held. Set by `Controller.keydown`, cleared once per frame by `GameEngine.tick`. */
-    justPressed: { z: false, x: false },
+    justPressed: { z: false, x: false, enter: false },
   },
   /** Seconds the current scene has been active — used by scenes with a `duration`. */
   sceneElapsed: 0,
@@ -89,17 +89,48 @@ export const GAME_STATE = {
   sequence: {
     intro: true,
     mama_parcel: true,
-    meet_daomingsi: false,
+    meet_daomingsi: true,
     meet_huazelei: false,
   },
+  /**
+   * Whether the bag/inventory *icon itself* currently shows at all — e.g.
+   * hide it during a cutscene or a scene where opening the bag makes no
+   * sense. Independent of `bagOpen` (below) — this is "does the button
+   * exist right now," not "is its panel currently expanded." Mutating this
+   * directly from canvas code is fine (same as `movementLocked`), but it
+   * does NOT by itself make React re-render — to actually change it from a
+   * scene, go through `this.on?.({ type: "hud:bag-icon.visible", visible })`
+   * (see `SceneEvent` in `scene.ts`) instead of setting this directly;
+   * `layout.tsx`'s listener keeps this field and its own React state in
+   * lockstep (and force-closes `bagOpen` too, since hiding the icon would
+   * otherwise leave an open panel with nothing left to close it).
+   */
+  bagIconVisible: false,
+  /**
+   * Whether the bag/inventory *panel* is currently expanded open — toggled
+   * by clicking the icon, or forced from a scene via
+   * `this.on?.({ type: "menu:bag.open", open })`. Same
+   * canvas-can't-rerender-React caveat as `bagIconVisible` above.
+   */
+  bagOpen: false,
   bag: new Map<ItemName, BagEntry>([
     ["parcel", { type: "item", quantity: 1 }],
-    ["shoes", { type: "equip", quantity: 0 }],
+    ["shoes", { type: "equip", quantity: 0 }], // TODO: comment this OUT on production
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,
   /** Whether running (hold X, with shoes) is allowed in the current scene — default on; a cramped interior (home, mansion) sets this `false` in its own `enter()`. Takes priority over everything else: no shoes, no X held, none of it matters here if this is `false`. */
   allowRunning: true,
+  /**
+   * Canvas → HTML-UI bridge, scene-agnostic — kept correctly pointed at the
+   * live React listener by `GameEngine.tick()`, every frame, the same way
+   * (and for the same reason) it keeps each individual scene's own `.on`
+   * up to date: a captured reference grabbed too early (e.g. in a scene's
+   * `enter()`, before the first tick has ever run) can be stale forever.
+   * Prefer a small wrapper in `src/lib/hud.ts` (e.g. `setBagIconVisible`)
+   * over calling this directly from scene code.
+   */
+  emit: (() => {}) as (event: SceneEvent) => void,
 };
 
 const { player, mama, papa } = GAME_STATE;

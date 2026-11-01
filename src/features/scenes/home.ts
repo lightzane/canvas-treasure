@@ -17,6 +17,7 @@ import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
+import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -47,6 +48,7 @@ let parcelBounce: AttentionBounceHandle | null = null;
 let parcelShine: ShineHandle | null = null;
 let mamaFaceNorthTimer: gsap.core.Tween | null = null;
 function scheduleMamaFaceNorth() {
+  if (hasItem("parcel")) hudSetBagIconVisible(true);
   mamaFaceNorthTimer?.kill(); // cancel any earlier pending one — e.g. from spam-talking — so only the latest survives
   mamaFaceNorthTimer = gsap.delayedCall(2, () => GAME_STATE.mama.face("w"));
 }
@@ -64,6 +66,9 @@ export const homeScene: Scene = {
   ),
 
   enter() {
+    if (hasItem("parcel") && !GAME_STATE.bagIconVisible)
+      gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
+
     GAME_STATE.boundaries = createBoundaries(COLLISION_HOME);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_HOME);
 
@@ -124,14 +129,16 @@ export const homeScene: Scene = {
 
 function interactions(target: Sprite | undefined) {
   if (target === GAME_STATE.mama) {
+    hudSetBagIconVisible(false);
     mamaFaceNorthTimer?.kill();
     if (!hasItem("parcel"))
       DIALOGUE.show({ text: "MAMA: Paki kuha mo na ang parcel at tingnan.", color: "red" });
-    else
+    else {
       DIALOGUE.show({
         text: "MAMA: Check mo nga rin sa labas kung anu kaya event meron sa invitation na iyan.",
         color: "red",
       });
+    }
     DIALOGUE.onComplete = scheduleMamaFaceNorth;
   }
 
@@ -167,6 +174,21 @@ function revealParcel() {
   DIALOGUE.queue({
     text: "MAMA: Sige makapag marites na lang ako sa labas mamaya kung anung event meron.",
     color: "red",
+  });
+  DIALOGUE.effect(() => {
+    DIALOGUE.hideBox();
+    gsap.delayedCall(0.8, () => {
+      GAME_STATE.player.face("s");
+      playExclamation(GAME_STATE.player);
+      hudSetBagIconVisible(true);
+    });
+  }, 0.8);
+  DIALOGUE.queue({
+    text: `
+      Check ko na lang sa bag (top-right corner)
+      yung mga gusto ko gawin.
+    `,
+    color: "black",
   });
   DIALOGUE.onComplete = scheduleMamaFaceNorth;
 }
@@ -208,6 +230,8 @@ function mamaParcelConversation() {
 }
 
 function exitZone() {
+  hudSetBagIconVisible(false);
+
   if (!GAME_STATE.sequence.mama_parcel) {
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Nasan ka?", color: "red" });
     return; // no parcel yet — stay home

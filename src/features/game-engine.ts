@@ -123,6 +123,7 @@ export class GameEngine {
 
     const scene = SCENES[GAME_STATE.sceneName];
     scene.on = this.on;
+    GAME_STATE.emit = this.on; // scene-agnostic equivalent of the line above — see its doc comment in game-state.ts
     scene.update(dt);
     GAME_STATE.sceneElapsed += dt;
 
@@ -150,9 +151,20 @@ export class GameEngine {
 
     FADE.draw(this.ctx);
 
+    // A universal shortcut, not tied to any one scene — same gating as
+    // updateInteraction's own canAct check (interact.ts), so it can't pop
+    // the bag open over mid-dialogue text or a locked cutscene. Fires
+    // unconditionally otherwise (even while the icon is hidden) — the
+    // open-guard in layout.tsx's setBagOpen is the single place that's
+    // actually enforced, so there's nothing extra to check here.
+    if (GAME_STATE.keys.justPressed.enter && !DIALOGUE.isActive && !GAME_STATE.movementLocked) {
+      this.on?.({ type: "menu:bag.open", open: !GAME_STATE.bagOpen });
+    }
+
     // Spent for this frame — a keydown sets it again for the next one.
     GAME_STATE.keys.justPressed.z = false;
     GAME_STATE.keys.justPressed.x = false;
+    GAME_STATE.keys.justPressed.enter = false;
 
     // DEBUG: Center of the canvas
     // this.ctx.fillStyle = "rgba(255, 0, 0, 1)";

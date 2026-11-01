@@ -537,6 +537,6 @@
  </objectgroup>
  <objectgroup color="#fffb00" id="21" name="trigger_zones">
   <object id="38" name="exit" x="458.98" y="609.192" width="20.0598" height="54.7807"/>
-  <object id="39" name="story_mama_parcel" x="225" y="215.5" width="63.5" height="40.5"/>
+  <object id="39" name="story_mama_parcel" x="225" y="215.5" width="63.5" height="34.2987"/>
  </objectgroup>
 </map>

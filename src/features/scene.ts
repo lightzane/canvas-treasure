@@ -5,17 +5,23 @@ export type SceneName = "home" | "mansion" | "overworld";
  * whatever moment it decides (a keypress, a dialogue completing, ...);
  * `GameEngine` forwards it to whoever set `game.on` (React, typically).
  *
- * No scene calls this yet — currently just a placeholder demonstrating the
- * canvas ↔ HTML UI wiring (see `layout.tsx`'s bag panel). Wire up a real
- * trigger when there's an actual bag/inventory to open, e.g. in a scene's
- * `update()`:
+ * Two independent bag-related events, not one — see `GAME_STATE.bagOpen`
+ * and `.bagIconVisible`'s own doc comments for why these are kept separate
+ * (whether the panel is expanded vs. whether the icon exists at all).
+ *
+ * `"menu:bag.open"` is actually fired from `GameEngine.tick()` itself (the
+ * Enter-key shortcut, scene-agnostic — see the comment there), not from any
+ * one scene's own `update()`. A scene would still reach for this event for
+ * something scene-specific instead, e.g. hiding the icon during a cutscene:
  *
  * @example
- * update(dt) {
- *   if (GAME_STATE.keys.actions.x) this.on?.({ type: "menu:bag.visible", visible: true });
+ * enter() {
+ *   this.on?.({ type: "hud:bag-icon.visible", visible: false }); // a cutscene scene, say
  * }
  */
-export type SceneEvent = { type: "menu:bag.visible"; visible: boolean };
+export type SceneEvent =
+  | { type: "menu:bag.open"; open: boolean }
+  | { type: "hud:bag-icon.visible"; visible: boolean };
 
 interface SceneBase {
   update(dt: number): void;

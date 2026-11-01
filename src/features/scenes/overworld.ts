@@ -27,6 +27,7 @@ import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { drawFootprints, trackFootstep, updateFootprints } from "@/lib/footprints";
+import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
@@ -74,12 +75,14 @@ let sandZoneCount = 0;
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   enter_home: {
     onEnter: () => {
+      hudSetBagIconVisible(false);
       GAME_STATE.sceneName = "home";
       GAME_STATE.movementLocked = true;
     },
   },
   enter_mansion: {
     onEnter: () => {
+      hudSetBagIconVisible(false);
       GAME_STATE.sceneName = "mansion";
       GAME_STATE.movementLocked = true;
     },
@@ -101,6 +104,9 @@ export const overworldScene: Scene = {
   ]).then(() => prepareViewportClamped([background, foreground])),
 
   enter() {
+    if (!GAME_STATE.bagIconVisible)
+      gsap.delayedCall(overworldScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
+
     GAME_STATE.player.face("s");
     GAME_STATE.papa.face("s");
     // Spawn at specific tiles (col, row from Tiled's bottom-left readout).
@@ -237,6 +243,7 @@ function interactHuazelei() {
 }
 
 function meetLeiConversation() {
+  hudSetBagIconVisible(false);
   let shineHandle: ShineHandle | null = null;
 
   DIALOGUE.show({
@@ -296,13 +303,14 @@ function meetLeiConversation() {
     1,
   );
   DIALOGUE.queue({
-    text: `YOU: [thinking] Kunin ko na lang rin para makita ko ang ginagawa ni LEI!`,
-    color: "green",
+    text: `Kunin ko na lang rin para makita ko ang ginagawa ni LEI!`,
+    color: "black",
     portrait: null,
   });
 
   DIALOGUE.onComplete = () => {
     GAME_STATE.sequence.meet_huazelei = true;
+    hudSetBagIconVisible(true);
   };
 }
 

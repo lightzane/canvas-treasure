@@ -1,7 +1,7 @@
 import { GAME_STATE } from "@/features/game-state";
 
 export type Direction = "w" | "a" | "s" | "d";
-export type ActionKey = "z" | "x";
+export type ActionKey = "z" | "x" | "enter";
 
 // prettier-ignore
 const KEY_TO_DIRECTION: Record<string, Direction> = {
@@ -11,7 +11,13 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
   d: "d", ArrowRight: "d",
 };
 
-const KEY_TO_ACTION: Record<string, ActionKey> = { z: "z", x: "x", " ": "z" };
+const KEY_TO_ACTION: Record<string, ActionKey> = {
+  z: "z",
+  x: "x",
+  " ": "z",
+  Shift: "x",
+  Enter: "enter",
+};
 
 /** `KeyboardEvent.key` reflects Shift/CapsLock state (e.g. "W" with CapsLock on) — normalize single-character keys to lowercase so letter lookups aren't case-sensitive. Multi-character keys (ArrowUp, Shift, ...) are left as-is. */
 const normalizeKey = (key: string) => (key.length === 1 ? key.toLowerCase() : key);
@@ -72,7 +78,9 @@ export class Controller {
     this.keys.pressed.length = 0;
     this.keys.actions.z = false;
     this.keys.actions.x = false;
+    this.keys.actions.enter = false;
     this.keys.justPressed.z = false;
     this.keys.justPressed.x = false;
+    this.keys.justPressed.enter = false;
   }
 }

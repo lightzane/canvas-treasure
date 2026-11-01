@@ -27,6 +27,7 @@ const PORTRAIT_MARGIN_LEFT = 32; // gap from the canvas's own left edge
 // centered — BOX_WIDTH < CANVAS_WIDTH on purpose), bottom-aligned with it.
 const PORTRAIT_LEFT = PORTRAIT_MARGIN_LEFT;
 const PORTRAIT_TOP = BOX_TOP + BOX_HEIGHT - PORTRAIT_SIZE;
+const BORDER_AND_PORTRAIT_COLOR = "#74b9ff"; // "#3498db";
 
 /** Resolves once the dialogue's pixel font is loaded — awaited by `GameEngine.start()` before the game loop begins. */
 export const dialogueFontReady = document.fonts.load(FONT);
@@ -301,7 +302,7 @@ class Dialogue {
     el.style.height = `${PORTRAIT_SIZE}px`;
     el.style.borderRadius = "50%";
     el.style.objectFit = "cover"; // crops to fill the circle rather than squashing — matters once a photo's aspect ratio isn't square
-    el.style.border = `${BOX_BORDER_WIDTH}px solid white`; // matches the dialogue box's own border
+    el.style.border = `${BOX_BORDER_WIDTH}px solid ${BORDER_AND_PORTRAIT_COLOR}`; // matches the dialogue box's own border
     el.style.display = "none";
     document.body.appendChild(el);
 
@@ -341,7 +342,7 @@ class Dialogue {
     ctx.fillStyle = "white";
     ctx.fill();
     ctx.lineWidth = BOX_BORDER_WIDTH;
-    ctx.strokeStyle = "black";
+    ctx.strokeStyle = BORDER_AND_PORTRAIT_COLOR;
     ctx.stroke();
   }
 

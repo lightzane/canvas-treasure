@@ -985,7 +985,7 @@
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -1008,7 +1008,7 @@
                  "y":609.192276312211
                 }, 
                 {
-                 "height":40.5,
+                 "height":34.2987243090007,
                  "id":39,
                  "name":"story_mama_parcel",
                  "opacity":1,
