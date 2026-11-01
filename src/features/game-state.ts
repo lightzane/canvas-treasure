@@ -66,12 +66,12 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "home" as SceneName,
+  sceneName: "overworld" as SceneName,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
-    intro: false,
-    mama_parcel: false,
-    meet_daomingsi: false,
+    intro: true,
+    mama_parcel: true,
+    meet_daomingsi: true,
     meet_huazelei: false,
   },
   quests: QUESTS,
@@ -97,8 +97,8 @@ export const GAME_STATE = {
    */
   bagOpen: false,
   bag: new Map<ItemName, BagEntry>([
-    ["journal", { type: "item", quantity: 0 }],
-    ["parcel", { type: "item", quantity: 0 }],
+    ["journal", { type: "item", quantity: 1 }],
+    ["parcel", { type: "item", quantity: 1 }],
     ["shoes", { type: "equip" }], // TODO: comment this OUT on production
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */

@@ -91,6 +91,12 @@ function repositionToasts() {
  * this, same as `playExclamation`/`playAttentionBounce` already get called
  * next to a `GAME_STATE.bag.set(...)` rather than bundled into one call.
  *
+ * Takes a bare string as shorthand for `{ description }` — same two-form
+ * idea as `playQuestCompleteBanner`'s own `string | {...}` and
+ * `DialogueInput` (`dialogue.ts`) — or the full options object when
+ * `resolved`/`qty`/`hold`/etc. are needed too.
+ *
+ * @example playQuestToast("Catch the sheets.");
  * @example playQuestToast({ description: quest.description });
  * @example playQuestToast({ description: quest.description, qty: 5, totalQty: 10 }); // half-filled pie
  * @example playQuestToast({ description: quest.description, resolved: true });
@@ -99,7 +105,8 @@ function repositionToasts() {
  * // ...later...
  * toast.stop();
  */
-export function playQuestToast(options: QuestToastOptions): QuestToastHandle {
+export function playQuestToast(input: string | QuestToastOptions): QuestToastHandle {
+  const options: QuestToastOptions = typeof input === "string" ? { description: input } : input;
   const { delay = 0 } = options;
 
   let pending: gsap.core.Tween | null = null;
@@ -177,8 +184,13 @@ function runToast(options: QuestToastOptions): () => void {
   }
   el.appendChild(circle);
 
+  // Auto-rendered, same rule as the journal list (JournalPanel) — never
+  // typed into `description` by hand.
   const text = document.createElement("span");
-  text.textContent = description;
+  text.textContent =
+    qty !== undefined && totalQty !== undefined
+      ? `(${qty}/${totalQty}) ${description}`
+      : description;
   el.appendChild(text);
 
   // This toast's own slot, computed once from whatever's already stacked —

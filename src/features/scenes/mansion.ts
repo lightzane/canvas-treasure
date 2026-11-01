@@ -18,11 +18,13 @@ import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewpo
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
+import { playQuestToast } from "@/lib/effects/quest-toast";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import { setQuestStatus, type QuestEntry, type QuestId } from "@/lib/quests";
 import { walk, type WalkHandle } from "@/lib/walk";
 import { IMGS_BUTLER_IDLE, PORTRAIT_BUTLER } from "@/sprites/butler";
 import { PORTRAIT_DAOMINGSI, PORTRAIT_DAOMINGSI_INTIMIDATE } from "@/sprites/dao-ming-si";
@@ -241,6 +243,27 @@ function nearMissConversation() {
     color: "black",
     portrait: PORTRAIT_BUTLER,
   });
+  DIALOGUE.effect(() => {
+    DIALOGUE.clearPortrait();
+    DIALOGUE.hideBox();
+
+    const quests: QuestEntry[] = ["daoming_keys", "meet_huazelei", "meet_meizuo", "meet_ximen"].map(
+      (id) => {
+        const quest = GAME_STATE.quests.get(id as QuestId)!;
+        setQuestStatus(quest, "active");
+        return quest;
+      },
+    );
+
+    let delay = 0;
+
+    quests.forEach(({ description }) => {
+      playQuestToast({
+        description,
+        delay: (delay += 0.3),
+      });
+    });
+  }, 5);
   DIALOGUE.onComplete = () => {
     hudSetBagIconVisible(true);
     GAME_STATE.sequence.meet_daomingsi = true;

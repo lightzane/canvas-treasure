@@ -5,7 +5,15 @@ import { GAME_STATE } from "@/features/game-state";
  * added. Same reasoning as `ItemName` (`@/lib/bag`): keeps
  * `GAME_STATE.quests.get`/`.set` calls typo-checked at compile time.
  */
-export type QuestId = "parcel" | "invitation_postcard" | "catch_sheets" | "music_box";
+export type QuestId =
+  | "parcel"
+  | "invitation_postcard"
+  | "daoming_keys"
+  | "meet_huazelei"
+  | "meet_ximen"
+  | "meet_meizuo"
+  | "catch_sheets"
+  | "music_box";
 
 /**
  * `"inactive"` — not yet discovered, never shown in the journal.
@@ -37,20 +45,30 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "parcel",
     {
       description: "Get the parcel.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [
     "invitation_postcard",
     {
       description: "Find out what's this treasure is about.",
-      status: "inactive",
+      status: "active",
     },
   ],
   [
+    "daoming_keys",
+    {
+      description: "Help DAO MING SI find his missing keys.",
+      status: "active",
+    },
+  ],
+  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "active" }],
+  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "active" }],
+  ["meet_ximen", { description: "Find and meet XI MEN", status: "active" }],
+  [
     "catch_sheets",
     {
-      description: "Catch Hua Ze Lei's sheets of tracing paper.",
+      description: "Catch HUA ZE LEI's sheets of tracing paper.",
       qty: 0,
       totalQty: 3,
       status: "inactive",

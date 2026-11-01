@@ -18,7 +18,7 @@ export function JournalPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="absolute top-4 left-4 w-full max-w-md max-h-[calc(100%-2rem)] overflow-y-auto rounded-xl border-slate-800 bg-linear-to-b from-[#fdf3dd] to-[#ecd9ab] p-5 shadow-[0_0_10px_black]">
-      <div className="mb-3 flex items-center justify-between border-b-2 border-amber-800/40 pb-2">
+      <div className="flex items-center justify-between border-b-2 border-amber-800/40 pb-2">
         <span className="font-game text-lg uppercase tracking-wider text-amber-950">Journal</span>
         <button
           type="button"
@@ -46,7 +46,7 @@ export function JournalPanel({ onClose }: { onClose: () => void }) {
         ))}
       </div>
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-2.5 overflow-y-auto max-h-72">
         {questEntries.length === 0 && (
           <div className="font-game text-sm italic text-amber-950/50">
             {tab === "active" ? "No active quests." : "No completed quests yet."}
@@ -75,12 +75,12 @@ export function JournalPanel({ onClose }: { onClose: () => void }) {
                 quest.status === "resolved" ? "text-amber-950/50 line-through" : "text-amber-950"
               }`}
             >
-              {quest.description}
               {quest.qty !== undefined && quest.totalQty !== undefined && (
-                <span className="ml-1 font-bold opacity-70">
+                <span className="mr-1 font-bold opacity-70">
                   ({quest.qty}/{quest.totalQty})
                 </span>
               )}
+              {quest.description}
             </span>
           </div>
         ))}

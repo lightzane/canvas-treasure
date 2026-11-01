@@ -25,6 +25,7 @@ import { drift } from "@/lib/drift";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
+import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { drawFootprints, trackFootstep, updateFootprints } from "@/lib/footprints";
 import { hudSetBagIconVisible } from "@/lib/hud";
@@ -32,6 +33,7 @@ import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import { setQuestStatus } from "@/lib/quests";
 import { PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
 import gsap from "gsap";
 
@@ -245,6 +247,12 @@ function interactHuazelei() {
 function meetLeiConversation() {
   hudSetBagIconVisible(false);
   let shineHandle: ShineHandle | null = null;
+  DIALOGUE.effect(() => {
+    const quest = GAME_STATE.quests.get("meet_huazelei")!;
+    playQuestToast({ description: quest.description, resolved: true });
+    playQuestCompleteBanner(`Meet Hua Ze Lei Completed!`);
+    setQuestStatus(quest, "resolved");
+  }, 5);
 
   DIALOGUE.show({
     text: "F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?",
@@ -294,19 +302,27 @@ function meetLeiConversation() {
 
   DIALOGUE.queue(`Nako, nilipad na ng hangin ang 3 pages ko na sketch!`);
   DIALOGUE.queue(`Hayaan na makita ng ibang tao ang sketch ko.`);
-  DIALOGUE.effect(
-    () =>
-      gsap.delayedCall(0.5, () => {
-        playExclamation(GAME_STATE.player);
-        playAttentionBounce(GAME_STATE.player, { hops: 2 });
-      }),
-    1,
-  );
+  DIALOGUE.effect(() => {
+    DIALOGUE.clearPortrait();
+    DIALOGUE.hideBox();
+    gsap.delayedCall(0.5, () => {
+      playExclamation(GAME_STATE.player);
+      playAttentionBounce(GAME_STATE.player, { hops: 2 });
+    });
+  }, 1);
+
   DIALOGUE.queue({
     text: `Kunin ko na lang rin para makita ko ang ginagawa ni LEI!`,
     color: "black",
     portrait: null,
   });
+
+  DIALOGUE.effect(() => {
+    DIALOGUE.hideBox();
+    const quest = GAME_STATE.quests.get("catch_sheets")!;
+    playQuestToast(quest);
+    setQuestStatus(quest, "active");
+  }, 0.5);
 
   DIALOGUE.onComplete = () => {
     GAME_STATE.sequence.meet_huazelei = true;

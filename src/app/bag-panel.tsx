@@ -56,7 +56,7 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <>
-      <div className="absolute inset-y-4 right-4 w-80 rounded-lg border-3 bg-linear-to-b from-white to-slate-50 p-5 shadow-[0_0_16px_black] overflow-y-auto">
+      <div className="absolute inset-y-4 right-4 w-80 rounded-lg border-3 bg-linear-to-b from-white to-amber-50 p-5 shadow-[0_0_16px_black] overflow-y-auto">
         <button
           type="button"
           onClick={onClose}
