@@ -133,6 +133,9 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
       exitMap();
     },
   },
+  cutscene_running_shoes: {
+    onEnter: cutsceneRunningShoes,
+  },
   sand: {
     onEnter: () => sandZoneCount++,
     onLeave: () => sandZoneCount--,
@@ -315,6 +318,42 @@ function spawnMamaAtOverworld() {
     sprite: GAME_STATE.mama,
     label: "Talk",
   });
+}
+
+function cutsceneRunningShoes() {
+  if (
+    questRunningShoes.status !== "active" || //
+    GAME_STATE.sequence.mama_running_shoes
+  ) {
+    return;
+  }
+
+  mamaFacePapaTimer?.kill();
+
+  exitMap();
+  walk(GAME_STATE.player, [58.9, 42], { animated: true, onComplete: convo });
+
+  function convo() {
+    const mama = GAME_STATE.mama;
+    mama.face("s");
+    playAttentionBounce(mama);
+    playExclamation(mama);
+
+    DIALOGUE.show({
+      text: `MAMA: Ching! Nakita ko hinahabol mo yung papel...`,
+      color: "red",
+    });
+    DIALOGUE.queue(`Buti nakita ko si HUA ZE LEI, pinatawag kita.`);
+    DIALOGUE.queue(`
+    Yung RUNNING SHOES nasa loob ng bahay,
+    kunin mo na lang para mas mabilis ka makapunta
+    sa bawat iba't ibang lugar sa paligid.
+  `);
+    DIALOGUE.onComplete = () => {
+      hudSetBagIconVisible(true);
+      scheduleMamaFacePapa();
+    };
+  }
 }
 
 function interactions(target: Sprite | undefined) {
@@ -626,6 +665,7 @@ function interactPaper2Part1() {
         paperWindAnimating = false;
         initTracingPaper2();
         hudSetBagIconVisible(true);
+        playQuestToast(questCatchSheets);
       },
     });
   }, 2.5);
@@ -650,6 +690,7 @@ function interactPaper2Part2() {
     DIALOGUE.hideBox();
     setQuestProgress(questCatchSheets, 2);
     playQuestToast(questCatchSheets);
+    bagIncItem("paper2");
   }, 1.5);
   DIALOGUE.effect(() => {
     walk(GAME_STATE.huazelei, [37, 71], { animated: true });

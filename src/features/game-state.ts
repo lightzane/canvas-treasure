@@ -19,7 +19,7 @@ export const GAME_STATE = {
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
     shadowOffset: { y: -3 },
-    moveSpeed: 500,
+    // moveSpeed: 500,
   }),
   mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
   papa: new PlayerSprite({ sprites: { idle: IMGS_PAPA_IDLE } }),
@@ -75,6 +75,7 @@ export const GAME_STATE = {
     meet_huazelei: true,
     chasing_sheet_2: true,
     retrieving_sheet_2: true,
+    mama_running_shoes: false,
   },
   quests: QUESTS,
   /**
@@ -104,7 +105,7 @@ export const GAME_STATE = {
     ["sketch", { type: "item", quantity: 0 }],
     ["papers", { type: "item", quantity: 0 }],
     ["paper1", { type: "item", quantity: 1 }],
-    ["paper2", { type: "item", quantity: 0 }],
+    ["paper2", { type: "item", quantity: 1 }],
     ["paper3", { type: "item", quantity: 0 }],
     ["shears", { type: "item", quantity: 1 }],
     // ["shoes", { type: "equip" }], // TODO: comment this OUT on production
