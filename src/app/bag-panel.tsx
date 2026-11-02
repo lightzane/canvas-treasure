@@ -1,6 +1,7 @@
 import { ImageViewer } from "@/app/image-viewer";
 import { JournalPanel } from "@/app/journal-panel";
 import { ParcelViewer } from "@/app/parcel-viewer";
+import { PuzzleViewer } from "@/app/puzzle-viewer";
 import { GAME_STATE } from "@/features/game-state";
 import { bagHasItem, type ItemName } from "@/lib/bag";
 import { img } from "@/lib/img";
@@ -10,6 +11,8 @@ const ITEM_LABEL: Record<ItemName, string> = {
   journal: "Journal",
   parcel: "Parcel",
   shoes: "Running Shoes",
+  sketch: "ZZ's Sketch",
+  papers: "ZZ's Tracing Papers Scrambled",
   paper1: "ZZ's Tracing Paper 1",
   paper2: "ZZ's Tracing Paper 2",
   paper3: "ZZ's Tracing Paper 3",
@@ -36,6 +39,8 @@ const ITEM_ICON: Partial<Record<ItemName, ItemIcon>> = {
   journal: { src: img("others/book-and-pencil.png"), scale: 0.8 },
   parcel: { src: img("others/parcel.png"), scale: 1.5 },
   shoes: { src: img("others/shoes.png"), scale: 0.6 },
+  sketch: { src: img("others/sketch.png"), scale: 0.8 },
+  papers: { src: img("others/paper-multi.png"), scale: 1.5 },
   paper1: { src: img("others/paper-single.png"), scale: 1.5 },
   paper2: { src: img("others/paper-single.png"), scale: 1.5 },
   paper3: { src: img("others/paper-single.png"), scale: 1.5 },
@@ -52,6 +57,12 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   // this makes the journal open automatically alongside it, every time.
   const [journalOpen, setJournalOpen] = useState(true);
   const [parcelOpen, setParcelOpen] = useState(false);
+  const [puzzleOpen, setPuzzleOpen] = useState(false);
+  // Bumped whenever something mutates GAME_STATE.quests while JournalPanel is
+  // already mounted (e.g. PuzzleViewer solving a quest mid-popup) — passed as
+  // JournalPanel's `key` below to force a fresh remount/read, since it has no
+  // other way to know the external quests Map changed underneath it.
+  const [journalRefreshKey, setJournalRefreshKey] = useState(0);
   // One slot, not three booleans — only ever one image previewed at a time,
   // and each paper needs its own src/alt, not just an open/closed flag.
   const [viewingImage, setViewingImage] = useState<{ src: string; alt: string } | null>(null);
@@ -65,6 +76,8 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   const onItemClick: Partial<Record<ItemName, () => void>> = {
     journal: () => setJournalOpen(true),
     parcel: () => setParcelOpen(true),
+    papers: () => setPuzzleOpen(true),
+    sketch: viewImage("sketch", "treasure/cheryl_birthday_postcard_sketch.jpg"),
     paper1: viewImage("paper1", "puzzle/tp1.png"),
     paper2: viewImage("paper2", "puzzle/tp2.png"),
     paper3: viewImage("paper3", "puzzle/tp3.png"),
@@ -141,8 +154,16 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {journalOpen && <JournalPanel onClose={() => setJournalOpen(false)} />}
+      {journalOpen && (
+        <JournalPanel key={journalRefreshKey} onClose={() => setJournalOpen(false)} />
+      )}
       {parcelOpen && <ParcelViewer onClose={() => setParcelOpen(false)} />}
+      {puzzleOpen && (
+        <PuzzleViewer
+          onClose={() => setPuzzleOpen(false)}
+          onSolved={() => setJournalRefreshKey((k) => k + 1)}
+        />
+      )}
       {viewingImage && (
         <ImageViewer
           src={viewingImage.src}

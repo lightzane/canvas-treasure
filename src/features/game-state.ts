@@ -101,7 +101,11 @@ export const GAME_STATE = {
   bag: new Map<ItemName, BagEntry>([
     ["journal", { type: "item", quantity: 1 }],
     ["parcel", { type: "item", quantity: 1 }],
+    ["sketch", { type: "item", quantity: 0 }],
+    ["papers", { type: "item", quantity: 0 }],
     ["paper1", { type: "item", quantity: 1 }],
+    ["paper2", { type: "item", quantity: 0 }],
+    ["paper3", { type: "item", quantity: 0 }],
     ["shears", { type: "item", quantity: 1 }],
     ["shoes", { type: "equip" }], // TODO: comment this OUT on production
   ]),
