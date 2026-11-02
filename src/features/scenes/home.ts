@@ -1,7 +1,13 @@
 import { COLLISION_HOME } from "@/constants/collisions/home";
+import { TILE_SIZE } from "@/constants/game-settings";
 import { TRIGGER_HOME, type TriggerName } from "@/constants/triggers/home";
 import { GAME_STATE } from "@/features/game-state";
-import { drawInteractPrompt, updateInteraction, type Interactable } from "@/features/interact";
+import {
+  drawInteractPrompt,
+  removeInteractable,
+  updateInteraction,
+  type Interactable,
+} from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
 import {
@@ -10,7 +16,8 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
-import { bagHasItem } from "@/lib/bag";
+import { addOnce } from "@/lib/array";
+import { bagAddItem, bagHasItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
@@ -34,11 +41,13 @@ const IMG_MAP_BG = img("maps/home.png");
 const IMG_MAP_FG = img("maps/home-fg.png");
 const IMG_PARCEL = img("others/parcel.png");
 const IMG_JOURNAL = img("others/book-and-pencil.png");
+const IMG_RUNNING_SHOES = img("others/shoes.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
 const parcel = new Sprite({ src: IMG_PARCEL, scale: 2, boxSize: { height: 64, width: 64 } });
 const journal = new Sprite({ src: IMG_JOURNAL, scale: 2 });
+const runningShoes = new Sprite({ src: IMG_RUNNING_SHOES, scale: 1.5 });
 
 const MAMA_INTERACTABLE: Interactable = { sprite: GAME_STATE.mama, label: "Talk" };
 // Sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway.
@@ -65,6 +74,8 @@ function scheduleMamaFaceNorth() {
 
 let isMamaOutside = false;
 
+const questRunningShoes = GAME_STATE.quests.get("running_shoes")!;
+
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
   story_mama_parcel: { onEnter: mamaParcelConversation },
@@ -81,7 +92,6 @@ export const homeScene: Scene = {
     if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible)
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
-    const questRunningShoes = GAME_STATE.quests.get("running_shoes")!;
     isMamaOutside = questRunningShoes.status !== "inactive";
 
     GAME_STATE.boundaries = createBoundaries(COLLISION_HOME);
@@ -109,8 +119,9 @@ export const homeScene: Scene = {
       tile: spawnLocation,
       spriteSize: GAME_STATE.player.boxSize,
     });
-    placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
-    placeAtTile({ sprite: journal, tile: [7, 4] });
+    if (!bagHasItem("parcel")) placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
+    if (!bagHasItem("journal")) placeAtTile({ sprite: journal, tile: [7, 4] });
+
     placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
 
     // Mama at home
@@ -121,6 +132,15 @@ export const homeScene: Scene = {
     interactables = bagHasItem("parcel")
       ? [MAMA_INTERACTABLE]
       : [MAMA_INTERACTABLE, PARCEL_INTERACTABLE];
+
+    if (!bagHasItem("shoes") && questRunningShoes.status === "active") {
+      placeAtTile({ sprite: runningShoes, tile: [10, 22] });
+      addOnce(interactables, {
+        sprite: runningShoes,
+        label: "Wear",
+        probeDistance: TILE_SIZE * 3,
+      });
+    }
 
     GAME_STATE.movementLocked = false;
   },
@@ -146,11 +166,17 @@ export const homeScene: Scene = {
 
     if (!bagHasItem("parcel")) parcel.draw(ctx);
     if (!bagHasItem("journal")) journal.draw(ctx);
+    if (!bagHasItem("shoes") && questRunningShoes.status === "active") runningShoes.draw(ctx);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, interactables);
   },
 };
 
 function interactions(target: Sprite | undefined) {
+  if (target === runningShoes && questRunningShoes.status === "active") {
+    interactShoes();
+    return;
+  }
+
   if (target === GAME_STATE.mama) {
     hudSetBagIconVisible(false);
     mamaFaceNorthTimer?.kill();
@@ -287,6 +313,25 @@ function mamaParcelConversation() {
       scheduleMamaFaceNorth();
     };
   });
+}
+
+function interactShoes() {
+  if (questRunningShoes.status !== "active" || bagHasItem("shoes")) return;
+  hudSetBagIconVisible(false);
+  DIALOGUE.show(`Suoting ko na shoes...`);
+  DIALOGUE.effect(() => {
+    removeInteractable(interactables, runningShoes);
+    DIALOGUE.hideBox();
+    setQuestStatus(questRunningShoes, "resolved");
+    bagAddItem("shoes");
+    playQuestToast({ description: questRunningShoes.description, resolved: true });
+    playQuestCompleteBanner(`Running Shoes Acquired!`);
+  }, 3);
+  DIALOGUE.queue(`Para tumakbo, i-hold ko lang iyung SHIFT or X keys sa keyboard while moving.`);
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.sequence.mama_running_shoes = true;
+    hudSetBagIconVisible(true);
+  };
 }
 
 function exitZone() {

@@ -49,3 +49,13 @@ export function bagIncItem(name: ItemName, qty = 1) {
   if (!entry.quantity) entry.quantity = 0;
   entry.quantity += qty;
 }
+
+export function bagAddItem(name: ItemName, qty = 1) {
+  const entry = GAME_STATE.bag.get(name);
+  if (entry) return bagIncItem(name, qty);
+
+  // doesn't exist yet
+  else {
+    GAME_STATE.bag.set(name, { type: "equip", quantity: qty });
+  }
+}

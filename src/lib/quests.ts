@@ -79,7 +79,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "running_shoes",
     {
       description: "Find running shoes at home.",
-      status: "active",
+      status: "resolved",
     },
   ],
   [
