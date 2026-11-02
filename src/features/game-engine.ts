@@ -2,6 +2,7 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH } from "@/constants/game-settings";
 import { Controller } from "@/features/controller";
 import { assetsReady, GAME_STATE } from "@/features/game-state";
 import type { Scene, SceneEvent, SceneName } from "@/features/scene";
+import { flowershopScene } from "@/features/scenes/flowershop";
 import { homeScene } from "@/features/scenes/home";
 import { mansionScene } from "@/features/scenes/mansion";
 import { overworldScene } from "@/features/scenes/overworld";
@@ -12,6 +13,7 @@ const SCENES: Record<SceneName, Scene> = {
   home: homeScene,
   mansion: mansionScene,
   overworld: overworldScene,
+  flowershop: flowershopScene,
 };
 
 // Caps how much game time a single frame can advance. Without this, any stall

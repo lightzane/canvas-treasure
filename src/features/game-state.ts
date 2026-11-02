@@ -19,7 +19,7 @@ export const GAME_STATE = {
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
     shadowOffset: { y: -3 },
-    // moveSpeed: 500,
+    moveSpeed: 500,
   }),
   mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
   papa: new PlayerSprite({ sprites: { idle: IMGS_PAPA_IDLE } }),
@@ -66,7 +66,7 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "overworld" as SceneName,
+  sceneName: "flowershop" as SceneName,
   /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
   sequence: {
     intro: true,

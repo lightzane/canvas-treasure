@@ -133,6 +133,12 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
       exitMap();
     },
   },
+  enter_flowershop: {
+    onEnter: () => {
+      GAME_STATE.sceneName = "flowershop";
+      exitMap();
+    },
+  },
   cutscene_running_shoes: {
     onEnter: cutsceneRunningShoes,
   },

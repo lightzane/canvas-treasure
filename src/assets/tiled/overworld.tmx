@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="167" nextobjectid="49">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="167" nextobjectid="50">
  <editorsettings>
   <export target="overworld.json" format="json"/>
  </editorsettings>
@@ -12824,8 +12824,9 @@
  </objectgroup>
  <group id="162" name="trigger_zones">
   <objectgroup color="#fffb00" id="156" name="enter">
-   <object id="1" name="home" x="1883.81" y="1290.27" width="33" height="40.5487"/>
+   <object id="1" name="flowershop" x="1204.81" y="1315.27" width="33" height="40.5487"/>
    <object id="4" name="mansion" x="2764.5" y="474.5" width="38" height="47.5"/>
+   <object id="49" name="home" x="1884" y="1290.23" width="33" height="40.5487"/>
   </objectgroup>
   <objectgroup color="#ffffff" id="163" name="sand">
    <object id="9" name="sand" x="331.451" y="2351.79" width="450.325" height="453.89"/>
