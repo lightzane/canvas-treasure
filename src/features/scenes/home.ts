@@ -63,6 +63,8 @@ function scheduleMamaFaceNorth() {
   mamaFaceNorthTimer = gsap.delayedCall(2, () => GAME_STATE.mama.face("w"));
 }
 
+let isMamaOutside = false;
+
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
   story_mama_parcel: { onEnter: mamaParcelConversation },
@@ -79,6 +81,9 @@ export const homeScene: Scene = {
     if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible)
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
+    const questRunningShoes = GAME_STATE.quests.get("running_shoes")!;
+    isMamaOutside = questRunningShoes.status !== "inactive";
+
     GAME_STATE.boundaries = createBoundaries(COLLISION_HOME);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_HOME);
 
@@ -88,10 +93,11 @@ export const homeScene: Scene = {
       spawnLocation = [3, 14];
       homeScene.fadeIn = 0.5;
       homeScene.fadeOut = 1;
-      GAME_STATE.mama.face("w");
     } else {
       GAME_STATE.player.face("a");
     }
+
+    if (!isMamaOutside) GAME_STATE.mama.face("w");
 
     // spriteSize pins this to the player's stable boxSize — its `run` clip
     // is a different pixel size than walk/idle (unlike every other sprite
@@ -103,20 +109,25 @@ export const homeScene: Scene = {
       tile: spawnLocation,
       spriteSize: GAME_STATE.player.boxSize,
     });
-    placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
     placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
     placeAtTile({ sprite: journal, tile: [7, 4] });
+    placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
 
-    GAME_STATE.obstacles = [GAME_STATE.mama]; // blocks walking through her, tracking wherever she currently is
+    // Mama at home
+    if (!isMamaOutside) {
+      GAME_STATE.obstacles = [GAME_STATE.mama]; // blocks walking through her, tracking wherever she currently is
+    }
+
     interactables = bagHasItem("parcel")
       ? [MAMA_INTERACTABLE]
       : [MAMA_INTERACTABLE, PARCEL_INTERACTABLE];
+
     GAME_STATE.movementLocked = false;
   },
 
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
-    GAME_STATE.mama.update(dt);
+    if (!isMamaOutside) GAME_STATE.mama.update(dt);
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
@@ -129,7 +140,8 @@ export const homeScene: Scene = {
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
-    drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
+    if (!isMamaOutside) drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
+    else GAME_STATE.player.draw(ctx);
     drawViewportClamped(ctx, foreground);
 
     if (!bagHasItem("parcel")) parcel.draw(ctx);

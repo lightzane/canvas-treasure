@@ -20,6 +20,8 @@ export interface Interactable {
   facePlayer?: boolean;
   /** Verb shown in the prompt popup above this one's head while it's the player's current target — "talk", "get", "open", ... @default "interact" */
   label?: string;
+  /** Nudges the label popup's position, in screen px, relative to its default (horizontally centered on `boxSize`, just above the sprite's head) — not every sprite's artwork is drawn the same relative to its own `position`/`boxSize`, so this corrects per sprite rather than needing one offset that fits everyone. @default { x: 0, y: 0 } */
+  labelOffset?: { x?: number; y?: number };
 }
 
 /**
@@ -172,11 +174,14 @@ export function drawInteractPrompt(
   sprite: Sprite,
   interactables: Interactable[],
 ) {
-  const label = interactables.find((i) => i.sprite === sprite)?.label ?? "Interact";
+  const entry = interactables.find((i) => i.sprite === sprite);
+  const label = entry?.label ?? "Interact";
+  const offsetX = entry?.labelOffset?.x ?? 0;
+  const offsetY = entry?.labelOffset?.y ?? 0;
 
   const { x, y } = toScreen(sprite.position);
-  const centerX = x + sprite.boxSize.width / 2;
-  const headY = y - 10; // gap above the sprite's head
+  const centerX = x + sprite.boxSize.width / 2 + offsetX;
+  const headY = y - 10 + offsetY; // gap above the sprite's head, plus any per-sprite correction
 
   // Manually snapshot/restore just the properties touched here, rather than
   // ctx.save()/restore() — see the same fix + rationale in Sprite.drawShadow().

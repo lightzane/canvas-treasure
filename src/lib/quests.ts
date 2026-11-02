@@ -13,6 +13,7 @@ export type QuestId =
   | "meet_ximen"
   | "meet_meizuo"
   | "catch_sheets"
+  | "running_shoes"
   | "music_box";
 
 /**
@@ -69,8 +70,15 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 1,
+      qty: 2,
       totalQty: 3,
+      status: "active",
+    },
+  ],
+  [
+    "running_shoes",
+    {
+      description: "Find running shoes at home",
       status: "active",
     },
   ],

@@ -144,8 +144,8 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
                 </span>
 
                 {entry.type === "item" && entry.quantity > 1 && (
-                  <span className="shrink-0 min-w-6 rounded-full border-2 border-amber-800 bg-amber-100 px-1.5 text-center font-game text-xs font-bold text-amber-950 shadow-[2px_2px_0_rgba(0,0,0,0.25)]">
-                    {entry.quantity}
+                  <span className="shrink-0 min-w-6 rounded-full bg-amber-100 px-1.5 text-center font-game text-xs font-bold text-amber-950">
+                    x{entry.quantity}
                   </span>
                 )}
               </button>
