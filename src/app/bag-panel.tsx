@@ -1,3 +1,4 @@
+import { ImageViewer } from "@/app/image-viewer";
 import { JournalPanel } from "@/app/journal-panel";
 import { ParcelViewer } from "@/app/parcel-viewer";
 import { GAME_STATE } from "@/features/game-state";
@@ -51,6 +52,12 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   // this makes the journal open automatically alongside it, every time.
   const [journalOpen, setJournalOpen] = useState(true);
   const [parcelOpen, setParcelOpen] = useState(false);
+  // One slot, not three booleans — only ever one image previewed at a time,
+  // and each paper needs its own src/alt, not just an open/closed flag.
+  const [viewingImage, setViewingImage] = useState<{ src: string; alt: string } | null>(null);
+
+  const viewImage = (name: ItemName, file: string) => () =>
+    setViewingImage({ src: img(file), alt: ITEM_LABEL[name] });
 
   // Few/specific items are clickable, each with its own distinct effect —
   // not every entry, and not a blanket rule off BagEntry's own `type`. Items
@@ -58,6 +65,9 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   const onItemClick: Partial<Record<ItemName, () => void>> = {
     journal: () => setJournalOpen(true),
     parcel: () => setParcelOpen(true),
+    paper1: viewImage("paper1", "puzzle/tp1.png"),
+    paper2: viewImage("paper2", "puzzle/tp2.png"),
+    paper3: viewImage("paper3", "puzzle/tp3.png"),
   };
 
   const entries = Array.from(GAME_STATE.bag.entries()).filter(([name]) => bagHasItem(name));
@@ -133,6 +143,13 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
 
       {journalOpen && <JournalPanel onClose={() => setJournalOpen(false)} />}
       {parcelOpen && <ParcelViewer onClose={() => setParcelOpen(false)} />}
+      {viewingImage && (
+        <ImageViewer
+          src={viewingImage.src}
+          alt={viewingImage.alt}
+          onClose={() => setViewingImage(null)}
+        />
+      )}
     </>
   );
 }

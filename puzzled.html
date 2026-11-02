@@ -1,0 +1,1458 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Puzzle Pages (dev tool)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: light;
+        --paper: #f7f4ed;
+        --card: #fffdf8;
+        --ink: #302e27;
+        --muted: #605e54;
+        --line: #d8d1c3;
+        --spruce: #294b40;
+        --accent: #8a5537;
+        --serif: Georgia, "Times New Roman", serif;
+        --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--paper);
+        color: var(--ink);
+        font: 15px/1.5 var(--sans);
+      }
+      main {
+        max-width: 640px;
+        margin: 0 auto;
+        padding: 32px 20px 60px;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+
+      .mast {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+        color: var(--spruce);
+      }
+      .mast .brand {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .mast .hair {
+        flex: 1;
+        height: 1px;
+        background: #b69a63;
+      }
+      h1 {
+        font: 500 2rem/1.1 var(--serif);
+        letter-spacing: -0.02em;
+        margin: 4px 0 0;
+        color: #2a382f;
+      }
+      .intro {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+      }
+      .step {
+        font: italic 14px/1.3 var(--serif);
+        color: var(--accent);
+        border-bottom: 1px solid #cdb487;
+      }
+      h2 {
+        font: 500 1.2rem/1.25 var(--serif);
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+
+      label {
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+
+      /* `.card` sets its own `display`, which otherwise ties with (and, being
+         an author rule, beats) the UA stylesheet's `[hidden] { display: none }`
+         — silently defeating `hidden` on any element that's also `.card`. */
+      [hidden] {
+        display: none !important;
+      }
+
+      button {
+        font: inherit;
+        cursor: pointer;
+        color: var(--ink);
+        border-radius: 6px;
+        font-weight: 600;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .pick,
+      .save {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #a69e87;
+        background: #fbf9f2;
+        color: #304d3f;
+        font-size: 0.88rem;
+        padding: 10px 16px;
+        min-height: 40px;
+      }
+      .pick:hover,
+      .save:hover {
+        background: #ebe6d8;
+      }
+      .save {
+        background: var(--spruce);
+        border-color: var(--spruce);
+        color: #fffdf7;
+      }
+      .save:hover {
+        background: #193b31;
+      }
+      .save:disabled {
+        background: #ebe6d8;
+        border-color: var(--line);
+        color: var(--muted);
+      }
+      .secondary {
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--spruce);
+        font-size: 0.82rem;
+        padding: 8px 12px;
+        min-height: 36px;
+      }
+      .secondary:hover {
+        background: #f1eee6;
+      }
+      .secondary[aria-pressed="true"] {
+        border-color: var(--spruce);
+        background: #eef1e9;
+      }
+      .text-btn {
+        background: none;
+        border: 0;
+        border-bottom: 1px solid #acb7a9;
+        padding: 2px 0;
+        color: var(--spruce);
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .sr {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+      }
+
+      .url-row {
+        display: flex;
+        gap: 6px;
+      }
+      input[type="url"],
+      input[type="text"],
+      input[type="number"] {
+        font: inherit;
+        border: 1px solid #bcb5a5;
+        background: #fffdf8;
+        color: var(--ink);
+        border-radius: 5px;
+        padding: 8px 10px;
+      }
+      input[type="url"] {
+        flex: 1;
+        min-width: 0;
+      }
+      input[type="number"] {
+        width: 90px;
+      }
+      .msg {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--accent);
+        min-height: 1.3em;
+      }
+      .filename {
+        margin: 0;
+        font-size: 0.78rem;
+        color: var(--muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: var(--ink);
+        cursor: pointer;
+      }
+      .checkbox-row input {
+        accent-color: var(--spruce);
+        cursor: pointer;
+      }
+
+      .zoom-row output {
+        font-size: 0.8rem;
+        color: var(--muted);
+        min-width: 42px;
+        text-align: right;
+      }
+
+      .orient-row {
+        display: flex;
+        gap: 8px;
+      }
+      .orient-row button {
+        flex: 1;
+      }
+      .dims-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+      .dims-row label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .ratio {
+        white-space: nowrap;
+        font-size: 0.78rem;
+        color: var(--muted);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 4px 8px;
+      }
+
+      .crop-wrap {
+        display: flex;
+        justify-content: center;
+      }
+      .crop-box {
+        position: relative;
+        overflow: hidden;
+        border-radius: 6px;
+        cursor: grab;
+        touch-action: none;
+        user-select: none;
+        max-width: 100%;
+      }
+      .crop-box.dragging {
+        cursor: grabbing;
+      }
+      .crop-box canvas {
+        display: block;
+      }
+      .crop-box::after {
+        position: absolute;
+        content: "";
+        inset: 0;
+        pointer-events: none;
+        box-shadow: inset 0 0 0 1px #322d2540;
+      }
+      .crop-box.empty::after {
+        content: "Choose a photo above first";
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 0 24px;
+        color: var(--muted);
+        font-size: 0.85rem;
+        box-shadow: none;
+        background: #e4ded2;
+      }
+      .checks {
+        background-color: #e5e0d5;
+        background-image: conic-gradient(#f5f2eb 25%, transparent 0 50%, #f5f2eb 0 75%, transparent 0);
+        background-size: 16px 16px;
+      }
+
+      .zoom-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .zoom-row label {
+        white-space: nowrap;
+      }
+      input[type="range"] {
+        flex: 1;
+        accent-color: var(--spruce);
+        cursor: pointer;
+      }
+
+      .actions-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .pages-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+      }
+      .page-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+      .page-card .thumb-wrap {
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: inset 0 0 0 1px #322d2540;
+      }
+      .page-card .thumb-wrap canvas {
+        display: block;
+      }
+      .page-card .card-label {
+        font-size: 0.76rem;
+        color: var(--muted);
+      }
+      .card-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        justify-content: center;
+      }
+
+      .play-wrap {
+        display: flex;
+        justify-content: center;
+      }
+
+      .foot {
+        margin: 6px 1px 0;
+        color: var(--muted);
+        font-size: 0.8rem;
+      }
+      .foot p {
+        margin: 0;
+      }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .lightbox-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(20, 18, 14, 0.7);
+      }
+      .lightbox-content {
+        position: relative;
+        background: var(--card);
+        border-radius: 10px;
+        padding: 18px;
+        max-width: 90vw;
+        max-height: 90vh;
+        display: flex;
+      }
+      .lightbox-canvas-wrap {
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: inset 0 0 0 1px #322d2540;
+        line-height: 0;
+      }
+      .lightbox-canvas-wrap canvas {
+        display: block;
+        max-width: calc(90vw - 36px);
+        max-height: calc(90vh - 36px);
+        width: auto;
+        height: auto;
+      }
+      .lightbox-close {
+        position: absolute;
+        top: -14px;
+        right: -14px;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        font-size: 1.1rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 4px #4d43324d;
+      }
+      .lightbox-close:hover {
+        background: #f1eee6;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <div class="mast"><span class="brand">Canvas Treasure</span><span class="hair"></span></div>
+        <h1>Puzzle pages</h1>
+        <p class="intro">
+          Split a photo into a shuffled grid of transparent-PNG pages — stack and flip/rotate them back into place
+          to reveal it, tracing-paper style.
+        </p>
+      </header>
+
+      <section class="card" aria-labelledby="t1">
+        <div class="section-title"><span class="step">01</span><h2 id="t1">Choose your photo</h2></div>
+        <button class="pick" id="pickBtn" type="button">Choose a photo file</button>
+        <input id="fileInput" class="sr" type="file" accept="image/*" tabindex="-1" aria-label="Upload a local photo" />
+        <form class="url-row" id="urlForm" novalidate>
+          <input
+            id="imageUrl"
+            type="url"
+            inputmode="url"
+            placeholder="Or paste an image URL, then press Load"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="secondary" id="loadUrlBtn" type="submit">Load</button>
+        </form>
+        <p class="msg" id="sourceStatus" role="status" aria-live="polite"></p>
+        <p class="filename" id="photoName"></p>
+        <label class="checkbox-row"><input type="checkbox" id="grayscaleToggle" /> Grayscale</label>
+        <div class="zoom-row">
+          <label for="blurSlider">Blur</label>
+          <input id="blurSlider" type="range" min="0" max="24" step="0.5" value="0" disabled />
+          <output id="blurValue" for="blurSlider">0px</output>
+        </div>
+        <div class="zoom-row">
+          <label for="contrastSlider">Contrast</label>
+          <input id="contrastSlider" type="range" min="20" max="200" step="5" value="100" disabled />
+          <output id="contrastValue" for="contrastSlider">100%</output>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="t2">
+        <div class="section-title"><span class="step">02</span><h2 id="t2">Frame, position &amp; grid</h2></div>
+
+        <div class="orient-row" role="group" aria-label="Frame orientation">
+          <button class="secondary" id="orientSquare" type="button">Square</button>
+          <button class="secondary" id="orientPortrait" type="button">Portrait</button>
+          <button class="secondary" id="orientLandscape" type="button">Landscape</button>
+        </div>
+        <div class="dims-row">
+          <label>Width (px)<input id="frameW" type="number" min="16" max="2048" step="1" value="512" /></label>
+          <label>Height (px)<input id="frameH" type="number" min="16" max="2048" step="1" value="512" /></label>
+          <span class="ratio" id="aspectRatio" aria-label="frame aspect ratio">1:1</span>
+        </div>
+
+        <div class="crop-wrap">
+          <div class="crop-box empty" id="cropBox" tabindex="0" role="group" aria-label="Position your photo">
+            <canvas id="cropCanvas" width="420" height="420" aria-hidden="true"></canvas>
+          </div>
+        </div>
+        <div class="zoom-row">
+          <label for="zoomSlider">Zoom</label>
+          <input id="zoomSlider" type="range" min="1" max="2" step="0.01" value="1" disabled />
+          <button class="text-btn" id="resetCropBtn" type="button">Reset</button>
+        </div>
+        <button class="secondary" id="downloadCroppedBtn" type="button" disabled>Download cropped photo</button>
+
+        <div class="dims-row">
+          <label>Tile width (px)<input id="tileW" type="number" min="1" max="2048" step="1" value="16" /></label>
+          <label>Tile height (px)<input id="tileH" type="number" min="1" max="2048" step="1" value="16" /></label>
+        </div>
+        <p class="msg" id="gridInfo"></p>
+      </section>
+
+      <section class="card" aria-labelledby="t3">
+        <div class="section-title"><span class="step">03</span><h2 id="t3">Generate pages</h2></div>
+        <label>Number of pages<input id="pagesCount" type="number" min="3" step="1" value="3" /></label>
+        <button class="save" id="generateBtn" type="button" disabled>Generate Pages</button>
+        <p class="msg" id="generateStatus" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="card" id="pagesSection" aria-labelledby="t4" hidden>
+        <div class="section-title"><span class="step">04</span><h2 id="t4">Pages</h2></div>
+        <div class="actions-row">
+          <button class="secondary" id="randomizeAllBtn" type="button">Randomize All</button>
+          <button class="secondary" id="downloadAllBtn" type="button">Download All</button>
+        </div>
+        <div class="pages-grid" id="pagesList"></div>
+      </section>
+
+      <section class="card" aria-labelledby="t5">
+        <div class="section-title"><span class="step">05</span><h2 id="t5">Try it out</h2></div>
+        <div class="actions-row">
+          <button class="secondary" id="useGeneratedBtn" type="button" disabled>Use generated pages</button>
+          <button class="pick" id="playPickBtn" type="button">Load page files&hellip;</button>
+          <input
+            id="playFilesInput"
+            class="sr"
+            type="file"
+            accept="image/*"
+            multiple
+            tabindex="-1"
+            aria-label="Upload page PNGs to play"
+          />
+        </div>
+        <p class="msg" id="playStatus" role="status" aria-live="polite"></p>
+        <div class="play-wrap">
+          <div class="crop-box checks" id="playStage">
+            <canvas id="playComposite" width="420" height="420" aria-hidden="true"></canvas>
+          </div>
+        </div>
+        <div class="actions-row">
+          <button class="secondary" id="downloadAllLayersBtn" type="button" disabled>Download All Layers</button>
+          <button class="secondary" id="downloadCompositeBtn" type="button" disabled>Download composite</button>
+        </div>
+        <div class="pages-grid" id="playLayersList"></div>
+      </section>
+
+      <div class="foot">
+        <p>File uploads work offline. Linked photos load from their image host. Everything here runs locally — nothing is uploaded anywhere.</p>
+      </div>
+    </main>
+
+    <div class="lightbox" id="lightbox" hidden>
+      <div class="lightbox-backdrop" id="lightboxBackdrop"></div>
+      <div class="lightbox-content">
+        <button class="lightbox-close" id="lightboxClose" type="button" aria-label="Close preview">&times;</button>
+        <div class="checks lightbox-canvas-wrap">
+          <canvas id="lightboxCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ---------------------------------------------------------------
+      // Constants
+      // ---------------------------------------------------------------
+      const ORIENTATIONS = {
+        square: { w: 512, h: 512 },
+        portrait: { w: 512, h: 768 },
+        landscape: { w: 768, h: 512 },
+      };
+      const PREVIEW_MAX = 420; // on-screen preview box max edge, px — independent of real frame/export resolution
+      const THUMB_MAX = 120; // page-card thumbnail max edge, px
+
+      // ---------------------------------------------------------------
+      // Elements
+      // ---------------------------------------------------------------
+      const $ = (id) => document.getElementById(id);
+      const pickBtn = $("pickBtn");
+      const fileInput = $("fileInput");
+      const urlForm = $("urlForm");
+      const imageUrl = $("imageUrl");
+      const sourceStatus = $("sourceStatus");
+      const photoName = $("photoName");
+      const grayscaleToggle = $("grayscaleToggle");
+      const blurSlider = $("blurSlider");
+      const blurValue = $("blurValue");
+      const contrastSlider = $("contrastSlider");
+      const contrastValue = $("contrastValue");
+
+      const orientBtns = { square: $("orientSquare"), portrait: $("orientPortrait"), landscape: $("orientLandscape") };
+      const frameWInput = $("frameW");
+      const frameHInput = $("frameH");
+      const aspectRatio = $("aspectRatio");
+      const cropBox = $("cropBox");
+      const cropCanvas = $("cropCanvas");
+      const zoomSlider = $("zoomSlider");
+      const resetCropBtn = $("resetCropBtn");
+      const downloadCroppedBtn = $("downloadCroppedBtn");
+      const tileWInput = $("tileW");
+      const tileHInput = $("tileH");
+      const gridInfo = $("gridInfo");
+
+      const pagesCountInput = $("pagesCount");
+      const generateBtn = $("generateBtn");
+      const generateStatus = $("generateStatus");
+
+      const pagesSection = $("pagesSection");
+      const pagesList = $("pagesList");
+      const randomizeAllBtn = $("randomizeAllBtn");
+      const downloadAllBtn = $("downloadAllBtn");
+
+      const useGeneratedBtn = $("useGeneratedBtn");
+      const playPickBtn = $("playPickBtn");
+      const playFilesInput = $("playFilesInput");
+      const playStatus = $("playStatus");
+      const playComposite = $("playComposite");
+      const downloadAllLayersBtn = $("downloadAllLayersBtn");
+      const downloadCompositeBtn = $("downloadCompositeBtn");
+      const playLayersList = $("playLayersList");
+
+      const lightbox = $("lightbox");
+      const lightboxBackdrop = $("lightboxBackdrop");
+      const lightboxClose = $("lightboxClose");
+      const lightboxCanvas = $("lightboxCanvas");
+
+      // ---------------------------------------------------------------
+      // State
+      // ---------------------------------------------------------------
+      const state = {
+        img: null, // full-resolution source HTMLImageElement
+        baseName: "puzzle",
+        frameW: 512,
+        frameH: 512,
+        scale: 1,
+        minScale: 1,
+        maxScale: 1,
+        offsetX: 0, // image center's distance from the frame's center, in real frame px
+        offsetY: 0,
+        grayscale: false,
+        blur: 0, // px, in real frame-resolution units (scaled down for the smaller preview canvas, see drawFrame)
+        contrast: 100, // %, CSS filter contrast() convention — 100 = unchanged
+        tileW: 16, // grid cell size, real frame px — primary input, Aseprite-style (column/row counts are derived)
+        tileH: 16,
+        dragging: false,
+        lastX: 0,
+        lastY: 0,
+        pages: [], // { canvas, cells, flipH, flipV, rotation, thumbCanvas }
+        lastGridSettings: null, // { frameW, frameH, tileW, tileH } snapshot from the last Generate — lets a grayscale toggle redraw existing pages in place
+      };
+
+      const play = { layers: [] }; // { source, flipH, flipV, rotation, thumbCanvas }
+
+      // ---------------------------------------------------------------
+      // Small shared helpers
+      // ---------------------------------------------------------------
+      function fitSize(w, h, max) {
+        const ar = w / h;
+        return ar >= 1 ? { w: max, h: Math.round(max / ar) } : { w: Math.round(max * ar), h: max };
+      }
+
+      function gcd(a, b) {
+        return b === 0 ? a : gcd(b, a % b);
+      }
+
+      /** Reduced "W:H" label, e.g. 512x288 -> "16:9". */
+      function aspectRatioLabel(w, h) {
+        const divisor = gcd(w, h) || 1;
+        return `${w / divisor}:${h / divisor}`;
+      }
+
+      function isSquareSource(w, h) {
+        return w === h;
+      }
+
+      /** 0/180 toggle for non-square frames (90° would swap width/height and break alignment); all four 90° steps for square ones. */
+      function nextRotation(w, h, rotation) {
+        return isSquareSource(w, h) ? (rotation + 90) % 360 : rotation === 0 ? 180 : 0;
+      }
+
+      function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+      }
+
+      function stem(name) {
+        return (
+          name
+            .replace(/\.[^.]+$/, "")
+            .replace(/[<>:"/\\|?*\x00-\x1f]/g, "-")
+            .trim()
+            .slice(0, 60) || "puzzle"
+        );
+      }
+
+      /** Draws `source` onto a fresh canvas with the given flip/rotation applied, sized to match (width/height swap for a 90°/270° rotation). Shared by page-card thumbnails, final page export, and play-mode layers. */
+      function applyTransform(source, flipH, flipV, rotation) {
+        const w = source.width ?? source.naturalWidth;
+        const h = source.height ?? source.naturalHeight;
+        const swap = rotation === 90 || rotation === 270;
+        const out = document.createElement("canvas");
+        out.width = swap ? h : w;
+        out.height = swap ? w : h;
+        const ctx = out.getContext("2d");
+        ctx.translate(out.width / 2, out.height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.scale(flipH ? -1 : 1, flipV ? -1 : 1);
+        ctx.drawImage(source, -w / 2, -h / 2);
+        return out;
+      }
+
+      function openLightbox(source, flipH, flipV, rotation) {
+        const transformed = applyTransform(source, flipH, flipV, rotation);
+        lightboxCanvas.width = transformed.width;
+        lightboxCanvas.height = transformed.height;
+        lightboxCanvas.getContext("2d").drawImage(transformed, 0, 0);
+        lightbox.hidden = false;
+      }
+      function closeLightbox() {
+        lightbox.hidden = true;
+      }
+      lightboxBackdrop.addEventListener("click", closeLightbox);
+      lightboxClose.addEventListener("click", closeLightbox);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !lightbox.hidden) closeLightbox();
+      });
+
+      function showStatus(el, message) {
+        el.textContent = message;
+      }
+
+      // ---------------------------------------------------------------
+      // Step 01 — photo loading
+      // ---------------------------------------------------------------
+      function applyImage(img, baseName, label) {
+        state.img = img;
+        state.baseName = baseName;
+        photoName.textContent = label;
+        recomputeScaleBounds();
+        state.offsetX = 0;
+        state.offsetY = 0;
+        cropBox.classList.remove("empty");
+        zoomSlider.disabled = false;
+        downloadCroppedBtn.disabled = false;
+        // Grayscale/blur/contrast are photo-independent style choices, same as
+        // the existing Grayscale checkbox — they stay as set across a new photo
+        // load, unlike pan/zoom (which are reset above since they're measured
+        // in that specific photo's own pixel space).
+        blurSlider.disabled = false;
+        contrastSlider.disabled = false;
+        showStatus(sourceStatus, "");
+        renderCrop();
+        updateGenerateEnabled();
+      }
+
+      function loadFile(file) {
+        if (!file || !file.type.startsWith("image/")) return;
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          applyImage(img, stem(file.name), file.name);
+          URL.revokeObjectURL(url);
+        };
+        img.onerror = () => showStatus(sourceStatus, "This photo could not be opened. Try a JPG, PNG or WebP.");
+        img.src = url;
+      }
+
+      function loadFromUrl(raw) {
+        if (!raw) return;
+        let url;
+        try {
+          url = new URL(raw);
+        } catch {
+          showStatus(sourceStatus, "Paste a direct image address, such as https://example.com/photo.jpg.");
+          return;
+        }
+        if (!["http:", "https:"].includes(url.protocol)) {
+          showStatus(sourceStatus, "Paste a direct image address, such as https://example.com/photo.jpg.");
+          return;
+        }
+
+        let label = url.pathname.split("/").filter(Boolean).pop() || "Linked photo";
+        try {
+          label = decodeURIComponent(label);
+        } catch {
+          // keep as-is
+        }
+
+        showStatus(sourceStatus, "Loading image…");
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => applyImage(img, stem(label), label);
+        img.onerror = () =>
+          showStatus(sourceStatus, "Couldn't load that URL — check it's a direct link to an image.");
+        img.src = url.href;
+      }
+
+      pickBtn.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", (e) => loadFile(e.target.files?.[0]));
+      urlForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        loadFromUrl(imageUrl.value.trim());
+      });
+      cropBox.addEventListener("dragover", (e) => e.preventDefault());
+      cropBox.addEventListener("drop", (e) => {
+        e.preventDefault();
+        loadFile(e.dataTransfer?.files?.[0]);
+      });
+      cropBox.addEventListener("click", () => {
+        if (!state.img) fileInput.click();
+      });
+      grayscaleToggle.addEventListener("change", () => {
+        state.grayscale = grayscaleToggle.checked;
+        renderCrop();
+        regeneratePageContent();
+      });
+
+      // "input" fires continuously while dragging — keep that to just the cheap
+      // preview redraw. "change" fires once, on release, which is when it's
+      // worth paying for the heavier regenerate across every existing page.
+      blurSlider.addEventListener("input", () => {
+        state.blur = Number(blurSlider.value);
+        blurValue.textContent = `${state.blur}px`;
+        renderCrop();
+      });
+      blurSlider.addEventListener("change", regeneratePageContent);
+
+      contrastSlider.addEventListener("input", () => {
+        state.contrast = Number(contrastSlider.value);
+        contrastValue.textContent = `${state.contrast}%`;
+        renderCrop();
+      });
+      contrastSlider.addEventListener("change", regeneratePageContent);
+
+      // ---------------------------------------------------------------
+      // Step 02 — frame, position & grid
+      // ---------------------------------------------------------------
+      function highlightOrientationButtons() {
+        for (const [key, def] of Object.entries(ORIENTATIONS)) {
+          const matches = state.frameW === def.w && state.frameH === def.h;
+          orientBtns[key].setAttribute("aria-pressed", String(matches));
+        }
+      }
+
+      function resizeCropCanvas() {
+        const { w, h } = fitSize(state.frameW, state.frameH, PREVIEW_MAX);
+        cropCanvas.width = w;
+        cropCanvas.height = h;
+      }
+
+      function recomputeScaleBounds() {
+        if (!state.img) return;
+        state.minScale = Math.max(state.frameW / state.img.naturalWidth, state.frameH / state.img.naturalHeight);
+        state.maxScale = state.minScale * 5;
+        state.scale = state.minScale;
+        zoomSlider.min = state.minScale;
+        zoomSlider.max = state.maxScale;
+        zoomSlider.step = (state.maxScale - state.minScale) / 200 || 0.01;
+        zoomSlider.value = state.scale;
+      }
+
+      function clampOffsets() {
+        if (!state.img) return;
+        const dispW = state.img.naturalWidth * state.scale;
+        const dispH = state.img.naturalHeight * state.scale;
+        const maxX = Math.max(0, (dispW - state.frameW) / 2);
+        const maxY = Math.max(0, (dispH - state.frameH) / 2);
+        state.offsetX = Math.min(maxX, Math.max(-maxX, state.offsetX));
+        state.offsetY = Math.min(maxY, Math.max(-maxY, state.offsetY));
+      }
+
+      /** Draws the positioned photo onto a canvas of size w×h, which may be the live preview (ratio < 1) or a full-resolution export frame (ratio === 1). Same geometry either way, just scaled. */
+      /** Composes the three optional photo-wide adjustments into one CSS filter
+       * string. `blur` is stored in real frame-resolution px, so it's scaled by
+       * `ratio` here — otherwise the same blur value would look much softer on
+       * the small preview canvas than on the full-resolution export/generate
+       * canvas, breaking the "tune it by eye in the preview" workflow. */
+      function buildFilterString(ratio) {
+        const parts = [];
+        if (state.grayscale) parts.push("grayscale(1)");
+        if (state.blur > 0) parts.push(`blur(${state.blur * ratio}px)`);
+        if (state.contrast !== 100) parts.push(`contrast(${state.contrast}%)`);
+        return parts.length ? parts.join(" ") : "none";
+      }
+
+      function drawFrame(ctx, w, h) {
+        ctx.clearRect(0, 0, w, h);
+        if (!state.img) return;
+        const ratio = w / state.frameW;
+        const dispW = state.img.naturalWidth * state.scale * ratio;
+        const dispH = state.img.naturalHeight * state.scale * ratio;
+        const cx = w / 2 + state.offsetX * ratio;
+        const cy = h / 2 + state.offsetY * ratio;
+        // Baked in here, the one shared draw path for both the live preview and
+        // the full-resolution base canvas `generatePages` copies tiles from — so
+        // every page/thumbnail/export inherits it for free.
+        ctx.filter = buildFilterString(ratio);
+        ctx.drawImage(state.img, cx - dispW / 2, cy - dispH / 2, dispW, dispH);
+        ctx.filter = "none";
+      }
+
+      /** Column/row count is derived from the tile pixel size, Aseprite-style — `ceil`, not `floor`/round, so a size that doesn't divide evenly still covers the whole frame via a smaller partial cell at the right/bottom edge instead of leaving a gap. */
+      function computeGridCounts() {
+        return {
+          cols: Math.max(1, Math.ceil(state.frameW / state.tileW)),
+          rows: Math.max(1, Math.ceil(state.frameH / state.tileH)),
+        };
+      }
+
+      /** Lines repeat every tile-size interval from the origin, like Aseprite's own grid overlay — not evenly redistributed to fit an exact count, so the last column/row is left unlined when the frame isn't a clean multiple (that cell is simply narrower/shorter, drawn that way in `generatePages`). */
+      function drawGridOverlay(ctx, w, h) {
+        const ratio = w / state.frameW; // real frame px -> this canvas's px
+        const tileWPx = state.tileW * ratio;
+        const tileHPx = state.tileH * ratio;
+        ctx.save();
+        ctx.strokeStyle = "rgba(255,255,255,0.55)";
+        ctx.lineWidth = 1;
+        for (let x = tileWPx; x < w; x += tileWPx) {
+          const px = Math.round(x) + 0.5;
+          ctx.beginPath();
+          ctx.moveTo(px, 0);
+          ctx.lineTo(px, h);
+          ctx.stroke();
+        }
+        for (let y = tileHPx; y < h; y += tileHPx) {
+          const py = Math.round(y) + 0.5;
+          ctx.beginPath();
+          ctx.moveTo(0, py);
+          ctx.lineTo(w, py);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function updateGridInfo() {
+        const { cols, rows } = computeGridCounts();
+        const partialCol = state.frameW % state.tileW !== 0;
+        const partialRow = state.frameH % state.tileH !== 0;
+        const partialNote = partialCol || partialRow ? " (edge cells are partial)" : "";
+        gridInfo.textContent = state.img ? `${cols} × ${rows} cells${partialNote}` : "";
+      }
+
+      function renderCrop() {
+        clampOffsets();
+        const ctx = cropCanvas.getContext("2d");
+        drawFrame(ctx, cropCanvas.width, cropCanvas.height);
+        if (state.img) drawGridOverlay(ctx, cropCanvas.width, cropCanvas.height);
+        zoomSlider.value = state.scale;
+        updateGridInfo();
+      }
+
+      function setFrameDims(w, h) {
+        state.frameW = Math.max(16, Math.round(w));
+        state.frameH = Math.max(16, Math.round(h));
+        frameWInput.value = state.frameW;
+        frameHInput.value = state.frameH;
+        aspectRatio.textContent = aspectRatioLabel(state.frameW, state.frameH);
+        highlightOrientationButtons();
+        resizeCropCanvas();
+        if (state.img) {
+          recomputeScaleBounds();
+          state.offsetX = 0;
+          state.offsetY = 0;
+        }
+        renderCrop();
+        updateGenerateEnabled();
+      }
+
+      for (const [key, def] of Object.entries(ORIENTATIONS)) {
+        orientBtns[key].addEventListener("click", () => setFrameDims(def.w, def.h));
+      }
+      frameWInput.addEventListener("change", () => setFrameDims(Number(frameWInput.value) || 16, state.frameH));
+      frameHInput.addEventListener("change", () => setFrameDims(state.frameW, Number(frameHInput.value) || 16));
+
+      tileWInput.addEventListener("change", () => {
+        state.tileW = Math.max(1, Math.round(Number(tileWInput.value) || 1));
+        tileWInput.value = state.tileW;
+        renderCrop();
+        updateGenerateEnabled();
+      });
+      tileHInput.addEventListener("change", () => {
+        state.tileH = Math.max(1, Math.round(Number(tileHInput.value) || 1));
+        tileHInput.value = state.tileH;
+        renderCrop();
+        updateGenerateEnabled();
+      });
+
+      // --- drag to pan ---
+      cropBox.addEventListener("pointerdown", (e) => {
+        if (!state.img) return;
+        state.dragging = true;
+        state.lastX = e.clientX;
+        state.lastY = e.clientY;
+        cropBox.classList.add("dragging");
+        cropBox.setPointerCapture(e.pointerId);
+      });
+      cropBox.addEventListener("pointermove", (e) => {
+        if (!state.dragging) return;
+        const ratio = state.frameW / cropCanvas.width; // preview px -> real frame px
+        state.offsetX += (e.clientX - state.lastX) * ratio;
+        state.offsetY += (e.clientY - state.lastY) * ratio;
+        state.lastX = e.clientX;
+        state.lastY = e.clientY;
+        renderCrop();
+      });
+      const endDrag = () => {
+        state.dragging = false;
+        cropBox.classList.remove("dragging");
+      };
+      cropBox.addEventListener("pointerup", endDrag);
+      cropBox.addEventListener("pointercancel", endDrag);
+
+      // --- wheel + slider to zoom ---
+      cropBox.addEventListener(
+        "wheel",
+        (e) => {
+          if (!state.img) return;
+          e.preventDefault();
+          const factor = e.deltaY < 0 ? 1.08 : 1 / 1.08;
+          state.scale = Math.min(state.maxScale, Math.max(state.minScale, state.scale * factor));
+          renderCrop();
+        },
+        { passive: false },
+      );
+      zoomSlider.addEventListener("input", () => {
+        if (!state.img) return;
+        state.scale = Number(zoomSlider.value);
+        renderCrop();
+      });
+      resetCropBtn.addEventListener("click", () => {
+        if (!state.img) return;
+        recomputeScaleBounds();
+        state.offsetX = 0;
+        state.offsetY = 0;
+        renderCrop();
+      });
+
+      // ---------------------------------------------------------------
+      // Step 03 — generate pages
+      // ---------------------------------------------------------------
+      function updateGenerateEnabled() {
+        const { cols, rows } = computeGridCounts();
+        const cells = cols * rows;
+        const pages = Math.max(3, Math.round(Number(pagesCountInput.value) || 3));
+        const enough = cells >= pages;
+        generateBtn.disabled = !state.img || !enough;
+        generateStatus.textContent =
+          state.img && !enough ? "Need at least as many grid cells as pages — shrink the tiles or lower the page count." : "";
+      }
+      pagesCountInput.addEventListener("input", updateGenerateEnabled);
+
+      /** Copies just `cellList`'s cells from `base` onto `ctx`, clamped to the
+       * frame edge so the last column/row is a smaller partial cell whenever
+       * the tile size doesn't divide evenly (Aseprite-style). Shared by the
+       * initial generate and by `regeneratePageContent`'s in-place redraw. */
+      function drawCellsOntoCanvas(ctx, base, cellList, frameW, frameH, tileW, tileH) {
+        ctx.clearRect(0, 0, frameW, frameH);
+        for (const [c, r] of cellList) {
+          const x = c * tileW;
+          const y = r * tileH;
+          const w = Math.min(tileW, frameW - x);
+          const h = Math.min(tileH, frameH - y);
+          ctx.drawImage(base, x, y, w, h, x, y, w, h);
+        }
+      }
+
+      function generatePages() {
+        if (!state.img) return;
+        const { frameW, frameH, tileW, tileH } = state;
+        const { cols: gridCols, rows: gridRows } = computeGridCounts();
+        const numPages = Math.max(3, Math.round(Number(pagesCountInput.value) || 3));
+
+        const base = document.createElement("canvas");
+        base.width = frameW;
+        base.height = frameH;
+        drawFrame(base.getContext("2d"), frameW, frameH);
+
+        const cells = [];
+        for (let r = 0; r < gridRows; r++) for (let c = 0; c < gridCols; c++) cells.push([c, r]);
+        shuffle(cells);
+        const pageCells = Array.from({ length: numPages }, () => []);
+        cells.forEach((cell, i) => pageCells[i % numPages].push(cell));
+
+        state.pages = pageCells.map((cellList) => {
+          const canvas = document.createElement("canvas");
+          canvas.width = frameW;
+          canvas.height = frameH;
+          drawCellsOntoCanvas(canvas.getContext("2d"), base, cellList, frameW, frameH, tileW, tileH);
+          return { canvas, cells: cellList, flipH: false, flipV: false, rotation: 0, thumbCanvas: null };
+        });
+        state.lastGridSettings = { frameW, frameH, tileW, tileH };
+
+        showStatus(
+          generateStatus,
+          `Generated ${numPages} pages from a ${gridCols}×${gridRows} grid (${tileW}×${tileH}px tiles).`,
+        );
+        renderPageCards();
+        pagesSection.hidden = false;
+        useGeneratedBtn.disabled = false;
+      }
+      generateBtn.addEventListener("click", generatePages);
+
+      function gridSettingsMatch() {
+        const s = state.lastGridSettings;
+        return (
+          !!s &&
+          s.frameW === state.frameW &&
+          s.frameH === state.frameH &&
+          s.tileW === state.tileW &&
+          s.tileH === state.tileH
+        );
+      }
+
+      /** Redraws every already-generated page's pixel content in place — same
+       * canvas objects, so play-mode layers (which reference them directly
+       * via "Use generated pages") pick up the change automatically — using
+       * the current crop/grayscale settings while preserving the existing
+       * scatter assignment and each page's flip/rotate state. Only safe when
+       * frame/tile dimensions haven't drifted since the last Generate, since
+       * the stored cell coordinates are tied to that geometry; otherwise this
+       * is a no-op and a fresh Generate click is needed, same as before. */
+      function regeneratePageContent() {
+        if (!state.pages.length || !state.img || !gridSettingsMatch()) return;
+        const { frameW, frameH, tileW, tileH } = state;
+        const base = document.createElement("canvas");
+        base.width = frameW;
+        base.height = frameH;
+        drawFrame(base.getContext("2d"), frameW, frameH);
+
+        state.pages.forEach((page) => {
+          drawCellsOntoCanvas(page.canvas.getContext("2d"), base, page.cells, frameW, frameH, tileW, tileH);
+          if (page.thumbCanvas) drawThumbnail(page.thumbCanvas, page.canvas, page.flipH, page.flipV, page.rotation);
+        });
+
+        if (play.layers.length) renderPlayLayerCards();
+      }
+
+      // ---------------------------------------------------------------
+      // Step 04 — per-page cards (thumbnail + flip/rotate/reset/download)
+      // ---------------------------------------------------------------
+      function drawThumbnail(canvasEl, source, flipH, flipV, rotation) {
+        const transformed = applyTransform(source, flipH, flipV, rotation);
+        const { w, h } = fitSize(transformed.width, transformed.height, THUMB_MAX);
+        canvasEl.width = w;
+        canvasEl.height = h;
+        const ctx = canvasEl.getContext("2d");
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(transformed, 0, 0, w, h);
+      }
+
+      function exportCanvasAsPng(canvas, filename, statusEl) {
+        const fail = () =>
+          showStatus(
+            statusEl,
+            "Couldn't export — this photo's source blocks cross-origin downloads. Save it to your computer and upload the file instead.",
+          );
+        try {
+          canvas.toBlob((blob) => {
+            if (!blob) return fail();
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+          }, "image/png");
+        } catch {
+          fail();
+        }
+      }
+
+      function downloadCanvas(source, flipH, flipV, rotation, filename) {
+        const out = applyTransform(source, flipH, flipV, rotation);
+        exportCanvasAsPng(out, filename, generateStatus);
+      }
+
+      function downloadCroppedPhoto() {
+        if (!state.img) return;
+        const out = document.createElement("canvas");
+        out.width = state.frameW;
+        out.height = state.frameH;
+        drawFrame(out.getContext("2d"), state.frameW, state.frameH);
+        exportCanvasAsPng(out, `${state.baseName}-cropped.png`, sourceStatus);
+      }
+      downloadCroppedBtn.addEventListener("click", downloadCroppedPhoto);
+
+      function renderPageCards() {
+        pagesList.innerHTML = "";
+        state.pages.forEach((page, index) => {
+          const card = document.createElement("div");
+          card.className = "page-card";
+
+          const thumbWrap = document.createElement("div");
+          thumbWrap.className = "thumb-wrap checks";
+          const thumbCanvas = document.createElement("canvas");
+          thumbWrap.appendChild(thumbCanvas);
+          page.thumbCanvas = thumbCanvas;
+
+          const label = document.createElement("div");
+          label.className = "card-label";
+          label.textContent = `Page ${index + 1} of ${state.pages.length}`;
+
+          const buttons = document.createElement("div");
+          buttons.className = "card-buttons";
+
+          const refresh = () => drawThumbnail(thumbCanvas, page.canvas, page.flipH, page.flipV, page.rotation);
+
+          const flipHBtn = makeButton("Flip H", () => {
+            page.flipH = !page.flipH;
+            refresh();
+          });
+          const flipVBtn = makeButton("Flip V", () => {
+            page.flipV = !page.flipV;
+            refresh();
+          });
+          const rotateBtn = makeButton("Rotate", () => {
+            page.rotation = nextRotation(page.canvas.width, page.canvas.height, page.rotation);
+            refresh();
+          });
+          const resetBtn = makeButton("Reset", () => {
+            page.flipH = false;
+            page.flipV = false;
+            page.rotation = 0;
+            refresh();
+          });
+          const downloadBtn = makeButton("Download", () =>
+            downloadCanvas(
+              page.canvas,
+              page.flipH,
+              page.flipV,
+              page.rotation,
+              `${state.baseName}-page-${index + 1}-of-${state.pages.length}.png`,
+            ),
+          );
+
+          buttons.append(flipHBtn, flipVBtn, rotateBtn, resetBtn, downloadBtn);
+          card.append(thumbWrap, label, buttons);
+          pagesList.appendChild(card);
+
+          refresh();
+        });
+      }
+
+      function makeButton(text, onClick) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "secondary";
+        btn.textContent = text;
+        btn.addEventListener("click", onClick);
+        return btn;
+      }
+
+      randomizeAllBtn.addEventListener("click", () => {
+        state.pages.forEach((page) => {
+          const square = isSquareSource(page.canvas.width, page.canvas.height);
+          const rotations = square ? [0, 90, 180, 270] : [0, 180];
+          page.flipH = Math.random() < 0.5;
+          page.flipV = Math.random() < 0.5;
+          page.rotation = rotations[Math.floor(Math.random() * rotations.length)];
+          drawThumbnail(page.thumbCanvas, page.canvas, page.flipH, page.flipV, page.rotation);
+        });
+      });
+
+      downloadAllBtn.addEventListener("click", () => {
+        state.pages.forEach((page, index) => {
+          setTimeout(
+            () =>
+              downloadCanvas(
+                page.canvas,
+                page.flipH,
+                page.flipV,
+                page.rotation,
+                `${state.baseName}-page-${index + 1}-of-${state.pages.length}.png`,
+              ),
+            index * 150,
+          );
+        });
+      });
+
+      // ---------------------------------------------------------------
+      // Step 05 — try it out (play mode)
+      // ---------------------------------------------------------------
+      function renderPlayComposite() {
+        if (!play.layers.length) {
+          playComposite.getContext("2d").clearRect(0, 0, playComposite.width, playComposite.height);
+          return;
+        }
+        const first = play.layers[0].source;
+        const w = first.width ?? first.naturalWidth;
+        const h = first.height ?? first.naturalHeight;
+        const { w: pw, h: ph } = fitSize(w, h, PREVIEW_MAX);
+        playComposite.width = pw;
+        playComposite.height = ph;
+        const ctx = playComposite.getContext("2d");
+        ctx.clearRect(0, 0, pw, ph);
+        for (const layer of play.layers) {
+          const transformed = applyTransform(layer.source, layer.flipH, layer.flipV, layer.rotation);
+          ctx.drawImage(transformed, 0, 0, pw, ph);
+        }
+      }
+
+      function renderPlayLayerCards() {
+        playLayersList.innerHTML = "";
+        play.layers.forEach((layer, index) => {
+          const card = document.createElement("div");
+          card.className = "page-card";
+
+          const thumbWrap = document.createElement("div");
+          thumbWrap.className = "thumb-wrap checks";
+          thumbWrap.style.cursor = "zoom-in";
+          thumbWrap.title = "Click to preview at full size";
+          thumbWrap.addEventListener("click", () => openLightbox(layer.source, layer.flipH, layer.flipV, layer.rotation));
+          const thumbCanvas = document.createElement("canvas");
+          thumbWrap.appendChild(thumbCanvas);
+          layer.thumbCanvas = thumbCanvas;
+
+          const label = document.createElement("div");
+          label.className = "card-label";
+          label.textContent = `Layer ${index + 1}`;
+
+          const buttons = document.createElement("div");
+          buttons.className = "card-buttons";
+
+          const refreshLayer = () => {
+            drawThumbnail(thumbCanvas, layer.source, layer.flipH, layer.flipV, layer.rotation);
+            renderPlayComposite();
+          };
+
+          const flipHBtn = makeButton("Flip H", () => {
+            layer.flipH = !layer.flipH;
+            refreshLayer();
+          });
+          const flipVBtn = makeButton("Flip V", () => {
+            layer.flipV = !layer.flipV;
+            refreshLayer();
+          });
+          const rotateBtn = makeButton("Rotate", () => {
+            const w = layer.source.width ?? layer.source.naturalWidth;
+            const h = layer.source.height ?? layer.source.naturalHeight;
+            layer.rotation = nextRotation(w, h, layer.rotation);
+            refreshLayer();
+          });
+          const downloadBtn = makeButton("Download", () =>
+            downloadCanvas(
+              layer.source,
+              layer.flipH,
+              layer.flipV,
+              layer.rotation,
+              `${state.baseName}-layer-${index + 1}-of-${play.layers.length}.png`,
+            ),
+          );
+
+          buttons.append(flipHBtn, flipVBtn, rotateBtn, downloadBtn);
+          card.append(thumbWrap, label, buttons);
+          playLayersList.appendChild(card);
+
+          drawThumbnail(thumbCanvas, layer.source, layer.flipH, layer.flipV, layer.rotation);
+        });
+        downloadAllLayersBtn.disabled = play.layers.length === 0;
+        downloadCompositeBtn.disabled = play.layers.length === 0;
+        renderPlayComposite();
+      }
+
+      downloadAllLayersBtn.addEventListener("click", () => {
+        play.layers.forEach((layer, index) => {
+          setTimeout(
+            () =>
+              downloadCanvas(
+                layer.source,
+                layer.flipH,
+                layer.flipV,
+                layer.rotation,
+                `${state.baseName}-layer-${index + 1}-of-${play.layers.length}.png`,
+              ),
+            index * 150,
+          );
+        });
+      });
+
+      /** Full-resolution version of what `renderPlayComposite` draws at preview
+       * size — stacks every layer's current flip/rotate transform onto one
+       * canvas, sized to the first layer's real pixel dimensions. */
+      function buildFullResComposite() {
+        const first = play.layers[0].source;
+        const w = first.width ?? first.naturalWidth;
+        const h = first.height ?? first.naturalHeight;
+        const out = document.createElement("canvas");
+        out.width = w;
+        out.height = h;
+        const ctx = out.getContext("2d");
+        for (const layer of play.layers) {
+          const transformed = applyTransform(layer.source, layer.flipH, layer.flipV, layer.rotation);
+          ctx.drawImage(transformed, 0, 0);
+        }
+        return out;
+      }
+      downloadCompositeBtn.addEventListener("click", () => {
+        if (!play.layers.length) return;
+        exportCanvasAsPng(buildFullResComposite(), `${state.baseName}-composite.png`, playStatus);
+      });
+
+      useGeneratedBtn.addEventListener("click", () => {
+        if (!state.pages.length) return;
+        // `p.canvas` is always the raw, untransformed tile content — p.flipH/flipV/rotation
+        // is what Randomize All (or manual per-page buttons) actually scrambled, applied only
+        // at display time. Carrying those over (not resetting to identity) is what makes this
+        // start unsolved: identity on the raw canvas IS the solved state.
+        play.layers = state.pages.map((p) => ({
+          source: p.canvas,
+          flipH: p.flipH,
+          flipV: p.flipV,
+          rotation: p.rotation,
+          thumbCanvas: null,
+        }));
+        showStatus(playStatus, `Loaded ${play.layers.length} generated pages, in their current orientation.`);
+        renderPlayLayerCards();
+      });
+
+      function loadImageFile(file) {
+        return new Promise((resolve, reject) => {
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = () => {
+            resolve(img);
+            URL.revokeObjectURL(url);
+          };
+          img.onerror = () => reject(new Error("could not decode"));
+          img.src = url;
+        });
+      }
+
+      playPickBtn.addEventListener("click", () => playFilesInput.click());
+      playFilesInput.addEventListener("change", async (e) => {
+        const files = Array.from(e.target.files ?? []);
+        e.target.value = "";
+        if (!files.length) return;
+        try {
+          const imgs = await Promise.all(files.map(loadImageFile));
+          play.layers = imgs.map((img) => ({ source: img, flipH: false, flipV: false, rotation: 0, thumbCanvas: null }));
+          showStatus(playStatus, `Loaded ${play.layers.length} page files.`);
+          renderPlayLayerCards();
+        } catch {
+          showStatus(playStatus, "One or more of those files couldn't be opened as images.");
+        }
+      });
+
+      // ---------------------------------------------------------------
+      // Init
+      // ---------------------------------------------------------------
+      resizeCropCanvas();
+      highlightOrientationButtons();
+      aspectRatio.textContent = aspectRatioLabel(state.frameW, state.frameH);
+      updateGenerateEnabled();
+    </script>
+  </body>
+</html>

@@ -3,3 +3,4 @@
 # automatically, including via the pre-commit lint-staged "**/*" pattern).
 portrait.html
 keepsake.html
+puzzled.html

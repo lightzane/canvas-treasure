@@ -118,7 +118,7 @@ export const mansionScene: Scene = {
       col--;
     }
 
-    GAME_STATE.obstacles = NPCS; // blocks walking through any of them, tracking wherever each currently is
+    GAME_STATE.obstacles = [...NPCS]; // blocks walking through any of them, tracking wherever each currently is
 
     COL_A.forEach((npc) => npc.face("d"));
     COL_B.forEach((npc) => npc.face("a"));

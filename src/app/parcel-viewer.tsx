@@ -2,8 +2,8 @@ import { img } from "@/lib/img";
 import { useState } from "react";
 
 // Real photos, not pixel art — no [image-rendering:pixelated] on these two.
-const PARCEL_PHOTO = img("others/chest-empty.png");
-const PARCEL_PHOTO_CLOSEUP = img("others/chest-empty-closeup.png");
+const PARCEL_PHOTO = img("treasure/chest-empty.png");
+const PARCEL_PHOTO_CLOSEUP = img("treasure/chest-empty-closeup.png");
 
 /** A centered modal (unlike JournalPanel's docked window) — a backdrop click also closes it. `zoomed` resets for free on close since this only mounts while open; no manual reset needed. */
 export function ParcelViewer({ onClose }: { onClose: () => void }) {
