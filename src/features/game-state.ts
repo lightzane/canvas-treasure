@@ -120,7 +120,7 @@ export const GAME_STATE = {
     ["paper2", { type: "item", quantity: 1 }],
     ["paper3", { type: "item", quantity: 0 }],
     ["treasure_map", { type: "item", quantity: 0 }],
-    ["shears", { type: "item", quantity: 0 }],
+    ["shears", { type: "item", quantity: 1 }],
     ["shoes", { type: "equip" }], // TODO: comment this OUT on production
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */

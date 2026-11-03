@@ -17,7 +17,7 @@ const ITEM_LABEL: Record<ItemName, string> = {
   paper2: "ZZ's Tracing Paper 2",
   paper3: "ZZ's Tracing Paper 3",
   shears: "Garden Shears",
-  treasure_map: "Treasure Map in Bottle",
+  treasure_map: "Treasure Map in a Bottle",
 };
 
 interface ItemIcon {
@@ -83,7 +83,7 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
     paper1: viewImage("paper1", "puzzle/tp1.png"),
     paper2: viewImage("paper2", "puzzle/tp2.png"),
     paper3: viewImage("paper3", "puzzle/tp3.png"),
-    treasure_map: viewImage("treasure_map", "treasure/chest-empty.png"),
+    treasure_map: viewImage("treasure_map", "others/treasure-map.jpg"),
   };
 
   const entries = Array.from(GAME_STATE.bag.entries()).filter(([name]) => bagHasItem(name));

@@ -55,6 +55,8 @@ const IMG_PAPER_WIND = img("others/paper-wind.png");
 const IMG_WILD_BUSH_CENTER = img("others/wild-bush-center.png");
 const IMG_SIGNPOST = img("others/signpost.png");
 const IMG_MESSAGE_BOTTLE_H = img("others/message-bottle-h.png");
+const IMG_CHEST_CLOSE = img("others/chest-close.png");
+const IMG_CHEST_OPEN = img("others/chest-open.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 /** Drawn on top of the player (tree canopies, roof overhangs, etc). */
@@ -70,6 +72,12 @@ const spMansion1 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
 const spMansion2 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
 const coreMsgBottle = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
 const msgBottle1 = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
+const chestClose = new Sprite({
+  src: IMG_CHEST_CLOSE,
+  scale: 2,
+  boxSize: { width: 32, height: 32 },
+});
+const chestOpen = new Sprite({ src: IMG_CHEST_OPEN, scale: 2 });
 
 // removable decors
 const wildBushConfigs = {
@@ -193,9 +201,11 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   },
 };
 
-const questCatchSheets = GAME_STATE.quests.get("catch_sheets")!;
-const questRunningShoes = GAME_STATE.quests.get("running_shoes")!;
-const questMessageBottle = GAME_STATE.quests.get("message_in_bottle")!;
+const quests = GAME_STATE.quests;
+const questCatchSheets = quests.get("catch_sheets")!;
+const questRunningShoes = quests.get("running_shoes")!;
+const questMessageBottle = quests.get("message_in_bottle")!;
+const questMazeChest = quests.get("maze_chest")!;
 
 placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
 placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
@@ -309,6 +319,7 @@ function initQuests() {
   initQuestsHuazelei();
   initTracingPaper2();
   initCoreMessageBottle();
+  spawnMazeChest();
 }
 
 function initQuestsDaomingsi() {
@@ -316,9 +327,11 @@ function initQuestsDaomingsi() {
   // re-entry (we don't know which visit is the first one after the flag
   // flips), so both additions go through addOnce to stay idempotent.
   if (GAME_STATE.sequence.meet_daomingsi) {
-    addOnce(NPCS, GAME_STATE.huazelei);
+    if (questMazeChest.status === "active") {
+      return; // Do not spawn Hua Ze Lei at the park to prep for maze chest cutscene
+    }
+    respawnNPC(GAME_STATE.huazelei, [81.5, 35]);
     addOnce(INTERACTABLES, HUAZELEI_INTERACTABLE);
-    placeAtTile({ sprite: GAME_STATE.huazelei, tile: [81.5, 35] });
     GAME_STATE.huazelei.face("w");
   }
 }
@@ -383,11 +396,9 @@ function initTracingPaper2() {
 }
 
 function spawnMamaAtOverworld() {
-  placeAtTile({ sprite: GAME_STATE.mama, tile: [62, 39] });
+  respawnNPC(GAME_STATE.mama, [62, 39]);
   GAME_STATE.mama.face("d");
   GAME_STATE.papa.face("a");
-  addOnce(NPCS, GAME_STATE.mama);
-  addOnce(GAME_STATE.obstacles, GAME_STATE.mama);
   addOnce(INTERACTABLES, {
     sprite: GAME_STATE.mama,
     label: "Talk",
@@ -511,6 +522,9 @@ function interactions(target: Sprite | undefined) {
     case msgBottle1:
       readBottle(msgBottle1);
       break;
+    case chestClose:
+      openMazeChest();
+      break;
   }
 }
 
@@ -554,6 +568,18 @@ function interactMama() {
       text: `MAMA: Yung message-in-a-bottle matatagpuan daw sa tabing-dagat.`,
       color: "red",
     });
+  } else if (questMazeChest.status === "active") {
+    DIALOGUE.show({
+      text: `MAMA: Abaw! Meron nga itong treasure map! Galing mo CHING!`,
+      color: "red",
+    });
+    DIALOGUE.queue(`Go kunin mo na ang kayamanan at manalo sa event!`);
+    DIALOGUE.effect(() => playExclamation(GAME_STATE.papa), 0.3);
+    DIALOGUE.queue({
+      text: `PAPA: Congrats CHING!`,
+      color: "blue",
+    });
+    DIALOGUE.effect(() => schedulePapaFaceMama());
   }
 
   // No hints
@@ -981,9 +1007,43 @@ function completeCoreMsgBottle() {
     questSetStatus(questMessageBottle, "resolved");
     playQuestToast(questMessageBottle);
     playQuestCompleteBanner(`Treasure Map Obtained!`);
+
+    despawnNPC(GAME_STATE.huazelei);
   }, 3);
+
+  DIALOGUE.queue(`Mahahanap ko na rin ang teasure para sa event!`);
+  DIALOGUE.effect(() => {
+    questSetStatus(questMazeChest, "active");
+    playQuestToast(questMazeChest);
+  });
+
   DIALOGUE.onComplete = () => {
     GAME_STATE.movementLocked = false;
     hudSetBagIconVisible(true);
+    spawnMazeChest();
   };
+}
+
+function spawnMazeChest() {
+  if (questMazeChest.status !== "active") return;
+  placeAtTile({ sprite: chestClose, tile: [119.75, 7.75] });
+  addOnce(DECORS, chestClose);
+  addOnce(GAME_STATE.obstacles, chestClose);
+  addOnce(INTERACTABLES, { sprite: chestClose, label: "Open" });
+}
+
+function openMazeChest() {
+  DIALOGUE.show("A chest!");
+}
+
+function respawnNPC(npc: PlayerSprite, tile?: [number, number]) {
+  if (tile) placeAtTile({ sprite: npc, tile });
+  addOnce(NPCS, npc);
+  addOnce(GAME_STATE.obstacles, npc);
+}
+
+function despawnNPC(npc: PlayerSprite) {
+  remove(NPCS, npc);
+  remove(GAME_STATE.obstacles, npc);
+  removeInteractable(INTERACTABLES, npc);
 }

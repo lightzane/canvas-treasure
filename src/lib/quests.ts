@@ -16,7 +16,7 @@ export type QuestId =
   | "garden_shears"
   | "running_shoes"
   | "message_in_bottle"
-  | "music_box";
+  | "maze_chest";
 
 /**
  * `"inactive"` — not yet discovered, never shown in the journal.
@@ -95,13 +95,13 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "message_in_bottle",
     {
       description: "Find the bottle that contains the treasure map.",
-      status: "inactive",
+      status: "active",
     },
   ],
   [
-    "music_box",
+    "maze_chest",
     {
-      description: "Find what the treasure map points to in the mansion garden.",
+      description: "Find the treasure chest.",
       status: "inactive",
     },
   ],
