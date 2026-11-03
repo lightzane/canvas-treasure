@@ -52,6 +52,21 @@ const COL_A = [STAFF_M1, STAFF_M2, STAFF_F1, STAFF_F2];
 const COL_B = [STAFF_M3, STAFF_M4, STAFF_F3, STAFF_F4];
 const NPCS: PlayerSprite[] = [GAME_STATE.daomingsi, BUTLER, ...COL_A, ...COL_B];
 
+let col = 21;
+for (const npc of COL_A) {
+  placeAtTile({ sprite: npc, tile: [10.25, col] });
+  col--;
+}
+
+col = 21;
+for (const npc of COL_B) {
+  placeAtTile({ sprite: npc, tile: [13.25, col] });
+  col--;
+}
+
+COL_A.forEach((npc) => npc.face("d"));
+COL_B.forEach((npc) => npc.face("a"));
+
 // Fixed for the whole scene — nobody else ever becomes interactable here, so
 // this never needs rebuilding on re-entry.
 const INTERACTABLES: Interactable[] = [{ sprite: BUTLER, label: "Talk" }];
@@ -106,22 +121,7 @@ export const mansionScene: Scene = {
       BUTLER.face("s");
     }
 
-    let col = 21;
-    for (const npc of COL_A) {
-      placeAtTile({ sprite: npc, tile: [10.25, col] });
-      col--;
-    }
-
-    col = 21;
-    for (const npc of COL_B) {
-      placeAtTile({ sprite: npc, tile: [13.25, col] });
-      col--;
-    }
-
     GAME_STATE.obstacles = [...NPCS]; // blocks walking through any of them, tracking wherever each currently is
-
-    COL_A.forEach((npc) => npc.face("d"));
-    COL_B.forEach((npc) => npc.face("a"));
 
     GAME_STATE.player.face("w");
     GAME_STATE.movementLocked = false;

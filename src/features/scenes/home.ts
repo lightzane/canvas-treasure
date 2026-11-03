@@ -317,7 +317,7 @@ function mamaParcelConversation() {
 function interactShoes() {
   if (questRunningShoes.status !== "active" || bagHasItem("shoes")) return;
   hudSetBagIconVisible(false);
-  DIALOGUE.show(`Suoting ko na shoes...`);
+  DIALOGUE.show(`Suotin ko na shoes...`);
   DIALOGUE.effect(() => {
     removeInteractable(interactables, runningShoes);
     DIALOGUE.hideBox();

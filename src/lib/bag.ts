@@ -15,7 +15,8 @@ export type ItemName =
   | "papers"
   | "paper2"
   | "paper3"
-  | "shears";
+  | "shears"
+  | "treasure_map";
 
 /**
  * A bag slot's own value — `"item"` is stackable (a quantity you pick up

@@ -72,6 +72,18 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
 };
 
+placeAtTile({ sprite: npcCashier, tile: [10, 2.6] });
+placeAtTile({ sprite: npcStaffM1, tile: [2.5, 4.2] });
+placeAtTile({ sprite: npcStaffF1, tile: [1.5, 4.2] });
+placeAtTile({ sprite: npcStaffM2, tile: [3.5, 6.7] });
+placeAtTile({ sprite: npcStaffF2, tile: [6.5, 6.2] });
+placeAtTile({ sprite: npcStaffF3, tile: [9, 5] });
+
+npcStaffM1.face("w");
+npcStaffF1.face("w");
+// npcStaffM2.face("s"); // default is 's'
+npcStaffF2.face("w");
+
 export const flowershopScene: Scene = {
   fadeIn: 0.5,
   fadeOut: 0.5,
@@ -95,8 +107,6 @@ export const flowershopScene: Scene = {
       tile: spawnLocation,
       spriteSize: GAME_STATE.player.boxSize,
     });
-
-    placeNpcs();
 
     GAME_STATE.obstacles = [...NPCS];
     GAME_STATE.player.face("w");
@@ -124,20 +134,6 @@ export const flowershopScene: Scene = {
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
   },
 };
-
-function placeNpcs() {
-  placeAtTile({ sprite: npcCashier, tile: [10, 2.6] });
-  placeAtTile({ sprite: npcStaffM1, tile: [2.5, 4.2] });
-  placeAtTile({ sprite: npcStaffF1, tile: [1.5, 4.2] });
-  placeAtTile({ sprite: npcStaffM2, tile: [3.5, 6.7] });
-  placeAtTile({ sprite: npcStaffF2, tile: [6.5, 6.2] });
-  placeAtTile({ sprite: npcStaffF3, tile: [9, 5] });
-
-  npcStaffM1.face("w");
-  npcStaffF1.face("w");
-  // npcStaffM2.face("s"); // default is 's'
-  npcStaffF2.face("w");
-}
 
 function exitZone() {
   hudSetBagIconVisible(false);

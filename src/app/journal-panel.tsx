@@ -19,7 +19,14 @@ export function JournalPanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="absolute top-4 left-4 w-full max-w-md max-h-[calc(100%-2rem)] overflow-y-auto rounded-xl border-slate-800 bg-linear-to-b from-[#fdf3dd] to-[#ecd9ab] p-5 shadow-[0_0_10px_black]">
       <div className="flex items-center justify-between border-b-2 border-amber-800/40 pb-2">
-        <span className="font-game text-lg uppercase tracking-wider text-amber-950">Journal</span>
+        <div className="flex gap-1 items-center">
+          <img
+            src="/assets/images/others/book-and-pencil.png"
+            alt=""
+            className="size-8 shrink-0 [image-rendering:pixelated] drop-shadow"
+          />
+          <span className="font-game text-lg uppercase tracking-wider text-amber-950">Journal</span>
+        </div>
         <button
           type="button"
           onClick={onClose}

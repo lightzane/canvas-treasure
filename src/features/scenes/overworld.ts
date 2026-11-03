@@ -53,6 +53,8 @@ const IMG_PAPER_SINGLE = img("others/paper-single.png");
 const IMG_PAPER_MULTI = img("others/paper-multi.png");
 const IMG_PAPER_WIND = img("others/paper-wind.png");
 const IMG_WILD_BUSH_CENTER = img("others/wild-bush-center.png");
+const IMG_SIGNPOST = img("others/signpost.png");
+const IMG_MESSAGE_BOTTLE_H = img("others/message-bottle-h.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 /** Drawn on top of the player (tree canopies, roof overhangs, etc). */
@@ -63,6 +65,11 @@ const smallFountainA = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 },
 const smallFountainB = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
 const bigFountainA = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
+const spHouse = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
+const spMansion1 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
+const spMansion2 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
+const coreMsgBottle = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
+const msgBottle1 = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
 
 // removable decors
 const wildBushConfigs = {
@@ -98,15 +105,38 @@ const DECORS: Sprite[] = [
   wildBushMazeChest,
   wildBushBeach1,
   wildBushBeach2,
+  msgBottle1,
 ];
+
 const NPCS: PlayerSprite[] = [GAME_STATE.papa];
+
+const wildBushInteractablesCfgs: Partial<Interactable> = {
+  label: "Interact",
+  labelOffset: { y: -16 },
+};
+
+const signpostInteractablesCfgs: Partial<Interactable> = {
+  label: "Read",
+  labelOffset: { x: -12.5, y: 32 },
+  probeDistance: 0,
+};
+
+const msgBottleInteractablesCfgs: Partial<Interactable> = {
+  label: "Read",
+  labelOffset: { y: 16 },
+};
+
 const INTERACTABLES: Interactable[] = [
   { sprite: GAME_STATE.papa, label: "Talk" },
-  { sprite: wildBushPaper, label: "Interact", labelOffset: { y: -16 } },
-  { sprite: wildBushMazeEntrance, label: "Interact", labelOffset: { y: -16 } },
-  { sprite: wildBushMazeChest, label: "Interact", labelOffset: { y: -16 } },
-  { sprite: wildBushBeach1, label: "Interact", labelOffset: { y: -16 } },
-  { sprite: wildBushBeach2, label: "Interact", labelOffset: { y: -16 } },
+  { sprite: wildBushPaper, ...wildBushInteractablesCfgs },
+  { sprite: wildBushMazeEntrance, ...wildBushInteractablesCfgs },
+  { sprite: wildBushMazeChest, ...wildBushInteractablesCfgs },
+  { sprite: wildBushBeach1, ...wildBushInteractablesCfgs },
+  { sprite: wildBushBeach2, ...wildBushInteractablesCfgs },
+  { sprite: spHouse, ...signpostInteractablesCfgs },
+  { sprite: spMansion1, ...signpostInteractablesCfgs },
+  { sprite: spMansion2, ...signpostInteractablesCfgs },
+  { sprite: msgBottle1, ...msgBottleInteractablesCfgs },
 ];
 const HUAZELEI_INTERACTABLE: Interactable = { sprite: GAME_STATE.huazelei, label: "Talk" };
 let paperWindAnimating = false;
@@ -118,6 +148,7 @@ let paperWindAnimating = false;
 let sandZoneCount = 0;
 
 let tracingPaper2ShineHandle: ShineHandle | undefined;
+let coreMsgBottleShineHandle: ShineHandle | undefined;
 
 function scheduleMamaFacePapa() {
   scheduleFaceDirection(GAME_STATE.mama, "d");
@@ -131,6 +162,7 @@ function exitMap() {
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true;
   tracingPaper2ShineHandle?.stop();
+  coreMsgBottleShineHandle?.stop();
 }
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
@@ -163,6 +195,23 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
 
 const questCatchSheets = GAME_STATE.quests.get("catch_sheets")!;
 const questRunningShoes = GAME_STATE.quests.get("running_shoes")!;
+const questMessageBottle = GAME_STATE.quests.get("message_in_bottle")!;
+
+placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
+placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
+placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
+placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
+placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
+placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
+placeAtTile({ sprite: wildBushPaper, tile: [42, 73.5] });
+placeAtTile({ sprite: wildBushMazeEntrance, tile: [106, 10] });
+placeAtTile({ sprite: wildBushMazeChest, tile: [117, 9] });
+placeAtTile({ sprite: wildBushBeach1, tile: [20, 51] });
+placeAtTile({ sprite: wildBushBeach2, tile: [20, 52] });
+placeAtTile({ sprite: spHouse, tile: [60, 45] });
+placeAtTile({ sprite: spMansion1, tile: [85, 30] });
+placeAtTile({ sprite: spMansion2, tile: [88, 30] });
+placeAtTile({ sprite: msgBottle1, tile: [45, 74] });
 
 export const overworldScene: Scene = {
   fadeIn: 1,
@@ -193,18 +242,7 @@ export const overworldScene: Scene = {
       tile: GAME_STATE.spawnLocation ?? [58.9, 42],
       spriteSize: GAME_STATE.player.boxSize,
     });
-    placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
     GAME_STATE.spawnLocation = undefined;
-    placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
-    placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
-    placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
-    placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
-    placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
-    placeAtTile({ sprite: wildBushPaper, tile: [42, 73.5] });
-    placeAtTile({ sprite: wildBushMazeEntrance, tile: [106, 10] });
-    placeAtTile({ sprite: wildBushMazeChest, tile: [117, 9] });
-    placeAtTile({ sprite: wildBushBeach1, tile: [20, 51] });
-    placeAtTile({ sprite: wildBushBeach2, tile: [20, 52] });
 
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
@@ -270,6 +308,7 @@ function initQuests() {
   initQuestsDaomingsi();
   initQuestsHuazelei();
   initTracingPaper2();
+  initCoreMessageBottle();
 }
 
 function initQuestsDaomingsi() {
@@ -391,6 +430,40 @@ function cutsceneRunningShoes() {
   }
 }
 
+function cutsceneStartMessageBottle() {
+  if (
+    //
+    GAME_STATE.sequence.mama_starts_bottle
+  ) {
+    return;
+  }
+
+  cancelScheduledFace(GAME_STATE.mama);
+
+  exitMap();
+
+  GAME_STATE.player.face("w");
+  const mama = GAME_STATE.mama;
+  mama.face("s");
+  playAttentionBounce(mama);
+  playExclamation(mama);
+
+  DIALOGUE.show({
+    text: `MAMA: CHING! May nasagap ako na balita tungkol sa treasure...`,
+    color: "red",
+  });
+  DIALOGUE.queue(`Narinig ko kwento ng iba meron daw "Message-in-a-bottle" sa beach area.`);
+  DIALOGUE.queue(`May nilalaman daw ito kaalaman tungkol sa kayamanan para sa event mamaya.`);
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.sequence.mama_starts_bottle = true;
+    hudSetBagIconVisible(true);
+    scheduleMamaFacePapa();
+    spawnCoreMessageBottle();
+    questSetStatus(questMessageBottle, "active");
+    playQuestToast(questMessageBottle);
+  };
+}
+
 function interactions(target: Sprite | undefined) {
   switch (target) {
     case GAME_STATE.papa:
@@ -425,6 +498,19 @@ function interactions(target: Sprite | undefined) {
     case wildBushBeach2:
       interactWildBush(wildBushBeach2);
       break;
+    case spHouse:
+      DIALOGUE.show("Your house...");
+      break;
+    case spMansion1:
+    case spMansion2:
+      DIALOGUE.show("DAO MING Mansion");
+      break;
+    case coreMsgBottle:
+      readBottle(coreMsgBottle);
+      break;
+    case msgBottle1:
+      readBottle(msgBottle1);
+      break;
   }
 }
 
@@ -437,20 +523,21 @@ function interactPapa() {
       `,
       color: "blue",
     });
-    return;
-  }
-
-  if (!GAME_STATE.sequence.meet_huazelei) {
+  } else if (!GAME_STATE.sequence.meet_huazelei) {
     DIALOGUE.show({
       text: `
         PAPA: Punta ka sa park, daan sa kanan. May pogi rin dun!
       `,
       color: "blue",
     });
-    return;
   }
 
-  DIALOGUE.show({ text: "PAPA: Yes CHING?", color: "blue" });
+  // No hints
+  else {
+    DIALOGUE.show({ text: "PAPA: Yes CHING?", color: "blue" });
+  }
+
+  if (questRunningShoes.status !== "inactive") cancelScheduledFace(GAME_STATE.papa);
 
   DIALOGUE.onComplete = () => {
     if (questRunningShoes.status !== "inactive") schedulePapaFaceMama();
@@ -460,10 +547,22 @@ function interactPapa() {
 function interactMama() {
   if (questCatchSheets.status === "inactive") return;
 
-  DIALOGUE.show({
-    text: "MAMA: Yes CHING?",
-    color: "red",
-  });
+  if (questRunningShoes.status !== "inactive") cancelScheduledFace(GAME_STATE.mama);
+
+  if (questMessageBottle.status === "active") {
+    DIALOGUE.show({
+      text: `MAMA: Yung message-in-a-bottle matatagpuan daw sa tabing-dagat.`,
+      color: "red",
+    });
+  }
+
+  // No hints
+  else {
+    DIALOGUE.show({
+      text: "MAMA: Yes CHING?",
+      color: "red",
+    });
+  }
 
   DIALOGUE.onComplete = () => {
     if (questRunningShoes.status !== "inactive") scheduleMamaFacePapa();
@@ -811,5 +910,80 @@ function interactWildBush(bushSprite: Sprite) {
     removeInteractable(INTERACTABLES, bushSprite);
     remove(DECORS, bushSprite);
     remove(GAME_STATE.obstacles, bushSprite);
+  };
+}
+
+function readBottle(msgBottle: Sprite) {
+  GAME_STATE.movementLocked = true;
+  const prefix = `[MESSAGE IN A BOTTLE]`;
+  DIALOGUE.show(prefix);
+
+  switch (msgBottle) {
+    case coreMsgBottle:
+      hudSetBagIconVisible(false);
+      completeCoreMsgBottle();
+      return; // stop reading all the way down below (overrides DIALOGUE.onComplete)
+    case msgBottle1:
+      DIALOGUE.queue(`
+        "You'll never realize how important something, or someone...
+        IS to you, until the moment they are about to fade."
+        — JP Aguilar
+      `);
+      break;
+  }
+
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.movementLocked = false;
+    if (questMessageBottle.status === "active" && msgBottle !== coreMsgBottle) {
+      DIALOGUE.show(`Dili ito ang message-in-a-bottle na hinahanap ko...`);
+    }
+  };
+}
+
+function initCoreMessageBottle() {
+  if (questRunningShoes.status === "resolved" && !GAME_STATE.sequence.mama_starts_bottle) {
+    GAME_STATE.movementLocked = true;
+    gsap.delayedCall(overworldScene.fadeIn! + 0.5, cutsceneStartMessageBottle);
+  }
+
+  if (questCatchSheets.status === "active") spawnCoreMessageBottle();
+}
+
+function spawnCoreMessageBottle() {
+  if (!GAME_STATE.sequence.mama_starts_bottle) return;
+
+  placeAtTile({ sprite: coreMsgBottle, tile: [24, 79] });
+  addOnce(DECORS, coreMsgBottle);
+  addOnce(INTERACTABLES, { sprite: coreMsgBottle, label: "Read", labelOffset: { y: 16 } });
+
+  coreMsgBottleShineHandle = playShine(coreMsgBottle, { color: "#fff", mode: "hidden" });
+}
+
+function completeCoreMsgBottle() {
+  if (questMessageBottle.status !== "active") return;
+  GAME_STATE.movementLocked = true;
+
+  DIALOGUE.queue(`...,`);
+  DIALOGUE.effect(() => {
+    playAttentionBounce(GAME_STATE.player);
+    playExclamation(GAME_STATE.player);
+  }, 1.5);
+  DIALOGUE.queue(`Ito na yung meron treasure map sa loob!`);
+  DIALOGUE.effect(() => {
+    GAME_STATE.movementLocked = true;
+    DIALOGUE.hideBox();
+
+    coreMsgBottleShineHandle?.stop();
+    remove(DECORS, coreMsgBottle);
+    removeInteractable(INTERACTABLES, coreMsgBottle);
+
+    bagIncItem("treasure_map", 1);
+    questSetStatus(questMessageBottle, "resolved");
+    playQuestToast(questMessageBottle);
+    playQuestCompleteBanner(`Treasure Map Obtained!`);
+  }, 3);
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.movementLocked = false;
+    hudSetBagIconVisible(true);
   };
 }
