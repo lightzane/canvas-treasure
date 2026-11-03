@@ -42,10 +42,16 @@ import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
 import { walk } from "@/lib/walk";
-import { PORTRAIT_DAOMINGSI, PORTRAIT_DAOMINGSI_INTIMIDATE } from "@/sprites/dao-ming-si";
+import {
+  DIALOGUE_COLOR_DAOMINGSI,
+  PORTRAIT_DAOMINGSI,
+  PORTRAIT_DAOMINGSI_INTIMIDATE,
+} from "@/sprites/dao-ming-si";
 import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
 import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
-import { PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
+import { DIALOGUE_COLOR_HUAZELEI, PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
+import { DIALOGUE_COLOR_MEIZUO, PORTRAIT_MEIZUO } from "@/sprites/mei-zuo";
+import { DIALOGUE_COLOR_XIMEN, PORTRAIT_XIMEN } from "@/sprites/xi-men";
 import gsap from "gsap";
 
 const IMG_MAP_BG = img("maps/overworld.png");
@@ -563,6 +569,12 @@ function interactions(target: Sprite | undefined) {
     case chestClose:
       openMazeChest();
       break;
+    case GAME_STATE.ximen:
+      interactXimen();
+      break;
+    case GAME_STATE.meizuo:
+      interactMeizuo();
+      break;
   }
 
   if (PARK_EVENT_GUARDS.includes(target as PlayerSprite)) {
@@ -646,7 +658,7 @@ function interactHuazelei() {
 
   DIALOGUE.show({
     text: `HUA ZE LEI: Hello CHERYL.`,
-    color: "blue",
+    color: DIALOGUE_COLOR_HUAZELEI,
     portrait: PORTRAIT_HUAZELEI,
   });
 }
@@ -663,7 +675,7 @@ function meetLeiConversation() {
 
   DIALOGUE.show({
     text: "F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?",
-    color: "blue",
+    color: DIALOGUE_COLOR_HUAZELEI,
     portrait: PORTRAIT_HUAZELEI,
   });
   DIALOGUE.effect(() => {
@@ -800,7 +812,7 @@ function interactPaperMulti() {
   function convo() {
     DIALOGUE.show({
       text: `HUA ZE LEI: Walang problema, hindi mo na kailangan kunin ang mga papel na iyan.`,
-      color: "blue",
+      color: DIALOGUE_COLOR_HUAZELEI,
       portrait: PORTRAIT_HUAZELEI,
     });
 
@@ -918,7 +930,7 @@ function interactPaper2Part2() {
   DIALOGUE.queue({
     text: `HUA ZE LEI: Oh CHERYL, nakita ko hinahabol mo pa rin sketch paper ko.`,
     portrait: PORTRAIT_HUAZELEI,
-    color: "blue",
+    color: DIALOGUE_COLOR_HUAZELEI,
   });
   DIALOGUE.queue(`Nagawa ako ulit bagong sketch...`);
   DIALOGUE.queue(`Para kasi yun sa event mamaya...`);
@@ -1114,7 +1126,7 @@ function openMazeChest() {
   }, 0.3);
   DIALOGUE.queue({
     text: `DAO MING SI: LEI, kailangan natin maayos na ang park para sa event mamaya...`,
-    color: "red",
+    color: DIALOGUE_COLOR_DAOMINGSI,
     portrait: PORTRAIT_DAOMINGSI,
   });
   DIALOGUE.effect(() => {
@@ -1160,7 +1172,7 @@ function openMazeChest() {
   DIALOGUE.effect(() => GAME_STATE.huazelei.face("a"));
   DIALOGUE.queue({
     text: `HUA ZE LEI: Pasensiya ka na AH SI. May pinapahanap kasi ako sa kanya kanina...`,
-    color: "blue",
+    color: DIALOGUE_COLOR_HUAZELEI,
     portrait: PORTRAIT_HUAZELEI,
   });
   DIALOGUE.effect(() => GAME_STATE.huazelei.face("d"));
@@ -1174,18 +1186,18 @@ function openMazeChest() {
   DIALOGUE.queue({
     text: `DAO MING SI: Bakit naman kasi meron ka iniiwan na gamit mo dito sa hardin ko...`,
     portrait: PORTRAIT_DAOMINGSI_INTIMIDATE,
-    color: "red",
+    color: DIALOGUE_COLOR_DAOMINGSI,
   });
   DIALOGUE.queue({
     text: `HUA ZE LEI: Pasensiya na AH SI...`,
     portrait: PORTRAIT_HUAZELEI,
-    color: "blue",
+    color: DIALOGUE_COLOR_HUAZELEI,
   });
   DIALOGUE.effect(() => GAME_STATE.daomingsi.face("s"));
   DIALOGUE.queue({
     text: `DAO MING SI: Tumatakbo ang oras, tayo na LEI, may gagawin pa tayo.`,
     portrait: PORTRAIT_DAOMINGSI,
-    color: "red",
+    color: DIALOGUE_COLOR_DAOMINGSI,
   });
   DIALOGUE.effect(() => {
     walk(
@@ -1205,7 +1217,7 @@ function openMazeChest() {
       HUA ZE LEI: CHERYL, sa pagkakatanda ko ay hinahanap mo
       sila XI MEN at MEI ZUO para mahanap ang keys ni AH SI...`,
     portrait: PORTRAIT_HUAZELEI,
-    color: "blue",
+    color: DIALOGUE_COLOR_HUAZELEI,
   });
   DIALOGUE.effect(() => GAME_STATE.huazelei.face("s"));
   DIALOGUE.queue(`Makikita mo lang sila kung pumunta ka sa timog na bahagi nitong mansion.`);
@@ -1254,6 +1266,7 @@ function despawnNPC(npc: PlayerSprite) {
   removeInteractable(INTERACTABLES, npc);
 }
 
+/** Locks movement, hides dialogue box and portrait. */
 function dialogueLockAndFocus() {
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true;
@@ -1264,8 +1277,77 @@ function dialogueLockAndFocus() {
 function initMarketEvent() {
   if (questMazeChest.status !== "resolved") return;
   despawnNPC(GAME_STATE.huazelei);
-  respawnNPC(GAME_STATE.meizuo, [101.5, 74]);
-  respawnNPC(GAME_STATE.ximen, [105.5, 74]);
+  const meizuo = GAME_STATE.meizuo;
+  const ximen = GAME_STATE.ximen;
+  respawnNPC(meizuo, [101.5, 74]);
+  respawnNPC(ximen, [105.5, 74]);
+  addOnce(INTERACTABLES, { sprite: meizuo });
+  addOnce(INTERACTABLES, { sprite: ximen });
+}
+
+function cutsceneMarket() {
+  if (questMazeChest.status !== "resolved") return;
+  hudSetBagIconVisible(false);
+  dialogueLockAndFocus();
+
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.meizuo), 1);
+  DIALOGUE.effect(() => {
+    const q1 = quests.get("meet_meizuo")!;
+    const q2 = quests.get("meet_ximen")!;
+    questSetStatus(q1, "resolved");
+    questSetStatus(q2, "resolved");
+    playQuestToast({ ...q1, hold: 8 });
+    // playQuestToast({ ...q2, delay: 0.2, hold: 8 }); // TODO: why delay didn't worked?!
+    gsap.delayedCall(0.2, () => playQuestToast({ ...q2, hold: 8 }));
+    playQuestCompleteBanner(`Meet Mei Zuo & Xi Men Complete!`);
+  }, 5);
+
+  DIALOGUE.queue({
+    text: `F4 MEI ZUO: Oh pumila lang kayo ng maayos diyan!`,
+    color: DIALOGUE_COLOR_MEIZUO,
+    portrait: PORTRAIT_MEIZUO,
+  });
+
+  DIALOGUE.onComplete = () => {
+    hudSetBagIconVisible(true);
+    GAME_STATE.sequence.market_cutscene = true;
+  };
+}
+
+function interactMeizuo() {
+  if (!GAME_STATE.sequence.market_cutscene) {
+    cutsceneMarket();
+    return;
+  }
+
+  cancelScheduledFace(GAME_STATE.meizuo);
+  playAttentionBounce(GAME_STATE.meizuo);
+  playExclamation(GAME_STATE.meizuo);
+
+  DIALOGUE.show({
+    text: `MEI ZUO: Yo! CHERYL whazzup?`,
+    color: DIALOGUE_COLOR_MEIZUO,
+    portrait: PORTRAIT_MEIZUO,
+  });
+
+  DIALOGUE.onComplete = () => scheduleFaceDirection(GAME_STATE.meizuo, "s");
+}
+
+function interactXimen() {
+  if (!GAME_STATE.sequence.market_cutscene) {
+    cutsceneMarket();
+    return;
+  }
+
+  cancelScheduledFace(GAME_STATE.ximen);
+
+  DIALOGUE.show({
+    text: `XI MEN: Hi`,
+    color: DIALOGUE_COLOR_XIMEN,
+    portrait: PORTRAIT_XIMEN,
+  });
+
+  DIALOGUE.onComplete = () => scheduleFaceDirection(GAME_STATE.ximen, "s");
 }
 
 function initMainEvent() {

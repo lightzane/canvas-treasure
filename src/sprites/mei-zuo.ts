@@ -27,3 +27,4 @@ export const IMGS_MEIZUO_IDLE: Record<Direction, AnimationSource> = {
 };
 
 export const PORTRAIT_MEIZUO = img("portraits/meizuo.jpg");
+export const DIALOGUE_COLOR_MEIZUO = "blueviolet";

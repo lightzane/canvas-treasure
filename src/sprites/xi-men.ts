@@ -27,3 +27,4 @@ export const IMGS_XIMEN_IDLE: Record<Direction, AnimationSource> = {
 };
 
 export const PORTRAIT_XIMEN = img("portraits/ximen.jpg");
+export const DIALOGUE_COLOR_XIMEN = "darkorange";

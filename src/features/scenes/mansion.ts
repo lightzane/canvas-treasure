@@ -27,7 +27,11 @@ import { preload } from "@/lib/preload";
 import { questSetStatus, type QuestEntry, type QuestId } from "@/lib/quests";
 import { walk, type WalkHandle } from "@/lib/walk";
 import { IMGS_BUTLER_IDLE, PORTRAIT_BUTLER } from "@/sprites/butler";
-import { PORTRAIT_DAOMINGSI, PORTRAIT_DAOMINGSI_INTIMIDATE } from "@/sprites/dao-ming-si";
+import {
+  DIALOGUE_COLOR_DAOMINGSI,
+  PORTRAIT_DAOMINGSI,
+  PORTRAIT_DAOMINGSI_INTIMIDATE,
+} from "@/sprites/dao-ming-si";
 import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
 import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
 import gsap from "gsap";
@@ -185,7 +189,7 @@ function nearMissConversation() {
   }, 0.5);
   DIALOGUE.queue({
     text: `F4 DAO MING SI: Saan ilalagay ang "keys"?`,
-    color: "red",
+    color: DIALOGUE_COLOR_DAOMINGSI,
     portrait: PORTRAIT_DAOMINGSI,
   });
   DIALOGUE.effect(() => BUTLER.face("w"));
@@ -217,7 +221,7 @@ function nearMissConversation() {
   }, 0.5);
   DIALOGUE.queue({
     text: `DAO MING SI: Hinihingi ko ba ang opinyon mo HA?`,
-    color: "red",
+    color: DIALOGUE_COLOR_DAOMINGSI,
     portrait: PORTRAIT_DAOMINGSI_INTIMIDATE,
   });
   DIALOGUE.effect(() => gsap.delayedCall(0.5, () => GAME_STATE.daomingsi.face("s")));

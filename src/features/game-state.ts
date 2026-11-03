@@ -9,9 +9,10 @@ import { QUESTS } from "@/lib/quests";
 import { IMGS_DAOMINGSI_IDLE, IMGS_DAOMINGSI_WALK } from "@/sprites/dao-ming-si";
 import { IMGS_HUAZELEI_IDLE, IMGS_HUAZELEI_WALK } from "@/sprites/hua-ze-lei";
 import { IMGS_MAMA_IDLE } from "@/sprites/mama";
-import { IMGS_MEIZUO_IDLE } from "@/sprites/mei-zuo";
+import { IMGS_MEIZUO_IDLE, IMGS_MEIZUO_WALK } from "@/sprites/mei-zuo";
 import { IMGS_PAPA_IDLE } from "@/sprites/papa";
 import { IMGS_PLAYER_IDLE, IMGS_PLAYER_RUN, IMGS_PLAYER_WALK } from "@/sprites/player";
+import { IMGS_XIMEN_IDLE, IMGS_XIMEN_WALK } from "@/sprites/xi-men";
 
 const boxSize = { width: 64 };
 const shadowOffset = { y: -3 };
@@ -42,8 +43,14 @@ export const GAME_STATE = {
     sprites: { idle: IMGS_HUAZELEI_IDLE, walk: IMGS_HUAZELEI_WALK },
     shadowOffset,
   }),
-  meizuo: new PlayerSprite({ sprites: { idle: IMGS_MEIZUO_IDLE } }),
-  ximen: new PlayerSprite({ sprites: { idle: IMGS_DAOMINGSI_IDLE } }),
+  meizuo: new PlayerSprite({
+    sprites: { idle: IMGS_MEIZUO_IDLE, walk: IMGS_MEIZUO_WALK },
+    shadowOffset,
+  }),
+  ximen: new PlayerSprite({
+    sprites: { idle: IMGS_XIMEN_IDLE, walk: IMGS_XIMEN_WALK },
+    shadowOffset,
+  }),
   boundaries: [] as Zone[],
   /**
    * Sprites to block the player against by their *live* `collisionBox` —
@@ -88,6 +95,7 @@ export const GAME_STATE = {
     retrieving_sheet_2: true,
     mama_running_shoes: true,
     mama_starts_bottle: true,
+    market_cutscene: false,
   },
   quests: QUESTS,
   /**

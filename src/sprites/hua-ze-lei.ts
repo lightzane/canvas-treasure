@@ -27,3 +27,4 @@ export const IMGS_HUAZELEI_IDLE: Record<Direction, AnimationSource> = {
 };
 
 export const PORTRAIT_HUAZELEI = img("portraits/huazelei-blue.jpg");
+export const DIALOGUE_COLOR_HUAZELEI = "blue";
