@@ -13,6 +13,7 @@ export type QuestId =
   | "meet_ximen"
   | "meet_meizuo"
   | "catch_sheets"
+  | "garden_shears"
   | "running_shoes"
   | "music_box";
 
@@ -70,16 +71,23 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 2,
+      qty: 1,
       totalQty: 3,
       status: "active",
+    },
+  ],
+  [
+    "garden_shears",
+    {
+      description: "Find a way to remove the wild bush.",
+      status: "inactive",
     },
   ],
   [
     "running_shoes",
     {
       description: "Find running shoes at home.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
@@ -100,18 +108,18 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
  * notification — call `playQuestToast` (`@/lib/effects/quest-toast`)
  * separately, explicitly, wherever that's actually wanted.
  */
-export function setQuestStatus(quest: QuestId | QuestEntry, status: QuestStatus) {
+export function questSetStatus(quest: QuestId | QuestEntry, status: QuestStatus) {
   const entry = typeof quest === "string" ? GAME_STATE.quests.get(quest) : quest;
   if (entry) entry.status = status;
 }
 
 /** Updates a quest's current progress in place — same `QuestId | QuestEntry` two-form support as `setQuestStatus`, same reasoning. `totalQty` stays whatever the quest was defined with. Does not show the toast notification — see `setQuestStatus`'s own note. */
-export function setQuestProgress(quest: QuestId | QuestEntry, qty: number) {
+export function questSetProgress(quest: QuestId | QuestEntry, qty: number) {
   const entry = typeof quest === "string" ? GAME_STATE.quests.get(quest) : quest;
   if (entry) entry.qty = qty;
 }
 
-export function incQuestProgress(quest: QuestId | QuestEntry, qty: number) {
+export function questIncreaseProgress(quest: QuestId | QuestEntry, qty: number) {
   const entry = typeof quest === "string" ? GAME_STATE.quests.get(quest) : quest;
   if (entry) {
     if (!entry.qty) entry.qty = 0;

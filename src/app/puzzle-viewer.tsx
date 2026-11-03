@@ -2,7 +2,7 @@ import { GAME_STATE } from "@/features/game-state";
 import { bagIncItem } from "@/lib/bag";
 import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { img } from "@/lib/img";
-import { setQuestProgress, setQuestStatus } from "@/lib/quests";
+import { questSetProgress, questSetStatus } from "@/lib/quests";
 import gsap from "gsap";
 import { LucideFlipHorizontal2, LucideFlipVertical2, LucideRotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -131,8 +131,8 @@ export function PuzzleViewer({
 
       if (questCatchSheets.status !== "resolved") {
         bagIncItem("sketch", 1);
-        setQuestProgress(questCatchSheets, 3);
-        setQuestStatus(questCatchSheets, "resolved");
+        questSetProgress(questCatchSheets, 3);
+        questSetStatus(questCatchSheets, "resolved");
         onSolved?.();
         gsap.delayedCall(1, () => {
           playQuestCompleteBanner(`Completed!`);

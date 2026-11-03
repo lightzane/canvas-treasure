@@ -13,23 +13,34 @@ import { IMGS_MEIZUO_IDLE } from "@/sprites/mei-zuo";
 import { IMGS_PAPA_IDLE } from "@/sprites/papa";
 import { IMGS_PLAYER_IDLE, IMGS_PLAYER_RUN, IMGS_PLAYER_WALK } from "@/sprites/player";
 
+const boxSize = { width: 64 };
+const shadowOffset = { y: -3 };
+
 export const GAME_STATE = {
   camera: { x: 0, y: 0 },
   player: new PlayerSprite({
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
-    shadowOffset: { y: -3 },
+    shadowOffset,
     moveSpeed: 500,
   }),
-  mama: new PlayerSprite({ sprites: { idle: IMGS_MAMA_IDLE } }),
-  papa: new PlayerSprite({ sprites: { idle: IMGS_PAPA_IDLE } }),
+  mama: new PlayerSprite({
+    sprites: { idle: IMGS_MAMA_IDLE },
+    boxSize,
+    shadowOffset,
+  }),
+  papa: new PlayerSprite({
+    sprites: { idle: IMGS_PAPA_IDLE },
+    boxSize,
+    shadowOffset,
+  }),
   daomingsi: new PlayerSprite({
     sprites: { idle: IMGS_DAOMINGSI_IDLE, walk: IMGS_DAOMINGSI_WALK },
-    shadowOffset: { y: -3 },
+    shadowOffset,
   }),
   huazelei: new PlayerSprite({
     sprites: { idle: IMGS_HUAZELEI_IDLE, walk: IMGS_HUAZELEI_WALK },
-    shadowOffset: { y: -3 },
+    shadowOffset,
   }),
   meizuo: new PlayerSprite({ sprites: { idle: IMGS_MEIZUO_IDLE } }),
   ximen: new PlayerSprite({ sprites: { idle: IMGS_DAOMINGSI_IDLE } }),
@@ -73,9 +84,9 @@ export const GAME_STATE = {
     mama_parcel: true,
     meet_daomingsi: true,
     meet_huazelei: true,
-    chasing_sheet_2: true,
-    retrieving_sheet_2: true,
-    mama_running_shoes: true,
+    chasing_sheet_2: false,
+    retrieving_sheet_2: false,
+    mama_running_shoes: false,
   },
   quests: QUESTS,
   /**
@@ -107,8 +118,8 @@ export const GAME_STATE = {
     ["paper1", { type: "item", quantity: 1 }],
     ["paper2", { type: "item", quantity: 1 }],
     ["paper3", { type: "item", quantity: 0 }],
-    ["shears", { type: "item", quantity: 1 }],
-    ["shoes", { type: "equip" }], // TODO: comment this OUT on production
+    ["shears", { type: "item", quantity: 0 }],
+    // ["shoes", { type: "equip" }], // TODO: comment this OUT on production
   ]),
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,

@@ -32,9 +32,10 @@ import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
+import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
-import { QUESTS, setQuestStatus } from "@/lib/quests";
+import { QUESTS, questSetStatus } from "@/lib/quests";
 import gsap from "gsap";
 
 const IMG_MAP_BG = img("maps/home.png");
@@ -65,11 +66,9 @@ let firstQuest: QuestToastHandle | undefined;
 let parcelBounce: AttentionBounceHandle | null = null;
 let parcelShine: ShineHandle | null = null;
 let journalShine: ShineHandle | null = null;
-let mamaFaceNorthTimer: gsap.core.Tween | null = null;
 function scheduleMamaFaceNorth() {
   if (bagHasItem("parcel")) hudSetBagIconVisible(true);
-  mamaFaceNorthTimer?.kill(); // cancel any earlier pending one — e.g. from spam-talking — so only the latest survives
-  mamaFaceNorthTimer = gsap.delayedCall(2, () => GAME_STATE.mama.face("w"));
+  scheduleFaceDirection(GAME_STATE.mama, "w");
 }
 
 let isMamaOutside = false;
@@ -179,7 +178,7 @@ function interactions(target: Sprite | undefined) {
 
   if (target === GAME_STATE.mama) {
     hudSetBagIconVisible(false);
-    mamaFaceNorthTimer?.kill();
+    cancelScheduledFace(GAME_STATE.mama);
     if (!bagHasItem("parcel"))
       DIALOGUE.show({ text: "MAMA: Paki kuha mo na ang parcel at tingnan.", color: "red" });
     else {
@@ -200,7 +199,7 @@ function interactions(target: Sprite | undefined) {
       const quest = QUESTS.get("parcel")!;
       playQuestToast({ description: quest.description, resolved: true });
       playQuestCompleteBanner(`Completed. A Journey Begins...!`);
-      setQuestStatus(quest, "resolved");
+      questSetStatus(quest, "resolved");
 
       GAME_STATE.bag.set("parcel", {
         type: "item",
@@ -250,7 +249,7 @@ function revealParcel() {
     DIALOGUE.hideBox();
     const quest = QUESTS.get("invitation_postcard")!;
     playQuestToast({ description: quest.description });
-    setQuestStatus(quest, "active");
+    questSetStatus(quest, "active");
     playQuestCompleteBanner(`Treasure Hunt Begins...!`);
   }, 3.5);
   DIALOGUE.effect(() => {
@@ -322,7 +321,7 @@ function interactShoes() {
   DIALOGUE.effect(() => {
     removeInteractable(interactables, runningShoes);
     DIALOGUE.hideBox();
-    setQuestStatus(questRunningShoes, "resolved");
+    questSetStatus(questRunningShoes, "resolved");
     bagAddItem("shoes");
     playQuestToast({ description: questRunningShoes.description, resolved: true });
     playQuestCompleteBanner(`Running Shoes Acquired!`);

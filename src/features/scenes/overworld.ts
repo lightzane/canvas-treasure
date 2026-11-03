@@ -27,15 +27,20 @@ import { drift } from "@/lib/drift";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
-import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
+import {
+  playQuestCompleteBanner,
+  playQuestToast,
+  type QuestToastHandle,
+} from "@/lib/effects/quest-toast";
 import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { drawFootprints, trackFootstep, updateFootprints } from "@/lib/footprints";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
+import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
-import { incQuestProgress, setQuestProgress, setQuestStatus } from "@/lib/quests";
+import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
 import { walk } from "@/lib/walk";
 import { PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
 import gsap from "gsap";
@@ -60,12 +65,16 @@ const bigFountainA = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, sca
 const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 
 // removable decors
-const wildBushPaper = new Sprite({
-  src: IMG_WILD_BUSH_CENTER,
+const wildBushConfigs = {
   scale: 2,
   boxSize: { height: 32 },
-  collisionBox: { height: 32, anchor: "center" },
-});
+  collisionBox: { height: 32, anchor: "center" as const },
+};
+const wildBushPaper = new Sprite({ ...wildBushConfigs, src: IMG_WILD_BUSH_CENTER });
+const wildBushMazeEntrance = new Sprite({ ...wildBushConfigs, src: IMG_WILD_BUSH_CENTER });
+const wildBushMazeChest = new Sprite({ ...wildBushConfigs, src: IMG_WILD_BUSH_CENTER });
+const wildBushBeach1 = new Sprite({ ...wildBushConfigs, src: IMG_WILD_BUSH_CENTER });
+const wildBushBeach2 = new Sprite({ ...wildBushConfigs, src: IMG_WILD_BUSH_CENTER });
 
 const paperSingle = new Sprite({ src: IMG_PAPER_SINGLE, scale: 2 });
 const paperMulti = new Sprite({
@@ -85,11 +94,19 @@ const DECORS: Sprite[] = [
   bigFountainA,
   bigFountainB,
   wildBushPaper,
+  wildBushMazeEntrance,
+  wildBushMazeChest,
+  wildBushBeach1,
+  wildBushBeach2,
 ];
 const NPCS: PlayerSprite[] = [GAME_STATE.papa];
 const INTERACTABLES: Interactable[] = [
   { sprite: GAME_STATE.papa, label: "Talk" },
-  { sprite: wildBushPaper, labelOffset: { y: -16 } },
+  { sprite: wildBushPaper, label: "Interact", labelOffset: { y: -16 } },
+  { sprite: wildBushMazeEntrance, label: "Interact", labelOffset: { y: -16 } },
+  { sprite: wildBushMazeChest, label: "Interact", labelOffset: { y: -16 } },
+  { sprite: wildBushBeach1, label: "Interact", labelOffset: { y: -16 } },
+  { sprite: wildBushBeach2, label: "Interact", labelOffset: { y: -16 } },
 ];
 const HUAZELEI_INTERACTABLE: Interactable = { sprite: GAME_STATE.huazelei, label: "Talk" };
 let paperWindAnimating = false;
@@ -102,16 +119,12 @@ let sandZoneCount = 0;
 
 let tracingPaper2ShineHandle: ShineHandle | undefined;
 
-let mamaFacePapaTimer: gsap.core.Tween | null = null;
 function scheduleMamaFacePapa() {
-  mamaFacePapaTimer?.kill();
-  mamaFacePapaTimer = gsap.delayedCall(2, () => GAME_STATE.mama.face("d"));
+  scheduleFaceDirection(GAME_STATE.mama, "d");
 }
 
-let papaFaceMamaTimer: gsap.core.Tween | null = null;
 function schedulePapaFaceMama() {
-  papaFaceMamaTimer?.kill();
-  papaFaceMamaTimer = gsap.delayedCall(2, () => GAME_STATE.papa.face("a"));
+  scheduleFaceDirection(GAME_STATE.papa, "a");
 }
 
 function exitMap() {
@@ -188,11 +201,22 @@ export const overworldScene: Scene = {
     placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
     placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
     placeAtTile({ sprite: wildBushPaper, tile: [42, 73.5] });
+    placeAtTile({ sprite: wildBushMazeEntrance, tile: [106, 10] });
+    placeAtTile({ sprite: wildBushMazeChest, tile: [117, 9] });
+    placeAtTile({ sprite: wildBushBeach1, tile: [20, 51] });
+    placeAtTile({ sprite: wildBushBeach2, tile: [20, 52] });
 
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
-    GAME_STATE.obstacles = [...NPCS, wildBushPaper];
+    GAME_STATE.obstacles = [
+      ...NPCS,
+      wildBushPaper,
+      wildBushMazeEntrance,
+      wildBushMazeChest,
+      wildBushBeach1,
+      wildBushBeach2,
+    ];
 
     if (!GAME_STATE.sequence.intro) {
       GAME_STATE.sequence.intro = true;
@@ -310,7 +334,12 @@ function initTracingPaper2() {
       labelOffset: { y: 40 },
     });
     tracingPaper2ShineHandle?.stop();
-    tracingPaper2ShineHandle = playShine(paperSingle, { color: "#fff", mode: "hidden", size: 32 });
+    tracingPaper2ShineHandle = playShine(paperSingle, {
+      color: "#fff",
+      mode: "hidden",
+      size: 32,
+      delay: overworldScene.fadeIn!,
+    });
   }
 }
 
@@ -334,7 +363,7 @@ function cutsceneRunningShoes() {
     return;
   }
 
-  mamaFacePapaTimer?.kill();
+  cancelScheduledFace(GAME_STATE.mama);
 
   exitMap();
   walk(GAME_STATE.player, [58.9, 42], { animated: true, onComplete: convo });
@@ -346,7 +375,7 @@ function cutsceneRunningShoes() {
     playExclamation(mama);
 
     DIALOGUE.show({
-      text: `MAMA: Ching! Nakita ko hinahabol mo yung papel...`,
+      text: `MAMA: CHING! Nakita ko hinahabol mo yung papel...`,
       color: "red",
     });
     DIALOGUE.queue(`Buti nakita ko si HUA ZE LEI, pinatawag kita.`);
@@ -382,7 +411,19 @@ function interactions(target: Sprite | undefined) {
       if (chasing_sheet_2 && !retrieving_sheet_2) interactPaper2Part2();
       break;
     case wildBushPaper:
-      interactWildBushPaper();
+      interactWildBush(wildBushPaper);
+      break;
+    case wildBushMazeEntrance:
+      interactWildBush(wildBushMazeEntrance);
+      break;
+    case wildBushMazeChest:
+      interactWildBush(wildBushMazeChest);
+      break;
+    case wildBushBeach1:
+      interactWildBush(wildBushBeach1);
+      break;
+    case wildBushBeach2:
+      interactWildBush(wildBushBeach2);
       break;
   }
 }
@@ -409,7 +450,7 @@ function interactPapa() {
     return;
   }
 
-  DIALOGUE.show({ text: "PAPA: Yes Ching?", color: "blue" });
+  DIALOGUE.show({ text: "PAPA: Yes CHING?", color: "blue" });
 
   DIALOGUE.onComplete = () => {
     if (questRunningShoes.status !== "inactive") schedulePapaFaceMama();
@@ -420,7 +461,7 @@ function interactMama() {
   if (questCatchSheets.status === "inactive") return;
 
   DIALOGUE.show({
-    text: "MAMA: Yes Ching?",
+    text: "MAMA: Yes CHING?",
     color: "red",
   });
 
@@ -447,9 +488,9 @@ function meetLeiConversation() {
   let shineHandle: ShineHandle | null = null;
   DIALOGUE.effect(() => {
     const quest = GAME_STATE.quests.get("meet_huazelei")!;
-    playQuestToast({ description: quest.description, resolved: true });
+    questSetStatus(quest, "resolved");
+    playQuestToast(quest);
     playQuestCompleteBanner(`Meet Hua Ze Lei Completed!`);
-    setQuestStatus(quest, "resolved");
   }, 5);
 
   DIALOGUE.show({
@@ -514,7 +555,7 @@ function meetLeiConversation() {
     DIALOGUE.hideBox();
     const quest = GAME_STATE.quests.get("catch_sheets")!;
     playQuestToast(quest);
-    setQuestStatus(quest, "active");
+    questSetStatus(quest, "active");
     spawnPaperMulti();
   }, 0.5);
 
@@ -628,7 +669,7 @@ function interactPaperMulti() {
 
     DIALOGUE.onComplete = () => {
       hudSetBagIconVisible(true);
-      incQuestProgress(questCatchSheets, 1);
+      questIncreaseProgress(questCatchSheets, 1);
       playQuestToast(questCatchSheets);
       bagIncItem("paper1");
       initTracingPaper2();
@@ -694,7 +735,7 @@ function interactPaper2Part2() {
   DIALOGUE.show(`Nahuli rin kita — 2 down! 1 to go...`);
   DIALOGUE.effect(() => {
     DIALOGUE.hideBox();
-    setQuestProgress(questCatchSheets, 2);
+    questSetProgress(questCatchSheets, 2);
     playQuestToast(questCatchSheets);
     bagIncItem("paper2");
   }, 1.5);
@@ -707,7 +748,7 @@ function interactPaper2Part2() {
   DIALOGUE.effect(() => GAME_STATE.huazelei.face("d"));
 
   DIALOGUE.queue({
-    text: `HUA ZE LEI: Oh Cheryl, nakita ko hinahabol mo pa rin sketch paper ko.`,
+    text: `HUA ZE LEI: Oh CHERYL, nakita ko hinahabol mo pa rin sketch paper ko.`,
     portrait: PORTRAIT_HUAZELEI,
     color: "blue",
   });
@@ -734,23 +775,41 @@ function interactPaper2Part2() {
     const q = GAME_STATE.quests.get("running_shoes")!;
     playQuestToast(questCatchSheets);
     gsap.delayedCall(0.8, () => playQuestToast(q));
-    setQuestStatus(q, "active");
+    questSetStatus(q, "active");
     placeAtTile({ sprite: GAME_STATE.huazelei, tile: [84.5, 36] });
     hudSetBagIconVisible(true);
     spawnMamaAtOverworld();
   });
 }
 
-function interactWildBushPaper() {
+let shearsToastHandle: QuestToastHandle | null;
+
+function interactWildBush(bushSprite: Sprite) {
   if (!bagHasItem("shears")) {
     DIALOGUE.show(`Di ako makadaan, may halaman sa daan...`);
+
+    if (bushSprite === wildBushPaper && GAME_STATE.sequence.chasing_sheet_2) {
+      DIALOGUE.onComplete = () => {
+        shearsToastHandle?.stop();
+        const quest = GAME_STATE.quests.get("garden_shears")!;
+        questSetStatus(quest, "active");
+        shearsToastHandle = playQuestToast({
+          ...quest,
+          hold: 10,
+          onComplete() {
+            shearsToastHandle = null;
+          },
+        });
+      };
+    }
+
     return;
   }
 
   DIALOGUE.show(`Using garden shears to trim the wild bush...`);
   DIALOGUE.onComplete = () => {
-    removeInteractable(INTERACTABLES, wildBushPaper);
-    remove(DECORS, wildBushPaper);
-    remove(GAME_STATE.obstacles, wildBushPaper);
+    removeInteractable(INTERACTABLES, bushSprite);
+    remove(DECORS, bushSprite);
+    remove(GAME_STATE.obstacles, bushSprite);
   };
 }

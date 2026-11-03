@@ -24,7 +24,7 @@ import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
-import { setQuestStatus, type QuestEntry, type QuestId } from "@/lib/quests";
+import { questSetStatus, type QuestEntry, type QuestId } from "@/lib/quests";
 import { walk, type WalkHandle } from "@/lib/walk";
 import { IMGS_BUTLER_IDLE, PORTRAIT_BUTLER } from "@/sprites/butler";
 import { PORTRAIT_DAOMINGSI, PORTRAIT_DAOMINGSI_INTIMIDATE } from "@/sprites/dao-ming-si";
@@ -250,7 +250,7 @@ function nearMissConversation() {
     const quests: QuestEntry[] = ["daoming_keys", "meet_huazelei", "meet_meizuo", "meet_ximen"].map(
       (id) => {
         const quest = GAME_STATE.quests.get(id as QuestId)!;
-        setQuestStatus(quest, "active");
+        questSetStatus(quest, "active");
         return quest;
       },
     );

@@ -18,7 +18,7 @@ export interface Interactable {
   probeDistance?: number;
   /** Turn to face the player once interacted with. No-op for a plain `Sprite` (only a `PlayerSprite` — an NPC — can face anything). @default true */
   facePlayer?: boolean;
-  /** Verb shown in the prompt popup above this one's head while it's the player's current target — "talk", "get", "open", ... @default "interact" */
+  /** Verb shown in the prompt popup above this one's head while it's the player's current target — "talk", "get", "open", ... @default "Talk" */
   label?: string;
   /** Nudges the label popup's position, in screen px, relative to its default (horizontally centered on `boxSize`, just above the sprite's head) — not every sprite's artwork is drawn the same relative to its own `position`/`boxSize`, so this corrects per sprite rather than needing one offset that fits everyone. @default { x: 0, y: 0 } */
   labelOffset?: { x?: number; y?: number };
@@ -175,7 +175,7 @@ export function drawInteractPrompt(
   interactables: Interactable[],
 ) {
   const entry = interactables.find((i) => i.sprite === sprite);
-  const label = entry?.label ?? "Interact";
+  const label = entry?.label ?? "Talk";
   const offsetX = entry?.labelOffset?.x ?? 0;
   const offsetY = entry?.labelOffset?.y ?? 0;
 

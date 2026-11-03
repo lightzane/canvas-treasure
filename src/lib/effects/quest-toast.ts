@@ -1,4 +1,5 @@
 import { GAME_FONT_FAMILY } from "@/constants/game-settings";
+import type { QuestEntry } from "@/lib/quests";
 import gsap from "gsap";
 
 export interface QuestToastOptions {
@@ -68,6 +69,24 @@ function repositionToasts() {
 }
 
 /**
+ * Normalizes `playQuestToast`'s three accepted input forms into one shape.
+ * A `QuestEntry` always has `status`; `QuestToastOptions` never does — a
+ * reliable runtime discriminant matching the type-level distinction.
+ */
+function normalizeToastInput(input: string | QuestToastOptions | QuestEntry): QuestToastOptions {
+  if (typeof input === "string") return { description: input };
+  if ("status" in input) {
+    return {
+      description: input.description,
+      qty: input.qty,
+      totalQty: input.totalQty,
+      resolved: input.status === "resolved",
+    };
+  }
+  return input;
+}
+
+/**
  * A disposable "journal updated" banner, top-left of the screen, showing
  * `options.description` briefly — pops in, holds, fades out, removes
  * itself. Stacks correctly with any other toasts already showing (each one
@@ -86,27 +105,33 @@ function repositionToasts() {
  * not the raw browser viewport (which `layout.tsx` centers the canvas
  * within, rather than pinning to its top-left).
  *
- * Doesn't touch `GAME_STATE.quests` itself — call `setQuestStatus`/
- * `setQuestProgress` (`@/lib/quests`) separately, explicitly, alongside
+ * Doesn't touch `GAME_STATE.quests` itself — call `questSetStatus`/
+ * `questSetProgress` (`@/lib/quests`) separately, explicitly, alongside
  * this, same as `playExclamation`/`playAttentionBounce` already get called
  * next to a `GAME_STATE.bag.set(...)` rather than bundled into one call.
  *
- * Takes a bare string as shorthand for `{ description }` — same two-form
- * idea as `playQuestCompleteBanner`'s own `string | {...}` and
- * `DialogueInput` (`dialogue.ts`) — or the full options object when
- * `resolved`/`qty`/`hold`/etc. are needed too.
+ * Takes a bare string as shorthand for `{ description }`, the full options
+ * object when `resolved`/`qty`/`hold`/etc. are needed, or a `QuestEntry`
+ * straight from `GAME_STATE.quests` — its `status`/`qty`/`totalQty` are
+ * read directly, so `resolved` is derived automatically from
+ * `status === "resolved"` instead of needing to be passed redundantly
+ * alongside it. Same two-form idea as `playQuestCompleteBanner`'s own
+ * `string | {...}` and `DialogueInput` (`dialogue.ts`), extended with this
+ * third form the same way `questSetStatus`/`questSetProgress` accept
+ * `QuestId | QuestEntry`.
  *
  * @example playQuestToast("Catch the sheets.");
  * @example playQuestToast({ description: quest.description });
  * @example playQuestToast({ description: quest.description, qty: 5, totalQty: 10 }); // half-filled pie
  * @example playQuestToast({ description: quest.description, resolved: true });
+ * @example playQuestToast(questEntry); // resolved/qty/totalQty read straight off it
  * @example
  * const toast = playQuestToast({ description: "Waiting on something...", hold: "infinite" });
  * // ...later...
  * toast.stop();
  */
-export function playQuestToast(input: string | QuestToastOptions): QuestToastHandle {
-  const options: QuestToastOptions = typeof input === "string" ? { description: input } : input;
+export function playQuestToast(input: string | QuestToastOptions | QuestEntry): QuestToastHandle {
+  const options = normalizeToastInput(input);
   const { delay = 0 } = options;
 
   let pending: gsap.core.Tween | null = null;
