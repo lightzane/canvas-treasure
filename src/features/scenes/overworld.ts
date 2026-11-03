@@ -10,7 +10,7 @@ import {
 } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
-import type { PlayerSprite } from "@/features/sprite-player";
+import { PlayerSprite } from "@/features/sprite-player";
 import {
   checkTriggerZones,
   createBoundaries,
@@ -43,11 +43,17 @@ import { preload } from "@/lib/preload";
 import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
 import { walk } from "@/lib/walk";
 import { PORTRAIT_DAOMINGSI, PORTRAIT_DAOMINGSI_INTIMIDATE } from "@/sprites/dao-ming-si";
+import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
+import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
 import { PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
 import gsap from "gsap";
 
 const IMG_MAP_BG = img("maps/overworld.png");
 const IMG_MAP_FG = img("maps/overworld-fg.png");
+
+const IMG_MAP_EVENT_BG = img("maps/overworld_event.png");
+// const IMG_MAP_FG = img("maps/overworld-fg.png");
+
 const IMG_FOUNTAIN_SMALL = img("others/fountain-small.png");
 const IMG_FOUNTAIN_BIG = img("others/fountain-big.png");
 const IMG_PAPER_SINGLE = img("others/paper-single.png");
@@ -64,9 +70,12 @@ const background = new Sprite({ src: IMG_MAP_BG });
 /** Drawn on top of the player (tree canopies, roof overhangs, etc). */
 const foreground = new Sprite({ src: IMG_MAP_FG });
 
+const backgroundEvent = new Sprite({ src: IMG_MAP_EVENT_BG });
+
 // static decors
 const smallFountainA = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
 const smallFountainB = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
+const smallFountainC = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
 const bigFountainA = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 const spHouse = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
@@ -111,6 +120,7 @@ const paperWind2 = new Sprite({ src: IMG_PAPER_WIND, scale: 2, frames: { max: 8,
 const DECORS: Sprite[] = [
   smallFountainA,
   smallFountainB,
+  smallFountainC,
   bigFountainA,
   bigFountainB,
   wildBushPaper,
@@ -122,6 +132,18 @@ const DECORS: Sprite[] = [
 ];
 
 const NPCS: PlayerSprite[] = [GAME_STATE.papa];
+
+const spawnGuards = () => [
+  new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } }),
+];
+
+const NORTH_GUARDS: PlayerSprite[] = spawnGuards();
+const WEST_GUARDS: PlayerSprite[] = spawnGuards();
+const EAST_GUARDS: PlayerSprite[] = spawnGuards();
+
+const PARK_EVENT_GUARDS: PlayerSprite[] = [...NORTH_GUARDS, ...WEST_GUARDS, ...EAST_GUARDS];
 
 const wildBushInteractablesCfgs: Partial<Interactable> = {
   label: "Interact",
@@ -211,11 +233,12 @@ const questCatchSheets = quests.get("catch_sheets")!;
 const questRunningShoes = quests.get("running_shoes")!;
 const questMessageBottle = quests.get("message_in_bottle")!;
 const questMazeChest = quests.get("maze_chest")!;
+const questDaoMingKeys = quests.get("daoming_keys")!;
 
 placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
 placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
-placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
 placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
+placeAtTile({ sprite: smallFountainC, tile: [92.25, 76.5] });
 placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
 placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
 placeAtTile({ sprite: wildBushPaper, tile: [42, 73.5] });
@@ -227,6 +250,7 @@ placeAtTile({ sprite: spHouse, tile: [60, 45] });
 placeAtTile({ sprite: spMansion1, tile: [85, 30] });
 placeAtTile({ sprite: spMansion2, tile: [88, 30] });
 placeAtTile({ sprite: msgBottle1, tile: [45, 74] });
+placeAtTile({ sprite: chestEmpty, tile: [119.75, 7.75] });
 
 export const overworldScene: Scene = {
   fadeIn: 1,
@@ -236,7 +260,9 @@ export const overworldScene: Scene = {
     foreground.image,
     smallFountainA.image,
     bigFountainA.image,
-  ]).then(() => prepareViewportClamped([background, foreground])),
+    backgroundEvent.image,
+    // TODO: is this the right place for the backgroundEvent, where we want to lazy load it once in a specific time?
+  ]).then(() => prepareViewportClamped([background, foreground, backgroundEvent])),
 
   enter() {
     sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
@@ -307,12 +333,17 @@ export const overworldScene: Scene = {
   },
 
   draw(ctx) {
-    drawViewportClamped(ctx, background);
+    if (questDaoMingKeys.status === "resolved") drawViewportClamped(ctx, backgroundEvent);
+    else drawViewportClamped(ctx, background);
+
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
     DECORS.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
     drawFootprints(ctx);
     drawYSorted(ctx, [GAME_STATE.player, ...NPCS.filter(isInViewport)]);
-    drawViewportClamped(ctx, foreground);
+
+    if (questDaoMingKeys.status === "resolved") drawViewportClamped(ctx, foreground);
+    else drawViewportClamped(ctx, foreground);
+
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
 
     if (paperWindAnimating) paperWind1.draw(ctx);
@@ -325,6 +356,8 @@ function initQuests() {
   initTracingPaper2();
   initCoreMessageBottle();
   spawnMazeChest();
+  initMarketEvent();
+  initMainEvent();
 }
 
 function initQuestsDaomingsi() {
@@ -530,6 +563,11 @@ function interactions(target: Sprite | undefined) {
     case chestClose:
       openMazeChest();
       break;
+  }
+
+  if (PARK_EVENT_GUARDS.includes(target as PlayerSprite)) {
+    DIALOGUE.show(`Bawal po muna dito ang entrance. Pasensiya na. May private event lang po...`);
+    return;
   }
 }
 
@@ -1049,12 +1087,11 @@ function openMazeChest() {
     removeInteractable(INTERACTABLES, chestClose);
     playExclamation(GAME_STATE.player);
   });
-  DIALOGUE.effect(dialogueLockAndFocus, 3);
+  DIALOGUE.effect(dialogueLockAndFocus, 1.5);
   DIALOGUE.queue(`A music box...!`);
   DIALOGUE.queue(`Kunin ko na...`);
   DIALOGUE.effect(() => {
     dialogueLockAndFocus();
-    placeAtTile({ sprite: chestEmpty, tile: [119.75, 7.75] });
     addOnce(DECORS, chestEmpty);
     addOnce(GAME_STATE.obstacles, chestEmpty);
     respawnNPC(GAME_STATE.daomingsi, [108, 7]);
@@ -1063,10 +1100,12 @@ function openMazeChest() {
       animated: true,
       onComplete: () => GAME_STATE.daomingsi.face("s"),
     });
-    walk(GAME_STATE.huazelei, [111, 7.25], {
-      animated: true,
-      onComplete: () => GAME_STATE.huazelei.face("w"),
-    });
+    gsap.delayedCall(0.1, () =>
+      walk(GAME_STATE.huazelei, [111, 7.25], {
+        animated: true,
+        onComplete: () => GAME_STATE.huazelei.face("w"),
+      }),
+    );
     gsap.delayedCall(0.5, () => GAME_STATE.player.face("a"));
     gsap.delayedCall(1.3, () => {
       playAttentionBounce(GAME_STATE.player, { hops: 3, duration: 0.09 });
@@ -1128,7 +1167,7 @@ function openMazeChest() {
   DIALOGUE.queue(`
     (pabulong) Ibigay mo na sa akin yung
     nakuha mo bago pa tayo mabisto ni AH SI
-    na nagpapanggap. Ako na bahala CHERYL.
+    na nagpapanggap.
   `);
   DIALOGUE.queue(`Maraming salamat sa paghanap nito sa akin.`);
   DIALOGUE.effect(() => GAME_STATE.huazelei.face("a"));
@@ -1168,6 +1207,7 @@ function openMazeChest() {
     portrait: PORTRAIT_HUAZELEI,
     color: "blue",
   });
+  DIALOGUE.effect(() => GAME_STATE.huazelei.face("s"));
   DIALOGUE.queue(`Makikita mo lang sila kung pumunta ka sa timog na bahagi nitong mansion.`);
   DIALOGUE.queue(`Sa timog ng park mismo makikita mo ang market dito.`);
   DIALOGUE.queue(`Sa market ginagawa ni XI MEN at MEI ZUO ang bahagi nila para sa event.`);
@@ -1182,9 +1222,7 @@ function openMazeChest() {
       ],
       {
         animated: true,
-        onComplete() {
-          despawnNPC(GAME_STATE.huazelei);
-        },
+        onComplete: initMarketEvent,
       },
     );
   }, 1.5);
@@ -1199,7 +1237,9 @@ function openMazeChest() {
     playQuestToast(questMazeChest);
     playQuestCompleteBanner(`Completed!`);
   }, 3.5);
-  DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
+  DIALOGUE.onComplete = () => {
+    hudSetBagIconVisible(true);
+  };
 }
 
 function respawnNPC(npc: PlayerSprite, tile?: [number, number]) {
@@ -1219,4 +1259,48 @@ function dialogueLockAndFocus() {
   GAME_STATE.movementLocked = true;
   DIALOGUE.hideBox();
   DIALOGUE.clearPortrait();
+}
+
+function initMarketEvent() {
+  if (questMazeChest.status !== "resolved") return;
+  despawnNPC(GAME_STATE.huazelei);
+  respawnNPC(GAME_STATE.meizuo, [101.5, 74]);
+  respawnNPC(GAME_STATE.ximen, [105.5, 74]);
+}
+
+function initMainEvent() {
+  if (questDaoMingKeys.status !== "resolved") return;
+  addOnce(DECORS, chestEmpty);
+  addOnce(GAME_STATE.obstacles, chestEmpty);
+  despawnNPC(GAME_STATE.huazelei);
+  despawnNPC(GAME_STATE.mama);
+  despawnNPC(GAME_STATE.papa);
+
+  let nLoc = [92.5, 32.4] as [number, number];
+  NORTH_GUARDS.forEach((npc, i) => {
+    let y = nLoc[1];
+    if (i % 2 === 0) y -= 0.15;
+    respawnNPC(npc, [(nLoc[0] += 0.85), y]);
+    npc.face("w");
+  });
+
+  let wLoc = [78.5, 45] as [number, number];
+  WEST_GUARDS.forEach((npc, i) => {
+    let x = wLoc[0];
+    if (i % 2 === 0) x -= 0.5;
+    respawnNPC(npc, [x, (wLoc[1] += 0.5)]);
+    npc.face("a");
+  });
+
+  let eLoc = [110, 45] as [number, number];
+  EAST_GUARDS.forEach((npc, i) => {
+    let x = eLoc[0];
+    if (i % 2 === 0) x += 0.5;
+    respawnNPC(npc, [x, (eLoc[1] += 0.5)]);
+    npc.face("d");
+  });
+
+  PARK_EVENT_GUARDS.forEach((npc) => {
+    addOnce(INTERACTABLES, { sprite: npc, probeDistance: 8 });
+  });
 }
