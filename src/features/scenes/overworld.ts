@@ -42,6 +42,7 @@ import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
 import { walk } from "@/lib/walk";
+import { PORTRAIT_DAOMINGSI, PORTRAIT_DAOMINGSI_INTIMIDATE } from "@/sprites/dao-ming-si";
 import { PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
 import gsap from "gsap";
 
@@ -57,6 +58,7 @@ const IMG_SIGNPOST = img("others/signpost.png");
 const IMG_MESSAGE_BOTTLE_H = img("others/message-bottle-h.png");
 const IMG_CHEST_CLOSE = img("others/chest-close.png");
 const IMG_CHEST_OPEN = img("others/chest-open.png");
+const IMG_CHEST_EMPTY = img("others/chest-empty.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 /** Drawn on top of the player (tree canopies, roof overhangs, etc). */
@@ -72,12 +74,15 @@ const spMansion1 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
 const spMansion2 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
 const coreMsgBottle = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
 const msgBottle1 = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
-const chestClose = new Sprite({
-  src: IMG_CHEST_CLOSE,
+
+const chestCfgs: Partial<Sprite> = {
   scale: 2,
   boxSize: { width: 32, height: 32 },
-});
-const chestOpen = new Sprite({ src: IMG_CHEST_OPEN, scale: 2 });
+};
+
+const chestClose = new Sprite({ ...chestCfgs, src: IMG_CHEST_CLOSE });
+const chestOpen = new Sprite({ ...chestCfgs, src: IMG_CHEST_OPEN });
+const chestEmpty = new Sprite({ ...chestCfgs, src: IMG_CHEST_EMPTY });
 
 // removable decors
 const wildBushConfigs = {
@@ -989,7 +994,7 @@ function completeCoreMsgBottle() {
   if (questMessageBottle.status !== "active") return;
   GAME_STATE.movementLocked = true;
 
-  DIALOGUE.queue(`...,`);
+  DIALOGUE.queue(`... ... ...`);
   DIALOGUE.effect(() => {
     playAttentionBounce(GAME_STATE.player);
     playExclamation(GAME_STATE.player);
@@ -1029,11 +1034,172 @@ function spawnMazeChest() {
   placeAtTile({ sprite: chestClose, tile: [119.75, 7.75] });
   addOnce(DECORS, chestClose);
   addOnce(GAME_STATE.obstacles, chestClose);
-  addOnce(INTERACTABLES, { sprite: chestClose, label: "Open" });
+  addOnce(INTERACTABLES, { sprite: chestClose, label: "Open", probeDistance: TILE_SIZE / 2 });
 }
 
 function openMazeChest() {
-  DIALOGUE.show("A chest!");
+  if (questMazeChest.status !== "active") return;
+
+  DIALOGUE.show("A chest— open ko na ito...");
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    placeAtTile({ sprite: chestOpen, tile: [119.75, 7.75] });
+    addOnce(DECORS, chestOpen);
+    addOnce(GAME_STATE.obstacles, chestOpen);
+    removeInteractable(INTERACTABLES, chestClose);
+    playExclamation(GAME_STATE.player);
+  });
+  DIALOGUE.effect(dialogueLockAndFocus, 3);
+  DIALOGUE.queue(`A music box...!`);
+  DIALOGUE.queue(`Kunin ko na...`);
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    placeAtTile({ sprite: chestEmpty, tile: [119.75, 7.75] });
+    addOnce(DECORS, chestEmpty);
+    addOnce(GAME_STATE.obstacles, chestEmpty);
+    respawnNPC(GAME_STATE.daomingsi, [108, 7]);
+    respawnNPC(GAME_STATE.huazelei, [107.5, 7.25]);
+    walk(GAME_STATE.daomingsi, [111.5, 7], {
+      animated: true,
+      onComplete: () => GAME_STATE.daomingsi.face("s"),
+    });
+    walk(GAME_STATE.huazelei, [111, 7.25], {
+      animated: true,
+      onComplete: () => GAME_STATE.huazelei.face("w"),
+    });
+    gsap.delayedCall(0.5, () => GAME_STATE.player.face("a"));
+    gsap.delayedCall(1.3, () => {
+      playAttentionBounce(GAME_STATE.player, { hops: 3, duration: 0.09 });
+      playExclamation(GAME_STATE.player);
+    });
+  }, 0.3);
+  DIALOGUE.queue({
+    text: `DAO MING SI: LEI, kailangan natin maayos na ang park para sa event mamaya...`,
+    color: "red",
+    portrait: PORTRAIT_DAOMINGSI,
+  });
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    GAME_STATE.daomingsi.face("d");
+  }, 2);
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    GAME_STATE.huazelei.face("d");
+    playExclamation(GAME_STATE.daomingsi, {
+      onComplete: () =>
+        walk(GAME_STATE.daomingsi, { direction: "d", steps: 2 }, { animated: true }),
+    });
+    playAttentionBounce(GAME_STATE.daomingsi, { hops: 5, duration: 0.05, delay: 2 });
+    playExclamation(GAME_STATE.daomingsi, { delay: 2 });
+    playExclamation(GAME_STATE.player, { delay: 2 });
+    playAttentionBounce(GAME_STATE.daomingsi, { hops: 5, duration: 0.05, delay: 4 });
+    playExclamation(GAME_STATE.daomingsi, { delay: 4 });
+    playExclamation(GAME_STATE.player, { delay: 4 });
+    gsap.delayedCall(0.8, () =>
+      walk(
+        GAME_STATE.huazelei,
+        [
+          { direction: "a", steps: 2 },
+          { direction: "s", steps: 2.5 },
+          { direction: "d", steps: 8.5 },
+        ],
+        { animated: true },
+      ),
+    );
+  }, 5);
+  DIALOGUE.queue({
+    text: `DAO MING SI: Bakit mo naman pinutol ang mga halaman sa hardin ko?!`,
+    portrait: PORTRAIT_DAOMINGSI_INTIMIDATE,
+  });
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    walk(GAME_STATE.huazelei, { direction: "w", steps: 2.5 }, { animated: true });
+    playAttentionBounce(GAME_STATE.player, { hops: 2, duration: 0.09 });
+    playExclamation(GAME_STATE.player, { hold: 10 });
+  }, 1);
+  DIALOGUE.queue({ text: `... ... ...`, portrait: null, color: "teal" });
+  DIALOGUE.effect(() => GAME_STATE.huazelei.face("a"));
+  DIALOGUE.queue({
+    text: `HUA ZE LEI: Pasensiya ka na AH SI. May pinapahanap kasi ako sa kanya kanina...`,
+    color: "blue",
+    portrait: PORTRAIT_HUAZELEI,
+  });
+  DIALOGUE.effect(() => GAME_STATE.huazelei.face("d"));
+  DIALOGUE.queue(`
+    (pabulong) Ibigay mo na sa akin yung
+    nakuha mo bago pa tayo mabisto ni AH SI
+    na nagpapanggap. Ako na bahala CHERYL.
+  `);
+  DIALOGUE.queue(`Maraming salamat sa paghanap nito sa akin.`);
+  DIALOGUE.effect(() => GAME_STATE.huazelei.face("a"));
+  DIALOGUE.queue({
+    text: `DAO MING SI: Bakit naman kasi meron ka iniiwan na gamit mo dito sa hardin ko...`,
+    portrait: PORTRAIT_DAOMINGSI_INTIMIDATE,
+    color: "red",
+  });
+  DIALOGUE.queue({
+    text: `HUA ZE LEI: Pasensiya na AH SI...`,
+    portrait: PORTRAIT_HUAZELEI,
+    color: "blue",
+  });
+  DIALOGUE.effect(() => GAME_STATE.daomingsi.face("s"));
+  DIALOGUE.queue({
+    text: `DAO MING SI: Tumatakbo ang oras, tayo na LEI, may gagawin pa tayo.`,
+    portrait: PORTRAIT_DAOMINGSI,
+    color: "red",
+  });
+  DIALOGUE.effect(() => {
+    walk(
+      GAME_STATE.daomingsi,
+      { direction: "a", steps: 10 },
+      {
+        animated: true,
+        onComplete() {
+          despawnNPC(GAME_STATE.daomingsi);
+        },
+      },
+    );
+    GAME_STATE.huazelei.face("d");
+  });
+  DIALOGUE.queue({
+    text: `
+      HUA ZE LEI: CHERYL, sa pagkakatanda ko ay hinahanap mo
+      sila XI MEN at MEI ZUO para mahanap ang keys ni AH SI...`,
+    portrait: PORTRAIT_HUAZELEI,
+    color: "blue",
+  });
+  DIALOGUE.queue(`Makikita mo lang sila kung pumunta ka sa timog na bahagi nitong mansion.`);
+  DIALOGUE.queue(`Sa timog ng park mismo makikita mo ang market dito.`);
+  DIALOGUE.queue(`Sa market ginagawa ni XI MEN at MEI ZUO ang bahagi nila para sa event.`);
+  DIALOGUE.queue(`Mauna na ako...`);
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    walk(
+      GAME_STATE.huazelei,
+      [
+        { direction: "s", steps: 2.5 },
+        { direction: "a", steps: 10 },
+      ],
+      {
+        animated: true,
+        onComplete() {
+          despawnNPC(GAME_STATE.huazelei);
+        },
+      },
+    );
+  }, 1.5);
+  DIALOGUE.effect(() => {
+    playAttentionBounce(GAME_STATE.player);
+    playExclamation(GAME_STATE.player);
+  });
+  DIALOGUE.queue({ text: `Pero iyung teasure ko...`, portrait: null, color: "black" });
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    questSetStatus(questMazeChest, "resolved");
+    playQuestToast(questMazeChest);
+    playQuestCompleteBanner(`Completed!`);
+  }, 3.5);
+  DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
 }
 
 function respawnNPC(npc: PlayerSprite, tile?: [number, number]) {
@@ -1046,4 +1212,11 @@ function despawnNPC(npc: PlayerSprite) {
   remove(NPCS, npc);
   remove(GAME_STATE.obstacles, npc);
   removeInteractable(INTERACTABLES, npc);
+}
+
+function dialogueLockAndFocus() {
+  hudSetBagIconVisible(false);
+  GAME_STATE.movementLocked = true;
+  DIALOGUE.hideBox();
+  DIALOGUE.clearPortrait();
 }

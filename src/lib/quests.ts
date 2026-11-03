@@ -95,14 +95,14 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "message_in_bottle",
     {
       description: "Find the bottle that contains the treasure map.",
-      status: "active",
+      status: "resolved",
     },
   ],
   [
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "inactive",
+      status: "active",
     },
   ],
 ]);
