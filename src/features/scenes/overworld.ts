@@ -148,8 +148,19 @@ const spawnGuards = () => [
 const NORTH_GUARDS: PlayerSprite[] = spawnGuards();
 const WEST_GUARDS: PlayerSprite[] = spawnGuards();
 const EAST_GUARDS: PlayerSprite[] = spawnGuards();
-
 const PARK_EVENT_GUARDS: PlayerSprite[] = [...NORTH_GUARDS, ...WEST_GUARDS, ...EAST_GUARDS];
+
+const AISLE_GUARDS_ROW_A: PlayerSprite[] = [
+  new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE } }),
+];
+
+const AISLE_GUARDS_ROW_B: PlayerSprite[] = [
+  new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_MALE_1_IDLE } }),
+];
+
+const AISLE_GUARDS = [...AISLE_GUARDS_ROW_A, ...AISLE_GUARDS_ROW_B];
 
 const wildBushInteractablesCfgs: Partial<Interactable> = {
   label: "Interact",
@@ -228,6 +239,8 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   cutscene_running_shoes: {
     onEnter: cutsceneRunningShoes,
   },
+  restrict_allow_run: { onEnter: () => restrictRun(false) },
+  restrict_disallow_run: { onEnter: () => restrictRun(true) },
   sand: {
     onEnter: () => sandZoneCount++,
     onLeave: () => sandZoneCount--,
@@ -258,6 +271,40 @@ placeAtTile({ sprite: spMansion1, tile: [85, 30] });
 placeAtTile({ sprite: spMansion2, tile: [88, 30] });
 placeAtTile({ sprite: msgBottle1, tile: [45, 74] });
 placeAtTile({ sprite: chestEmpty, tile: [119.75, 7.75] });
+
+let nLoc = [92.5, 32.4] as [number, number];
+NORTH_GUARDS.forEach((npc, i) => {
+  let y = nLoc[1];
+  if (i % 2 === 0) y -= 0.15;
+  placeAtTile({ sprite: npc, tile: [(nLoc[0] += 0.85), y] });
+  npc.face("w");
+});
+
+let wLoc = [78.5, 45] as [number, number];
+WEST_GUARDS.forEach((npc, i) => {
+  let x = wLoc[0];
+  if (i % 2 === 0) x -= 0.5;
+  placeAtTile({ sprite: npc, tile: [x, (wLoc[1] += 0.5)] });
+  npc.face("a");
+});
+
+let eLoc = [110, 45] as [number, number];
+EAST_GUARDS.forEach((npc, i) => {
+  let x = eLoc[0];
+  if (i % 2 === 0) x += 0.5;
+  placeAtTile({ sprite: npc, tile: [x, (eLoc[1] += 0.5)] });
+  npc.face("d");
+});
+
+placeAtTile({ sprite: AISLE_GUARDS_ROW_A[0], tile: [92.75, 54.5] });
+placeAtTile({ sprite: AISLE_GUARDS_ROW_A[1], tile: [95.25, 54.5] });
+placeAtTile({ sprite: AISLE_GUARDS_ROW_B[0], tile: [92.75, 58] });
+placeAtTile({ sprite: AISLE_GUARDS_ROW_B[1], tile: [95.25, 58] });
+
+AISLE_GUARDS.forEach((npc, i) => {
+  if (i % 2 === 0) npc.face("d");
+  else npc.face("a");
+});
 
 export const overworldScene: Scene = {
   fadeIn: 1,
@@ -1366,7 +1413,7 @@ function cutsceneMarket() {
 
   f4Speaker("meizuo", `Wala sa akin. Nasa iyo ba XI MEN?`);
   f4Speaker("ximen", `XI MEN: Anung keys— ito talaga si AH SI.`);
-  f4Speaker("ximen", `Alam ko nasa mansion lang ni AH SI yun.`);
+  f4Speaker("ximen", `Alam ko binalik na namin iyun nasa mansion lang ni AH SI yun.`);
   DIALOGUE.effect(() => GAME_STATE.meizuo.face("s"));
   f4Speaker("meizuo", `MEI ZUO: CHE, Mabuti pa balik ka ulit sa mansion.`);
   f4Speaker("ximen", `XI MEN: Sabihin mo kay LIU wala sa amin.`);
@@ -1468,7 +1515,9 @@ function interactMeizuo() {
     portrait: PORTRAIT_MEIZUO,
   });
 
-  DIALOGUE.onComplete = () => scheduleFaceDirection(GAME_STATE.meizuo, "s");
+  DIALOGUE.onComplete = () => {
+    if (questDaoMingKeys.status !== "resolved") scheduleFaceDirection(GAME_STATE.meizuo, "s");
+  };
 }
 
 function interactXimen() {
@@ -1499,41 +1548,36 @@ function interactXimen() {
     });
   }
 
-  DIALOGUE.onComplete = () => scheduleFaceDirection(GAME_STATE.ximen, "s");
+  DIALOGUE.onComplete = () => {
+    if (questDaoMingKeys.status !== "resolved") scheduleFaceDirection(GAME_STATE.ximen, "s");
+  };
 }
 
 function initMainEvent() {
   if (questDaoMingKeys.status !== "resolved") return;
   addOnce(DECORS, chestEmpty);
   addOnce(GAME_STATE.obstacles, chestEmpty);
-  despawnNPC(GAME_STATE.huazelei);
-  despawnNPC(GAME_STATE.mama);
-  despawnNPC(GAME_STATE.papa);
 
-  let nLoc = [92.5, 32.4] as [number, number];
-  NORTH_GUARDS.forEach((npc, i) => {
-    let y = nLoc[1];
-    if (i % 2 === 0) y -= 0.15;
-    respawnNPC(npc, [(nLoc[0] += 0.85), y]);
-    npc.face("w");
-  });
+  // Mei Zuo & Xi Men
+  placeAtTile({ sprite: GAME_STATE.meizuo, tile: [92.75, 51] });
+  placeAtTile({ sprite: GAME_STATE.ximen, tile: [95.25, 51] });
+  GAME_STATE.meizuo.face("d");
+  GAME_STATE.ximen.face("a");
 
-  let wLoc = [78.5, 45] as [number, number];
-  WEST_GUARDS.forEach((npc, i) => {
-    let x = wLoc[0];
-    if (i % 2 === 0) x -= 0.5;
-    respawnNPC(npc, [x, (wLoc[1] += 0.5)]);
-    npc.face("a");
-  });
+  // Papa & Mama
+  placeAtTile({ sprite: GAME_STATE.mama, tile: [91.35, 45.75] });
+  placeAtTile({ sprite: GAME_STATE.papa, tile: [92.15, 45.75] });
+  GAME_STATE.mama.face("s");
+  GAME_STATE.papa.face("s");
 
-  let eLoc = [110, 45] as [number, number];
-  EAST_GUARDS.forEach((npc, i) => {
-    let x = eLoc[0];
-    if (i % 2 === 0) x += 0.5;
-    respawnNPC(npc, [x, (eLoc[1] += 0.5)]);
-    npc.face("d");
-  });
+  // Ah Si & Lei
+  respawnNPC(GAME_STATE.daomingsi, [92.75, 46.5]);
+  respawnNPC(GAME_STATE.huazelei, [95.25, 46.5]);
+  GAME_STATE.daomingsi.face("d");
+  GAME_STATE.huazelei.face("a");
 
+  PARK_EVENT_GUARDS.forEach((npc) => respawnNPC(npc));
+  AISLE_GUARDS.forEach((npc) => respawnNPC(npc));
   PARK_EVENT_GUARDS.forEach((npc) => {
     addOnce(INTERACTABLES, { sprite: npc, probeDistance: 8 });
   });
@@ -1561,4 +1605,14 @@ function f4Speaker(speaker: "daomingsi" | "huazelei" | "meizuo" | "ximen", messa
     color,
     portrait,
   });
+}
+
+function restrictRun(restricted = true) {
+  if (questDaoMingKeys.status !== "resolved") return;
+
+  if (restricted) {
+    GAME_STATE.allowRunning = false;
+  } else {
+    GAME_STATE.allowRunning = true;
+  }
 }

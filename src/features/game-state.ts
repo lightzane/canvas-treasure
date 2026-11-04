@@ -95,7 +95,7 @@ export const GAME_STATE = {
     retrieving_sheet_2: true,
     mama_running_shoes: true,
     mama_starts_bottle: true,
-    market_cutscene: false,
+    market_cutscene: true,
   },
   quests: QUESTS,
   /**

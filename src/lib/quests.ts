@@ -62,7 +62,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "daoming_keys",
     {
       description: "Help DAO MING SI find his missing keys.",
-      status: "active",
+      status: "resolved",
     },
   ],
   ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],

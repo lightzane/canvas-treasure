@@ -18,7 +18,7 @@ import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewpo
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
-import { playQuestToast } from "@/lib/effects/quest-toast";
+import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
@@ -80,6 +80,8 @@ const IMG_MAP_BG = img("maps/mansion.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 // const foreground = new Sprite({ src: IMG_MAP_FG });
+
+const questDaomingKeys = GAME_STATE.quests.get("daoming_keys")!;
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
@@ -162,9 +164,24 @@ function exitZone() {
 
 function interactions(target: Sprite | undefined) {
   if (target === BUTLER) {
+    if (GAME_STATE.sequence.market_cutscene && questDaomingKeys.status !== "resolved") {
+      keysFoundConversation();
+      return;
+    }
+
+    let message = "BUTLER LIU: Binibining CHE! Wala po dito si Young Master...";
+
+    if (GAME_STATE.quests.get("daoming_keys")!.status === "resolved") {
+      message = `
+        BUTLER LIU: Binibining CHE! Nahanap na po ang keys. 
+        Nasa park na po si Young Master.
+      `;
+    }
+
     DIALOGUE.show({
-      text: "BUTLER LIU: Binibining CHE! Wala po dito si Young Master...",
+      text: message,
       portrait: PORTRAIT_BUTLER,
+      color: "darkblue",
     });
   }
 }
@@ -176,6 +193,7 @@ function nearMissConversation() {
   DIALOGUE.show({
     text: `BUTLER LIU: Young Master, saan po natin ilalagay ang ke#&@—k!`,
     portrait: PORTRAIT_BUTLER,
+    color: "darkblue",
   });
   DIALOGUE.effect(() => {
     DIALOGUE.clearPortrait();
@@ -207,7 +225,7 @@ function nearMissConversation() {
   });
   DIALOGUE.queue({
     text: `BUTLER LIU: Pero ang alam ko ay hindi naman po nawawala ang keys niyo...`,
-    color: "black",
+    color: "darkblue",
     portrait: PORTRAIT_BUTLER,
   });
   DIALOGUE.effect(() => playExclamation(GAME_STATE.daomingsi), 0.5);
@@ -244,7 +262,7 @@ function nearMissConversation() {
       pero nahihiya lang po si Young Master manghingi ng tulong.
       Kung maaari po tulungan po ninyo siya mahanap ang keys niya.
     `,
-    color: "black",
+    color: "darkblue",
     portrait: PORTRAIT_BUTLER,
   });
   DIALOGUE.effect(() => {
@@ -273,4 +291,38 @@ function nearMissConversation() {
     GAME_STATE.sequence.meet_daomingsi = true;
     remove(NPCS, GAME_STATE.daomingsi); // he's left — also drops him from GAME_STATE.obstacles, same array reference
   };
+}
+
+function keysFoundConversation() {
+  GAME_STATE.movementLocked = true;
+  hudSetBagIconVisible(false);
+
+  DIALOGUE.show({
+    text: `BUTLER LIU: Hello po binibining CHE.`,
+    portrait: PORTRAIT_BUTLER,
+    color: "darkblue",
+  });
+
+  DIALOGUE.queue("Pinapasabi po ni Young Master na ang keys ay nahanap na.");
+  DIALOGUE.queue(
+    "At dahil nga po dito ay magsisimula na rin po ang event para ipakita ang treasure...",
+  );
+  DIALOGUE.queue(
+    `Kung inyong mararapatin ay pumunta lang po kayo
+    sa timog na bahagi na park para sa mga dadalo sa kaganapan
+    upang ipagdiwang ang isang napakahalagang treasure na natagpuan.
+    `,
+  );
+  DIALOGUE.queue("Makikita niyo rin po dun si Young Master.");
+
+  DIALOGUE.effect(() => {
+    GAME_STATE.movementLocked = true;
+    DIALOGUE.hideBox();
+    DIALOGUE.clearPortrait();
+    questSetStatus(questDaomingKeys, "resolved");
+    playQuestToast(questDaomingKeys);
+    playQuestCompleteBanner("Completed!");
+  }, 5);
+
+  DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
 }

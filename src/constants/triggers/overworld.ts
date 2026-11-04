@@ -2,6 +2,8 @@
 import { scaleTiledObjects } from "@/lib/tiled";
 
 export type TriggerName =
+  | "restrict_allow_run"
+  | "restrict_disallow_run"
   | "enter_flowershop"
   | "enter_mansion"
   | "enter_home"
@@ -11,6 +13,8 @@ export type TriggerName =
 
 // prettier-ignore
 export const TRIGGER_OVERWORLD = scaleTiledObjects([
+  { name: "restrict_allow_run", x: 2976.00872769589, y: 1856.36951248045, width: 96, height: 48 },
+  { name: "restrict_disallow_run", x: 2976.008727696, y: 1807.36951248, width: 96, height: 48 },
   { name: "enter_flowershop", x: 1204.81, y: 1315.27, width: 33, height: 40.5487 },
   { name: "enter_mansion", x: 2764.5, y: 474.5, width: 38, height: 47.5 },
   { name: "enter_home", x: 1884, y: 1290.22565, width: 33, height: 40.5487 },
