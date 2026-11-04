@@ -18,7 +18,7 @@ export const CANVAS_CENTER = {
 };
 
 /** Flat px/sec added to the player's own `moveSpeed` while running (holding X, with shoes, somewhere running's allowed) — not a multiplier. */
-export const RUN_SPEED_BONUS = 150;
+export const RUN_SPEED_BONUS = 250;
 
 /**
  * Canvas-drawn text can't use the `font-game` CSS class (`ctx.font` is a

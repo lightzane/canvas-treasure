@@ -235,6 +235,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
 };
 
 const quests = GAME_STATE.quests;
+const questMainQuest = quests.get("invitation_postcard")!;
 const questCatchSheets = quests.get("catch_sheets")!;
 const questRunningShoes = quests.get("running_shoes")!;
 const questMessageBottle = quests.get("message_in_bottle")!;
@@ -666,18 +667,23 @@ function interactHuazelei() {
 function meetLeiConversation() {
   hudSetBagIconVisible(false);
   let shineHandle: ShineHandle | null = null;
+
+  DIALOGUE.show({
+    text: "F4 HUA ZE LEI: Hello CHERYL...",
+    color: DIALOGUE_COLOR_HUAZELEI,
+    portrait: PORTRAIT_HUAZELEI,
+  });
+
   DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
     const quest = GAME_STATE.quests.get("meet_huazelei")!;
     questSetStatus(quest, "resolved");
     playQuestToast(quest);
     playQuestCompleteBanner(`Meet Hua Ze Lei Completed!`);
   }, 5);
 
-  DIALOGUE.show({
-    text: "F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?",
-    color: DIALOGUE_COLOR_HUAZELEI,
-    portrait: PORTRAIT_HUAZELEI,
-  });
+  f4Speaker("huazelei", `F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?`);
+
   DIALOGUE.effect(() => {
     playExclamation(GAME_STATE.player);
     playAttentionBounce(GAME_STATE.player, { hops: 3, duration: 0.1 });
@@ -1290,8 +1296,29 @@ function cutsceneMarket() {
   hudSetBagIconVisible(false);
   dialogueLockAndFocus();
 
-  DIALOGUE.effect(() => playExclamation(GAME_STATE.meizuo), 1);
   DIALOGUE.effect(() => {
+    playExclamation(GAME_STATE.meizuo);
+    playExclamation(GAME_STATE.ximen);
+    // TODO: Fix this! Walking animation doesn't walk and just stay's idle even though the animated is set to true!
+    // walk(GAME_STATE.player, [101.5, 75], {
+    //   animated: true,
+    //   onComplete: () => GAME_STATE.player.face("w"),
+    // });
+  }, 1);
+
+  f4Speaker("meizuo", `F4 MEI ZUO: Oh pumila lang kayo ng maayos diyan!`);
+
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    playExclamation(GAME_STATE.ximen);
+  }, 0.5);
+
+  f4Speaker("ximen", `F4 XI MEN: Isang halik kay MEI ZUO kada isang gawa/humihip ng lobo!`);
+  f4Speaker("ximen", `Pinakamaraming kiss sa pinakamaraming lobo na magagawa!`);
+  f4Speaker("meizuo", `MEI ZUO: Whoaooooooh yeah alright!`);
+
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
     const q1 = quests.get("meet_meizuo")!;
     const q2 = quests.get("meet_ximen")!;
     questSetStatus(q1, "resolved");
@@ -1302,13 +1329,124 @@ function cutsceneMarket() {
     playQuestCompleteBanner(`Meet Mei Zuo & Xi Men Complete!`);
   }, 5);
 
-  DIALOGUE.queue({
-    text: `F4 MEI ZUO: Oh pumila lang kayo ng maayos diyan!`,
-    color: DIALOGUE_COLOR_MEIZUO,
-    portrait: PORTRAIT_MEIZUO,
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.meizuo), 0.5);
+
+  DIALOGUE.effect(() => {
+    playAttentionBounce(GAME_STATE.meizuo);
+    playExclamation(GAME_STATE.meizuo);
+  }, 0.5);
+
+  f4Speaker("meizuo", `Oii si CHE pala nandito!`);
+  f4Speaker("meizuo", `XI MEN tingnan mo hahaha!`);
+
+  DIALOGUE.effect(() => {
+    playAttentionBounce(GAME_STATE.ximen);
+    playExclamation(GAME_STATE.ximen);
+  }, 0.5);
+
+  f4Speaker(
+    "ximen",
+    `XI MEN: Hi CHE, naghahanda kami ni MEI ZUO ng mga lobo para sa event mamaya.`,
+  );
+
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
+
+  f4Speaker("meizuo", `MEI ZUO: Anu sabi mo CHE— naghahanap ka rin ng kiss?`);
+
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
+
+  f4Speaker("meizuo", `Ahh yung "keys" ni AH SI?`);
+
+  DIALOGUE.effect(() =>
+    gsap.delayedCall(1, () => {
+      GAME_STATE.meizuo.face("d");
+      playAttentionBounce(GAME_STATE.meizuo);
+    }),
+  );
+
+  f4Speaker("meizuo", `Wala sa akin. Nasa iyo ba XI MEN?`);
+  f4Speaker("ximen", `XI MEN: Anung keys— ito talaga si AH SI.`);
+  f4Speaker("ximen", `Alam ko nasa mansion lang ni AH SI yun.`);
+  DIALOGUE.effect(() => GAME_STATE.meizuo.face("s"));
+  f4Speaker("meizuo", `MEI ZUO: CHE, Mabuti pa balik ka ulit sa mansion.`);
+  f4Speaker("ximen", `XI MEN: Sabihin mo kay LIU wala sa amin.`);
+
+  DIALOGUE.effect(() => GAME_STATE.meizuo.face("d"));
+  f4Speaker("meizuo", `MEI ZUO: Hindi kaya keys ng treasure chest iyun?`);
+
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    GAME_STATE.ximen.face("a");
+    gsap.delayedCall(0.5, () => playAttentionBounce(GAME_STATE.meizuo));
+    gsap.delayedCall(0.7, () => playAttentionBounce(GAME_STATE.ximen));
+    gsap.delayedCall(1, () => playExclamation(GAME_STATE.meizuo));
+    gsap.delayedCall(1.7, () => playExclamation(GAME_STATE.ximen));
+    gsap.delayedCall(2, () => GAME_STATE.meizuo.face("s"));
+    gsap.delayedCall(2.3, () => GAME_STATE.ximen.face("s"));
+  }, 3);
+
+  f4Speaker(
+    "meizuo",
+    `
+    Kami bahala CHE, balikan mo lang kami kapag hindi
+    pa rin nahanap ang keys. Puntahan mo si LIU sa mansion.
+    Kailangan pa namin tapusin ito mga lobo para sa event.
+  `,
+  );
+
+  DIALOGUE.effect(dialogueLockAndFocus, 1);
+  DIALOGUE.effect(() => {
+    GAME_STATE.meizuo.face("d");
+    playAttentionBounce(GAME_STATE.meizuo);
+    playExclamation(GAME_STATE.meizuo);
+  }, 0.5);
+
+  f4Speaker(
+    `meizuo`,
+    `MEI ZUO: Alam mo napaisip ako XI MEN, baka yung keys rin ni AH SI ang hanap ng mga babaeng nakapila dito sa atin.`,
+  );
+
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    GAME_STATE.ximen.face("a");
+  }, 1.5);
+
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    gsap.delayedCall(0.5, () => playAttentionBounce(GAME_STATE.meizuo));
+    gsap.delayedCall(0.7, () => playAttentionBounce(GAME_STATE.ximen));
+    gsap.delayedCall(1, () => playExclamation(GAME_STATE.meizuo));
+    gsap.delayedCall(1.7, () => playExclamation(GAME_STATE.ximen));
+  }, 3);
+
+  f4Speaker(`ximen`, `XI MEN: Kiss ni AH SI?`);
+
+  DIALOGUE.queue({ text: `... ... ...`, portrait: null, color: "black" });
+
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    gsap.delayedCall(0.5, () => playAttentionBounce(GAME_STATE.meizuo));
+    gsap.delayedCall(0.7, () => playAttentionBounce(GAME_STATE.ximen));
+    gsap.delayedCall(1, () => playExclamation(GAME_STATE.meizuo));
+    gsap.delayedCall(1.7, () => playExclamation(GAME_STATE.ximen));
+    gsap.delayedCall(2, () => GAME_STATE.meizuo.face("s"));
+    gsap.delayedCall(2.3, () => GAME_STATE.ximen.face("s"));
+  }, 3);
+
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    playAttentionBounce(GAME_STATE.meizuo, {
+      hops: 5,
+      onComplete() {
+        playAttentionBounce(GAME_STATE.meizuo, { hops: 5, delay: 0.5 });
+      },
+    });
   });
 
+  f4Speaker(`meizuo`, `MEI ZUO: HAHAHAHAHA! HAHAHAHAHAHA!`);
+
   DIALOGUE.onComplete = () => {
+    gsap.delayedCall(0.5, () => playQuestToast({ ...questDaoMingKeys, hold: 10 }));
     hudSetBagIconVisible(true);
     GAME_STATE.sequence.market_cutscene = true;
   };
@@ -1339,13 +1477,27 @@ function interactXimen() {
     return;
   }
 
+  const color = DIALOGUE_COLOR_XIMEN;
+  const portrait = PORTRAIT_XIMEN;
+
   cancelScheduledFace(GAME_STATE.ximen);
 
-  DIALOGUE.show({
-    text: `XI MEN: Hi`,
-    color: DIALOGUE_COLOR_XIMEN,
-    portrait: PORTRAIT_XIMEN,
-  });
+  if (GAME_STATE.sequence.market_cutscene && questDaoMingKeys.status !== "resolved") {
+    DIALOGUE.show({
+      text: `XI MEN: Punta ka sa mansion kausapin mo si LIU. Kailangan pa namin tapusin ito mga paggawa ng lobo para sa event mamaya.`,
+      color,
+      portrait,
+    });
+  }
+
+  // No hints
+  else {
+    DIALOGUE.show({
+      text: `XI MEN: Hi...`,
+      color,
+      portrait,
+    });
+  }
 
   DIALOGUE.onComplete = () => scheduleFaceDirection(GAME_STATE.ximen, "s");
 }
@@ -1384,5 +1536,29 @@ function initMainEvent() {
 
   PARK_EVENT_GUARDS.forEach((npc) => {
     addOnce(INTERACTABLES, { sprite: npc, probeDistance: 8 });
+  });
+}
+
+function f4Speaker(speaker: "daomingsi" | "huazelei" | "meizuo" | "ximen", message: string) {
+  let color = DIALOGUE_COLOR_DAOMINGSI;
+  let portrait = PORTRAIT_DAOMINGSI;
+  switch (speaker) {
+    case "huazelei":
+      color = DIALOGUE_COLOR_HUAZELEI;
+      portrait = PORTRAIT_HUAZELEI;
+      break;
+    case "meizuo":
+      color = DIALOGUE_COLOR_MEIZUO;
+      portrait = PORTRAIT_MEIZUO;
+      break;
+    case "ximen":
+      color = DIALOGUE_COLOR_XIMEN;
+      portrait = PORTRAIT_XIMEN;
+      break;
+  }
+  DIALOGUE.queue({
+    text: message,
+    color,
+    portrait,
   });
 }

@@ -23,7 +23,7 @@ export const GAME_STATE = {
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
     shadowOffset,
-    moveSpeed: 500,
+    // moveSpeed: 500,
   }),
   mama: new PlayerSprite({
     sprites: { idle: IMGS_MAMA_IDLE },
