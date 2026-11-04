@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm build *)",
+      "Bash(pnpm type-check *)",
+      "Bash(pnpm format *)",
+      "Bash(pnpm lint *)",
+      "Bash(echo \"lint exit: $?\")",
+      "Bash(pnpm exec oxlint *)",
+      "Bash(pnpm exec oxfmt *)"
+    ]
+  }
+}

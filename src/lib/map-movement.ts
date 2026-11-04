@@ -5,6 +5,8 @@ import { GAME_STATE } from "@/features/game-state";
 import type { Position } from "@/features/sprite";
 import { bagHasItem } from "@/lib/bag";
 import { getPosSpawnTile } from "@/lib/positioning";
+import { isSingleLeg, legTarget, type WalkLeg } from "@/lib/walk";
+import gsap from "gsap";
 
 /** Edge-detects `GAME_STATE.movementLocked` turning on, so `movePlayer` only forces idle once per lock, not every frame — see the comment where it's read. */
 let wasLocked = false;
@@ -153,4 +155,132 @@ export function setCameraToTile(tile: [number, number], origin: Position = { x: 
   const center = getPosSpawnTile({ tile, spriteSize: { width: 0, height: 0 }, origin });
   GAME_STATE.camera.x = center.x;
   GAME_STATE.camera.y = center.y;
+}
+
+const DEFAULT_PAN_SPEED = 250; // px/sec — same fallback drift() uses for its own default duration
+const CAMERA_POINT_SIZE = { width: 0, height: 0 }; // a sizeless point — same convention setCameraToTile uses
+
+export interface CameraPanOptions {
+  /** World position the tile grid is measured from, same as `placeAtTile`'s `origin`. Only affects absolute-tile legs. @default {x:0,y:0} */
+  origin?: Position;
+  /** Tiled `[col, row]` tile to pan from — same coordinate language as `to`, not a raw world `Position`. @default wherever the camera currently is */
+  from?: [number, number];
+  /** Total seconds for the whole pan, across every leg if more than one. Takes priority over `speed` if both are given — an effective px/sec is derived from the *total* distance, then applied per leg below, so multi-leg motion stays at one constant visual speed instead of being split evenly by leg count (which would pace a short leg and a long leg identically). @default distance / speed */
+  duration?: number;
+  /** Px/sec, applied per leg — derives each leg's own duration from its own distance when `duration` isn't given directly. @default 250 */
+  speed?: number;
+  /** @default "sine.inOut" */
+  ease?: string;
+  /** Seconds to wait before starting. */
+  delay?: number;
+  /** Runs once the camera has landed exactly on the final target. */
+  onComplete?: () => void;
+}
+
+export interface CameraPanHandle {
+  /** Cancels the pan — kills it (whether still delayed or mid-flight) and snaps straight to the final target. */
+  stop: () => void;
+}
+
+/**
+ * Animates the camera from `options.from` (default: wherever it currently
+ * is) through `to` — the animated counterpart to `setCameraToTile` (which
+ * jumps instantly), same relationship `walk`/`drift` have to `placeAtTile`.
+ * `to` is its own positional argument, not bundled into `options` — it's
+ * the one genuinely required input, same reasoning `walk(npc, path,
+ * options)` already splits `path` out for. Only sticks while
+ * `GAME_STATE.cameraFollow` is `false` — otherwise `followCamera()` fights
+ * it every frame.
+ *
+ * @example
+ * GAME_STATE.cameraFollow = false;
+ * panCameraToTile([42, 73.5]); // no other options needed
+ * @example
+ * panCameraToTile([42, 73.5], { duration: 2 });
+ * @example
+ * panCameraToTile([42, 73.5], { speed: 400 }); // duration derived from distance
+ * @example
+ * panCameraToTile([[37, 43], [42, 73.5]], { speed: 400 }); // chained, same WalkLeg[] shape as walk()
+ * @example
+ * panCameraToTile([94, 45], { from: [58.9, 42] }); // explicit start tile, not the camera's current position
+ */
+export function panCameraToTile(
+  to: WalkLeg | WalkLeg[],
+  options: CameraPanOptions = {},
+): CameraPanHandle {
+  const {
+    origin = { x: 0, y: 0 },
+    speed = DEFAULT_PAN_SPEED,
+    ease = "sine.inOut",
+    delay = 0,
+    onComplete,
+  } = options;
+
+  // The one case `from` is actually a raw position rather than a tile —
+  // "wherever the camera currently is" has no tile to convert from, it's
+  // just read directly. An explicit `from` is always a tile, same
+  // coordinate language `to` uses.
+  const from: Position = options.from
+    ? getPosSpawnTile({ tile: options.from, spriteSize: CAMERA_POINT_SIZE, origin })
+    : { x: GAME_STATE.camera.x, y: GAME_STATE.camera.y };
+
+  const legs: WalkLeg[] = isSingleLeg(to) ? [to] : to;
+
+  // Resolves every leg's target + its own distance up front — each leg's
+  // relative form chains from the previous leg's own resolved end position,
+  // same as walk(). Reused below both for the total (duration -> speed
+  // conversion) and each tween's own per-leg duration.
+  const steps: { target: Position; distance: number }[] = [];
+  let cursor = from;
+  for (const leg of legs) {
+    const target = legTarget({ leg, from: cursor, spriteSize: CAMERA_POINT_SIZE, origin });
+    steps.push({ target, distance: Math.hypot(target.x - cursor.x, target.y - cursor.y) });
+    cursor = target;
+  }
+  const finalTarget = steps[steps.length - 1]!.target;
+  const totalDistance = steps.reduce((sum, s) => sum + s.distance, 0);
+
+  const effectiveSpeed =
+    options.duration !== undefined && totalDistance > 0 ? totalDistance / options.duration : speed;
+
+  // Establishes the starting point immediately, even if `delay` postpones
+  // the actual pan — otherwise the camera would keep showing wherever it
+  // was *before* this call for the whole delay, then jump to `from` right
+  // as the tween starts.
+  GAME_STATE.camera.x = from.x;
+  GAME_STATE.camera.y = from.y;
+
+  let pending: gsap.core.Tween | null = null;
+  let tl: gsap.core.Timeline | null = null;
+
+  const run = () => {
+    tl = gsap.timeline({
+      onComplete: () => {
+        // guards against float drift from the tween chain, same as drift()'s own landing snap
+        GAME_STATE.camera.x = finalTarget.x;
+        GAME_STATE.camera.y = finalTarget.y;
+        onComplete?.();
+      },
+    });
+    for (const { target, distance } of steps) {
+      tl.to(GAME_STATE.camera, {
+        x: target.x,
+        y: target.y,
+        duration: distance / effectiveSpeed,
+        ease,
+      });
+    }
+  };
+
+  if (delay > 0) pending = gsap.delayedCall(delay, run);
+  else run();
+
+  return {
+    stop: () => {
+      pending?.kill();
+      tl?.kill();
+      GAME_STATE.camera.x = finalTarget.x;
+      GAME_STATE.camera.y = finalTarget.y;
+    },
+  };
 }

@@ -37,7 +37,7 @@ import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { drawFootprints, trackFootstep, updateFootprints } from "@/lib/footprints";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
-import { movePlayer } from "@/lib/map-movement";
+import { movePlayer, panCameraToTile } from "@/lib/map-movement";
 import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
@@ -324,7 +324,6 @@ export const overworldScene: Scene = {
 
   enter() {
     sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
-
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(overworldScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
@@ -336,9 +335,10 @@ export const overworldScene: Scene = {
     // a later, unrelated entry (e.g. a straight game boot into overworld).
     // spriteSize pins this to the player's stable boxSize — see the same
     // comment in home.ts, or spriteSize's own doc in positioning.ts.
+    const spawnTile = GAME_STATE.spawnLocation ?? [58.9, 42];
     placeAtTile({
       sprite: GAME_STATE.player,
-      tile: GAME_STATE.spawnLocation ?? [58.9, 42],
+      tile: spawnTile,
       spriteSize: GAME_STATE.player.boxSize,
     });
     GAME_STATE.spawnLocation = undefined;
@@ -1651,6 +1651,10 @@ function cutsceneMidAisleLei() {
   });
   DIALOGUE.queue("Yung last page ng sketch ko na hinahabol mo ay nahanap na.");
   DIALOGUE.queue("...iaabot niya na lang sa iyo kasama ang music box.");
+  DIALOGUE.effect(dialogueLockAndFocus, 0.5);
+  DIALOGUE.queue({ text: "... ... ...", portrait: null, color: "black" });
+  DIALOGUE.effect(dialogueLockAndFocus, 1.5);
+  DIALOGUE.queue(`...niya?`);
   DIALOGUE.effect(() => {
     dialogueLockAndFocus();
     playQuestToast(questCatchSheets);
@@ -1677,7 +1681,10 @@ function cutsceneMidAisleJp() {
   DIALOGUE.effect(dialogueLockAndFocus, 0.00001);
 
   DIALOGUE.effect(() => {
-    playExclamation(player, { delay: 0.5 });
+    GAME_STATE.cameraFollow = false;
+    panCameraToTile([94, 43.05], {
+      onComplete: () => playExclamation(player, { delay: 0.5 }),
+    });
   }, 1);
 
   DIALOGUE.effect(() => {
@@ -1735,7 +1742,10 @@ function cutsceneMidAisleJp() {
     );
 
     // TODO: Add "advance-lock" on dialogue
-    gsap.delayedCall(0.8, () => (GAME_STATE.cameraFollow = false));
+    gsap.delayedCall(0.8, () => {
+      GAME_STATE.cameraFollow = false;
+      panCameraToTile([94, 44.05], { duration: 2 });
+    });
 
     // slowly prep the F4
     gsap.delayedCall(2, () => {

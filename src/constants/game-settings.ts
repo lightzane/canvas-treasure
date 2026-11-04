@@ -8,14 +8,18 @@ export const ZOOM_LEVEL = 2;
 export const TILE_SIZE = 32 * ZOOM_LEVEL;
 
 // aspect ratio = 16:9
-// export const CANVAS_WIDTH = 1024;
-// export const CANVAS_HEIGHT = 576;
 export const CANVAS_WIDTH = 1280;
 export const CANVAS_HEIGHT = 720;
 export const CANVAS_CENTER = {
-  x: CANVAS_WIDTH / 2,
-  y: CANVAS_HEIGHT / 2,
+  x: CANVAS_WIDTH / 2, // 640
+  y: CANVAS_HEIGHT / 2, // 360
 };
+
+// To get the size of the camera in Tiled
+// divide the size to the zoom-level (i.e. 1280x720 = 640x360)
+// The camera in Tiled helps you visualize and easily get the correct
+// tiled coordinates to position the camera in canvas when using
+// panCameraToTile() — see map-movement.ts
 
 /** Flat px/sec added to the player's own `moveSpeed` while running (holding X, with shoes, somewhere running's allowed) — not a multiplier. */
 export const RUN_SPEED_BONUS = 250;
