@@ -1734,6 +1734,9 @@ function cutsceneMidAisleJp() {
       { animated: true, onComplete: () => player.face("d") },
     );
 
+    // TODO: Add "advance-lock" on dialogue
+    gsap.delayedCall(0.8, () => (GAME_STATE.cameraFollow = false));
+
     // slowly prep the F4
     gsap.delayedCall(2, () => {
       walk(ximen, [93.5, 47], { animated: true });

@@ -2,7 +2,9 @@ import { RUN_SPEED_BONUS } from "@/constants/game-settings";
 import { isColliding, type Rect } from "@/features/collisions";
 import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
+import type { Position } from "@/features/sprite";
 import { bagHasItem } from "@/lib/bag";
+import { getPosSpawnTile } from "@/lib/positioning";
 
 /** Edge-detects `GAME_STATE.movementLocked` turning on, so `movePlayer` only forces idle once per lock, not every frame — see the comment where it's read. */
 let wasLocked = false;
@@ -127,10 +129,28 @@ function attemptMove(dx: number, dy: number): Rect {
   return playerBox;
 }
 
-/** Re-centers the camera on the player's current position. */
+/** Re-centers the camera on `GAME_STATE.cameraTarget` (or the player, if that's `null`) — a no-op while `GAME_STATE.cameraFollow` is `false`, e.g. after `setCameraToTile`, so the manual placement isn't immediately overwritten next frame. */
 function followCamera() {
-  const player = GAME_STATE.player;
-  const playerCenter = { x: player.boxSize.width / 2, y: player.boxSize.height / 2 };
-  GAME_STATE.camera.x = player.position.x + playerCenter.x;
-  GAME_STATE.camera.y = player.position.y + playerCenter.y;
+  if (!GAME_STATE.cameraFollow) return;
+  const target = GAME_STATE.cameraTarget ?? GAME_STATE.player;
+  const targetCenter = { x: target.boxSize.width / 2, y: target.boxSize.height / 2 };
+  GAME_STATE.camera.x = target.position.x + targetCenter.x;
+  GAME_STATE.camera.y = target.position.y + targetCenter.y;
+}
+
+/**
+ * Moves the camera directly to a tile's center — same `[col, row]`
+ * convention as `placeAtTile` (Tiled's own bottom-left readout), and the
+ * same underlying math (`getPosSpawnTile`), just centered on a 0x0 point
+ * instead of a sprite's own size. Only sticks while `GAME_STATE.cameraFollow`
+ * is `false` — otherwise `followCamera()` overwrites it the very next frame.
+ *
+ * @example
+ * GAME_STATE.cameraFollow = false;
+ * setCameraToTile([42, 73.5]);
+ */
+export function setCameraToTile(tile: [number, number], origin: Position = { x: 0, y: 0 }) {
+  const center = getPosSpawnTile({ tile, spriteSize: { width: 0, height: 0 }, origin });
+  GAME_STATE.camera.x = center.x;
+  GAME_STATE.camera.y = center.y;
 }

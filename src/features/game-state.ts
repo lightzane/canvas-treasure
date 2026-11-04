@@ -20,6 +20,22 @@ const shadowOffset = { y: -3 };
 
 export const GAME_STATE = {
   camera: { x: 0, y: 0 },
+  /** Whether `followCamera()` (`lib/map-movement.ts`) re-centers the camera every frame. @default true */
+  cameraFollow: true,
+  /**
+   * Who `followCamera()` re-centers on while `cameraFollow` is true —
+   * `null` means "whatever `GAME_STATE.player` currently is," read fresh
+   * every frame, not a fixed reference captured once. That matters if
+   * `player` itself is ever reassigned later (not currently — it's one
+   * `PlayerSprite` for the app's whole life, only ever mutated in place):
+   * a field that *defaulted* to `GAME_STATE.player` would freeze on
+   * whichever object was current when this was set, going stale after a
+   * reassignment; `null` has no such risk since it never captures a
+   * reference at all. Set back to `null` (not `GAME_STATE.player`) to
+   * restore the default — same reasoning.
+   * @default null
+   */
+  cameraTarget: null as Sprite | null,
   player: new PlayerSprite({
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
