@@ -23,6 +23,7 @@ import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { birthdayConfetti } from "@/lib/confetti";
 import { drift } from "@/lib/drift";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
@@ -71,6 +72,8 @@ const IMG_MESSAGE_BOTTLE_H = img("others/message-bottle-h.png");
 const IMG_CHEST_CLOSE = img("others/chest-close.png");
 const IMG_CHEST_OPEN = img("others/chest-open.png");
 const IMG_CHEST_EMPTY = img("others/chest-empty.png");
+
+const MAIN_EVENT_PLAYER_MOVESPEED = 100;
 
 const background = new Sprite({ src: IMG_MAP_BG });
 /** Drawn on top of the player (tree canopies, roof overhangs, etc). */
@@ -236,11 +239,10 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
       exitMap();
     },
   },
-  cutscene_running_shoes: {
-    onEnter: cutsceneRunningShoes,
-  },
+  cutscene_running_shoes: { onEnter: cutsceneRunningShoes },
   cutscene_mid_aisle: { onEnter: () => cutsceneMidAisle() },
   cutscene_mid_aisle_lei: { onEnter: () => cutsceneMidAisleLei() },
+  cutscene_mid_aisle_jp: { onEnter: () => cutsceneMidAisleJp() },
   restrict_allow_run: { onEnter: () => restrictRun(false) },
   restrict_disallow_run: { onEnter: () => restrictRun(true) },
   sand: {
@@ -250,7 +252,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
 };
 
 const quests = GAME_STATE.quests;
-const questMainQuest = quests.get("invitation_postcard")!;
+const questMain = quests.get("invitation_postcard")!;
 const questCatchSheets = quests.get("catch_sheets")!;
 const questRunningShoes = quests.get("running_shoes")!;
 const questMessageBottle = quests.get("message_in_bottle")!;
@@ -509,8 +511,13 @@ function cutsceneRunningShoes() {
 
   cancelScheduledFace(GAME_STATE.mama);
 
-  exitMap();
-  walk(GAME_STATE.player, [58.9, 42], { animated: true, onComplete: convo });
+  hudSetBagIconVisible(false);
+
+  DIALOGUE.effect(dialogueLockAndFocus, 0.00001);
+  DIALOGUE.effect(
+    () => walk(GAME_STATE.player, [58.9, 42], { animated: true, onComplete: convo }),
+    0.5,
+  );
 
   function convo() {
     const mama = GAME_STATE.mama;
@@ -1343,17 +1350,22 @@ function initMarketEvent() {
 function cutsceneMarket() {
   if (questMazeChest.status !== "resolved") return;
   hudSetBagIconVisible(false);
-  dialogueLockAndFocus();
+
+  // ! This pattern is IMPORTANT before a "Walk effect"
+  // ! If this is missing, the walk effect will have a bug during animation
+  // ! that it would move the player but stays in "idle" frame instead of "walk"
+  DIALOGUE.effect(dialogueLockAndFocus, 0.00000000000001);
 
   DIALOGUE.effect(() => {
-    playExclamation(GAME_STATE.meizuo);
-    playExclamation(GAME_STATE.ximen);
-    // TODO: Fix this! Walking animation doesn't walk and just stay's idle even though the animated is set to true!
-    // walk(GAME_STATE.player, [101.5, 75], {
-    //   animated: true,
-    //   onComplete: () => GAME_STATE.player.face("w"),
-    // });
-  }, 1);
+    walk(GAME_STATE.player, [101.5, 75], {
+      animated: true,
+      onComplete: () => {
+        GAME_STATE.player.face("w");
+        playExclamation(GAME_STATE.meizuo);
+        playExclamation(GAME_STATE.ximen);
+      },
+    });
+  }, 3);
 
   f4Speaker("meizuo", `F4 MEI ZUO: Oh pumila lang kayo ng maayos diyan!`);
 
@@ -1502,24 +1514,29 @@ function cutsceneMarket() {
 }
 
 function cutsceneMidAisle() {
+  if (GAME_STATE.sequence.mid_aisle_cutscene)
+    GAME_STATE.player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
   if (
     questDaoMingKeys.status !== "resolved" ||
-    questMainQuest.status !== "active" ||
+    questMain.status !== "active" ||
     GAME_STATE.sequence.mid_aisle_cutscene
   )
     return;
 
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true;
-  GAME_STATE.huazelei.moveSpeed = 50;
-  GAME_STATE.daomingsi.moveSpeed = 50;
-  GAME_STATE.meizuo.moveSpeed = 50;
-  GAME_STATE.ximen.moveSpeed = 50;
 
-  // walk(GAME_STATE.player, [94, 50.25], {
-  //   animated: true,
-  //   onComplete: () => GAME_STATE.player.face("w"),
-  // }); // TODO: FIX THIS! Walking animation doesn't walk even animated is set to true!
+  // ! This pattern is IMPORTANT before a "Walk effect"
+  // ! If this is missing, the walk effect will have a bug during animation
+  // ! that it would move the player but stays in "idle" frame instead of "walk"
+  DIALOGUE.effect(dialogueLockAndFocus, 0.00000000000001);
+
+  DIALOGUE.effect(() => {
+    walk(GAME_STATE.player, [94, 50.25], {
+      animated: true,
+      onComplete: () => GAME_STATE.player.face("w"),
+    });
+  }, 1);
 
   DIALOGUE.effect(() => {
     playExclamation(GAME_STATE.daomingsi, {
@@ -1587,7 +1604,7 @@ function cutsceneMidAisle() {
   `);
   DIALOGUE.effect(() => {
     dialogueLockAndFocus();
-    GAME_STATE.player.moveSpeed = 50;
+    GAME_STATE.player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
     walk(
       GAME_STATE.daomingsi,
       [
@@ -1601,10 +1618,10 @@ function cutsceneMidAisle() {
   DIALOGUE.queue(`Sige na CHE, diretso ka lang pumunta sa stage.`);
   DIALOGUE.effect(() => {
     dialogueLockAndFocus();
-    respawnNPC(GAME_STATE.jp, [94.5, 41]);
+    spawnJp();
     GAME_STATE.daomingsi.face("d");
     GAME_STATE.huazelei.face("a");
-    playQuestToast(questMainQuest);
+    playQuestToast(questMain);
   }, 1.5);
   DIALOGUE.onComplete = () => {
     hudSetBagIconVisible(true);
@@ -1615,7 +1632,7 @@ function cutsceneMidAisle() {
 function cutsceneMidAisleLei() {
   if (
     questDaoMingKeys.status !== "resolved" ||
-    questMainQuest.status !== "active" ||
+    questMain.status !== "active" ||
     GAME_STATE.sequence.mid_aisle_lei_cutscene
   )
     return;
@@ -1626,8 +1643,14 @@ function cutsceneMidAisleLei() {
     playExclamation(GAME_STATE.huazelei);
   }, 0.5);
   f4Speaker("huazelei", "HUA ZE LEI: CHERYL...");
+  DIALOGUE.effect(() => {
+    gsap.delayedCall(2, () => {
+      GAME_STATE.papa.face("d");
+      GAME_STATE.mama.face("d");
+    });
+  });
   DIALOGUE.queue("Yung last page ng sketch ko na hinahabol mo ay nahanap na.");
-  DIALOGUE.queue("...iaabot niya na lang sa iyo.");
+  DIALOGUE.queue("...iaabot niya na lang sa iyo kasama ang music box.");
   DIALOGUE.effect(() => {
     dialogueLockAndFocus();
     playQuestToast(questCatchSheets);
@@ -1635,6 +1658,140 @@ function cutsceneMidAisleLei() {
   DIALOGUE.onComplete = () => {
     GAME_STATE.sequence.mid_aisle_lei_cutscene = true;
     hudSetBagIconVisible(true);
+  };
+}
+
+function cutsceneMidAisleJp() {
+  if (
+    questDaoMingKeys.status !== "resolved" ||
+    questMain.status !== "active" ||
+    GAME_STATE.sequence.mid_aisle_jp_cutscene
+  )
+    return;
+
+  const { player, jp, daomingsi, huazelei, meizuo, ximen } = GAME_STATE;
+  const f4 = [daomingsi, huazelei, meizuo, ximen];
+
+  hudSetBagIconVisible(false);
+
+  DIALOGUE.effect(dialogueLockAndFocus, 0.00001);
+
+  DIALOGUE.effect(() => {
+    playExclamation(player, { delay: 0.5 });
+  }, 1);
+
+  DIALOGUE.effect(() => {
+    playExclamation(player);
+    playAttentionBounce(player);
+  }, 0.5);
+
+  DIALOGUE.effect(() => {
+    playAttentionBounce(player);
+    player.face("s");
+  }, 0.5);
+
+  DIALOGUE.effect(() => {
+    playExclamation(player);
+    playAttentionBounce(player);
+    player.face("a");
+  }, 0.5);
+
+  DIALOGUE.effect(() => {
+    playExclamation(player);
+    playAttentionBounce(player);
+    player.face("w");
+  }, 0.5);
+
+  DIALOGUE.effect(() => {
+    gsap.delayedCall(1, () => {
+      GAME_STATE.mama.face("w");
+      GAME_STATE.papa.face("w");
+    });
+  });
+
+  DIALOGUE.queue({
+    text: `JP: Hi Love Love, Cheryl ko...`,
+    color: "blue",
+  });
+
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    playExclamation(player);
+    playAttentionBounce(player, { hops: 2 });
+  }, 2);
+
+  DIALOGUE.effect(() => {
+    gsap.delayedCall(0.7, () =>
+      walk(jp, [94.35, 42], {
+        animated: true,
+        onComplete: () => jp.face("a"),
+      }),
+    );
+
+    walk(
+      player, //
+      [93.75, 42],
+      { animated: true, onComplete: () => player.face("d") },
+    );
+
+    // slowly prep the F4
+    gsap.delayedCall(2, () => {
+      walk(ximen, [93.5, 47], { animated: true });
+      walk(meizuo, [94.5, 47], {
+        animated: true,
+        onComplete: () => {
+          daomingsi.face("w");
+          huazelei.face("w");
+          f4.forEach((f) => walk(f, { direction: "w", steps: 2 }, { animated: true }));
+        },
+      });
+    });
+  }, 3.5);
+
+  DIALOGUE.effect(() => {
+    playExclamation(GAME_STATE.jp);
+    gsap.delayedCall(0.3, () => {
+      birthdayConfetti();
+    });
+    gsap.delayedCall(1, () => {
+      playExclamation(GAME_STATE.player);
+      playAttentionBounce(GAME_STATE.player, { hops: 2 });
+    });
+  }, 0.1);
+  DIALOGUE.queue(`JP: 🎂 HAPPY BIRTHDAY LOVE LOVE!`);
+
+  DIALOGUE.effect(() => {
+    gsap.delayedCall(0.3, () =>
+      walk(
+        daomingsi,
+        [
+          { direction: "d", steps: 0.75 },
+          { direction: "w", steps: 2 },
+        ],
+        { animated: true },
+      ),
+    );
+    gsap.delayedCall(0.6, () =>
+      walk(
+        huazelei,
+        [
+          { direction: "a", steps: 0.75 },
+          { direction: "w", steps: 2 },
+        ],
+        { animated: true },
+      ),
+    );
+    gsap.delayedCall(1.5, () => walk(ximen, [{ direction: "w", steps: 1 }], { animated: true }));
+    gsap.delayedCall(1.8, () => walk(meizuo, [{ direction: "w", steps: 1 }], { animated: true }));
+  }, 0.1);
+
+  // DIALOGUE.queue(`Nakita ko ito'ng sketch sa tracing paper...`);
+  // DIALOGUE.queue(`Sabi sa akin ni LEI, ito daw yung kinokolekta mo.`);
+  // DIALOGUE.queue(`Sabi sa akin ni LEI, ito daw yung kinokolekta mo.`);
+
+  DIALOGUE.onComplete = () => {
+    hudSetBagIconVisible(true);
+    GAME_STATE.sequence.mid_aisle_jp_cutscene = true;
   };
 }
 
@@ -1697,11 +1854,16 @@ function initMainEvent() {
   addOnce(DECORS, chestEmpty);
   addOnce(GAME_STATE.obstacles, chestEmpty);
 
+  GAME_STATE.huazelei.moveSpeed = 50;
+  GAME_STATE.daomingsi.moveSpeed = 50;
+  GAME_STATE.meizuo.moveSpeed = 50;
+  GAME_STATE.ximen.moveSpeed = 50;
+
   // Mei Zuo & Xi Men
-  placeAtTile({ sprite: GAME_STATE.meizuo, tile: [92.75, 51] });
-  placeAtTile({ sprite: GAME_STATE.ximen, tile: [95.25, 51] });
-  GAME_STATE.meizuo.face("d");
-  GAME_STATE.ximen.face("a");
+  placeAtTile({ sprite: GAME_STATE.meizuo, tile: [95.25, 51] });
+  placeAtTile({ sprite: GAME_STATE.ximen, tile: [92.75, 51] });
+  GAME_STATE.meizuo.face("a");
+  GAME_STATE.ximen.face("d");
 
   // Papa & Mama
   placeAtTile({ sprite: GAME_STATE.mama, tile: [91.35, 45.75] });
@@ -1710,12 +1872,16 @@ function initMainEvent() {
   GAME_STATE.papa.face("s");
 
   // Ah Si & Lei
-  // respawnNPC(GAME_STATE.daomingsi, [92.75, 46.5]);
-  // respawnNPC(GAME_STATE.huazelei, [95.25, 46.5]);
-  // GAME_STATE.daomingsi.face("d");
-  // GAME_STATE.huazelei.face("a");
-  respawnNPC(GAME_STATE.daomingsi, [94, 45.5]);
-  respawnNPC(GAME_STATE.huazelei, [94.25, 43]);
+  if (GAME_STATE.sequence.mid_aisle_cutscene) {
+    respawnNPC(GAME_STATE.daomingsi, [92.75, 46.5]);
+    respawnNPC(GAME_STATE.huazelei, [95.25, 46.5]);
+    GAME_STATE.daomingsi.face("d");
+    GAME_STATE.huazelei.face("a");
+    spawnJp();
+  } else {
+    respawnNPC(GAME_STATE.daomingsi, [94, 45.5]);
+    respawnNPC(GAME_STATE.huazelei, [94.25, 43]);
+  }
 
   PARK_EVENT_GUARDS.forEach((npc) => respawnNPC(npc));
   AISLE_GUARDS.forEach((npc) => respawnNPC(npc));
@@ -1756,4 +1922,8 @@ function restrictRun(restricted = true) {
   } else {
     GAME_STATE.allowRunning = true;
   }
+}
+
+function spawnJp() {
+  respawnNPC(GAME_STATE.jp, [94.5, 41]);
 }

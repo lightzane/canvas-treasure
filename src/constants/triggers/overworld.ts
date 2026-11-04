@@ -11,7 +11,8 @@ export type TriggerName =
   | "sound_fountain_mansion"
   | "cutscene_running_shoes"
   | "cutscene_mid_aisle"
-  | "cutscene_mid_aisle_lei";
+  | "cutscene_mid_aisle_lei"
+  | "cutscene_mid_aisle_jp";
 
 // prettier-ignore
 export const TRIGGER_OVERWORLD = scaleTiledObjects([
@@ -49,4 +50,5 @@ export const TRIGGER_OVERWORLD = scaleTiledObjects([
   { name: "cutscene_running_shoes", x: 1825, y: 1389.5, width: 126.5, height: 41.5 },
   { name: "cutscene_mid_aisle", x: 2975.86753147166, y: 1596.20506102626, width: 96, height: 48 },
   { name: "cutscene_mid_aisle_lei", x: 2975.86753147166, y: 1514.20506102626, width: 96, height: 48 },
+  { name: "cutscene_mid_aisle_jp", x: 2975.86753147166, y: 1438.20506102626, width: 96, height: 48 },
 ]);

@@ -14223,6 +14223,18 @@
                          "width":96,
                          "x":2975.86753147166,
                          "y":1514.20506102626
+                        }, 
+                        {
+                         "height":48,
+                         "id":56,
+                         "name":"mid_aisle_jp",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":96,
+                         "x":2975.86753147166,
+                         "y":1438.20506102626
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -14238,7 +14250,7 @@
          "y":0
         }],
  "nextlayerid":168,
- "nextobjectid":56,
+ "nextobjectid":57,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",
