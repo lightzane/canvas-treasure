@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="168" nextobjectid="54">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="168" nextobjectid="56">
  <editorsettings>
   <export target="overworld.json" format="json"/>
  </editorsettings>
@@ -12864,6 +12864,8 @@
   </objectgroup>
   <objectgroup color="#00f900" id="165" name="cutscene">
    <object id="48" name="running_shoes" x="1825" y="1389.5" width="126.5" height="41.5"/>
+   <object id="54" name="mid_aisle" x="2975.87" y="1596.21" width="96" height="48"/>
+   <object id="55" name="mid_aisle_lei" x="2975.87" y="1514.21" width="96" height="48"/>
   </objectgroup>
  </group>
 </map>

@@ -8,6 +8,7 @@ import { preload } from "@/lib/preload";
 import { QUESTS } from "@/lib/quests";
 import { IMGS_DAOMINGSI_IDLE, IMGS_DAOMINGSI_WALK } from "@/sprites/dao-ming-si";
 import { IMGS_HUAZELEI_IDLE, IMGS_HUAZELEI_WALK } from "@/sprites/hua-ze-lei";
+import { IMGS_JP_IDLE } from "@/sprites/jp";
 import { IMGS_MAMA_IDLE } from "@/sprites/mama";
 import { IMGS_MEIZUO_IDLE, IMGS_MEIZUO_WALK } from "@/sprites/mei-zuo";
 import { IMGS_PAPA_IDLE } from "@/sprites/papa";
@@ -24,6 +25,11 @@ export const GAME_STATE = {
     initialSprite: "idle",
     shadowOffset,
     // moveSpeed: 500,
+  }),
+  jp: new PlayerSprite({
+    sprites: { idle: IMGS_JP_IDLE, walk: IMGS_PLAYER_WALK },
+    shadowOffset,
+    moveSpeed: 50,
   }),
   mama: new PlayerSprite({
     sprites: { idle: IMGS_MAMA_IDLE },
@@ -96,6 +102,8 @@ export const GAME_STATE = {
     mama_running_shoes: true,
     mama_starts_bottle: true,
     market_cutscene: true,
+    mid_aisle_cutscene: false,
+    mid_aisle_lei_cutscene: false,
   },
   quests: QUESTS,
   /**

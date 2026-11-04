@@ -14199,6 +14199,30 @@
                          "width":126.5,
                          "x":1825,
                          "y":1389.5
+                        }, 
+                        {
+                         "height":48,
+                         "id":54,
+                         "name":"mid_aisle",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":96,
+                         "x":2975.86753147166,
+                         "y":1596.20506102626
+                        }, 
+                        {
+                         "height":48,
+                         "id":55,
+                         "name":"mid_aisle_lei",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":96,
+                         "x":2975.86753147166,
+                         "y":1514.20506102626
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -14214,7 +14238,7 @@
          "y":0
         }],
  "nextlayerid":168,
- "nextobjectid":54,
+ "nextobjectid":56,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

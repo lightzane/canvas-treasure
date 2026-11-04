@@ -239,6 +239,8 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   cutscene_running_shoes: {
     onEnter: cutsceneRunningShoes,
   },
+  cutscene_mid_aisle: { onEnter: () => cutsceneMidAisle() },
+  cutscene_mid_aisle_lei: { onEnter: () => cutsceneMidAisleLei() },
   restrict_allow_run: { onEnter: () => restrictRun(false) },
   restrict_disallow_run: { onEnter: () => restrictRun(true) },
   sand: {
@@ -1499,6 +1501,143 @@ function cutsceneMarket() {
   };
 }
 
+function cutsceneMidAisle() {
+  if (
+    questDaoMingKeys.status !== "resolved" ||
+    questMainQuest.status !== "active" ||
+    GAME_STATE.sequence.mid_aisle_cutscene
+  )
+    return;
+
+  hudSetBagIconVisible(false);
+  GAME_STATE.movementLocked = true;
+  GAME_STATE.huazelei.moveSpeed = 50;
+  GAME_STATE.daomingsi.moveSpeed = 50;
+  GAME_STATE.meizuo.moveSpeed = 50;
+  GAME_STATE.ximen.moveSpeed = 50;
+
+  // walk(GAME_STATE.player, [94, 50.25], {
+  //   animated: true,
+  //   onComplete: () => GAME_STATE.player.face("w"),
+  // }); // TODO: FIX THIS! Walking animation doesn't walk even animated is set to true!
+
+  DIALOGUE.effect(() => {
+    playExclamation(GAME_STATE.daomingsi, {
+      onComplete: () => {
+        gsap.delayedCall(0.5, () => {
+          playExclamation(GAME_STATE.daomingsi);
+          playAttentionBounce(GAME_STATE.daomingsi);
+        });
+      },
+    });
+  }, 3);
+
+  f4Speaker("daomingsi", `DAO MING SI: Okay, okay! Tahimik muna ang lahat!`);
+  DIALOGUE.effect(dialogueLockAndFocus, 1.5);
+  DIALOGUE.queue(`
+      Alam kong napagod kayo kakahanap ng mga pahiwatig,
+      pero hindi naman basta-bastang kayamanan ang hinahanap
+      natin dito. Hindi lahat ng kayamanan ay ginto o alahas...
+  `);
+  DIALOGUE.effect(dialogueLockAndFocus, 1.5);
+  DIALOGUE.effect(() => {
+    walk(
+      GAME_STATE.huazelei,
+      [
+        //
+        { direction: "s", steps: 2 },
+        { direction: "d", steps: 1 },
+        [95.25, 46.5],
+      ],
+      { animated: true },
+    );
+  });
+  DIALOGUE.effect(() => {
+    playExclamation(GAME_STATE.daomingsi);
+    playAttentionBounce(GAME_STATE.daomingsi);
+  }, 0.5);
+  DIALOGUE.queue(`Minsan...`);
+  DIALOGUE.queue(`
+    ...ang pinakamahalagang kayamanan ay isang taong
+    hindi kayang tumbasan ng kahit anong yaman.
+  `);
+  DIALOGUE.effect(dialogueLockAndFocus, 1.5);
+  DIALOGUE.effect(() => {
+    playExclamation(GAME_STATE.daomingsi);
+    playAttentionBounce(GAME_STATE.daomingsi);
+  }, 0.5);
+  DIALOGUE.queue(`
+    Lubos rin ako nagpapasalamat kay CHE para sa suporta,
+    bawat kilos, galaw at oras niya na ibinigay sa paghanap ng
+    keys.
+  `);
+  DIALOGUE.effect(dialogueLockAndFocus, 1.5);
+  DIALOGUE.queue(`
+    Sa katunayan nga ay muntik na madulas si LIU mabanggit
+    ang "keyk".
+  `);
+  DIALOGUE.queue(`
+    OO Tama! Cake talaga iyun. Hindi keys. At hindi rin ito keys
+    sa isang treasure chest.
+  `);
+  DIALOGUE.queue(`Pero tama na ang daldal. Ituloy na natin ang kaganapang ito.`);
+  DIALOGUE.queue(`
+    Pero siyempre, palakpakan n'yo rin naman ako.
+    Hindi basta-basta ang pinaghandaan ko rito!
+  `);
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    GAME_STATE.player.moveSpeed = 50;
+    walk(
+      GAME_STATE.daomingsi,
+      [
+        //
+        { direction: "a", steps: 1.25 },
+        [92.75, 46.5],
+      ],
+      { animated: true },
+    );
+  }, 5);
+  DIALOGUE.queue(`Sige na CHE, diretso ka lang pumunta sa stage.`);
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    respawnNPC(GAME_STATE.jp, [94.5, 41]);
+    GAME_STATE.daomingsi.face("d");
+    GAME_STATE.huazelei.face("a");
+    playQuestToast(questMainQuest);
+  }, 1.5);
+  DIALOGUE.onComplete = () => {
+    hudSetBagIconVisible(true);
+    GAME_STATE.sequence.mid_aisle_cutscene = true;
+  };
+}
+
+function cutsceneMidAisleLei() {
+  if (
+    questDaoMingKeys.status !== "resolved" ||
+    questMainQuest.status !== "active" ||
+    GAME_STATE.sequence.mid_aisle_lei_cutscene
+  )
+    return;
+
+  hudSetBagIconVisible(false);
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    playExclamation(GAME_STATE.huazelei);
+  }, 0.5);
+  f4Speaker("huazelei", "HUA ZE LEI: CHERYL...");
+  DIALOGUE.queue("Yung last page ng sketch ko na hinahabol mo ay nahanap na.");
+  DIALOGUE.queue("...iaabot niya na lang sa iyo.");
+  DIALOGUE.effect(() => {
+    dialogueLockAndFocus();
+    playQuestToast(questCatchSheets);
+  }, 1.5);
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.sequence.mid_aisle_lei_cutscene = true;
+    hudSetBagIconVisible(true);
+  };
+}
+
 function interactMeizuo() {
   if (!GAME_STATE.sequence.market_cutscene) {
     cutsceneMarket();
@@ -1571,10 +1710,12 @@ function initMainEvent() {
   GAME_STATE.papa.face("s");
 
   // Ah Si & Lei
-  respawnNPC(GAME_STATE.daomingsi, [92.75, 46.5]);
-  respawnNPC(GAME_STATE.huazelei, [95.25, 46.5]);
-  GAME_STATE.daomingsi.face("d");
-  GAME_STATE.huazelei.face("a");
+  // respawnNPC(GAME_STATE.daomingsi, [92.75, 46.5]);
+  // respawnNPC(GAME_STATE.huazelei, [95.25, 46.5]);
+  // GAME_STATE.daomingsi.face("d");
+  // GAME_STATE.huazelei.face("a");
+  respawnNPC(GAME_STATE.daomingsi, [94, 45.5]);
+  respawnNPC(GAME_STATE.huazelei, [94.25, 43]);
 
   PARK_EVENT_GUARDS.forEach((npc) => respawnNPC(npc));
   AISLE_GUARDS.forEach((npc) => respawnNPC(npc));
