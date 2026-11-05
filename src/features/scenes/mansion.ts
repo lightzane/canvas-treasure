@@ -217,7 +217,7 @@ function nearMissConversation() {
   DIALOGUE.effect(() => {
     DIALOGUE.clearPortrait();
     DIALOGUE.hideBox();
-    daoMingSiWalk = walk(GAME_STATE.daomingsi, [[23, 4]], { animated: true });
+    daoMingSiWalk = walk(GAME_STATE.daomingsi, [[23, 4]]);
   }, 1);
   DIALOGUE.effect(() => {
     BUTLER.face("d");
@@ -252,7 +252,7 @@ function nearMissConversation() {
   DIALOGUE.effect(() => {
     DIALOGUE.clearPortrait();
     DIALOGUE.hideBox();
-    walk(GAME_STATE.daomingsi, [25, 4], { animated: true });
+    walk(GAME_STATE.daomingsi, [25, 4]);
     gsap.delayedCall(0.5, () => BUTLER.face("s"));
   }, 1);
   DIALOGUE.effect(() => playExclamation(BUTLER), 0.5);

@@ -3,7 +3,7 @@ import { toScreen } from "@/lib/canvas/screen";
 import gsap from "gsap";
 
 export interface ExclamationBubbleOptions {
-  /** Square size, in px. @default 32 */
+  /** Square size, in px. @default 40 */
   size?: number;
   /** Gap between the sprite's head and the bottom of the bubble, in px. @default 10 */
   margin?: number;
@@ -11,7 +11,20 @@ export interface ExclamationBubbleOptions {
   fill?: string;
   /** Border color. @default "black" */
   stroke?: string;
-  /** "!" glyph color. @default "red" */
+  /** The character/emoji shown in the bubble — one glyph, not a text string (this is a small fixed square, not a label). Ignored if `icon` is given. @default "!" */
+  glyph?: string;
+  /**
+   * Image URL/path shown instead of `glyph` — set directly as an `<img>`'s
+   * `src` (same as `img()`'s own return value, e.g.
+   * `icon: img("others/garden-shears.png")`), not a filename alone or a
+   * tooltip/title string. An animated GIF/APNG/WebP plays normally, same as
+   * any other `<img>`. Renders identically everywhere, unlike a multicolor
+   * emoji glyph, which depends on the OS's own emoji font and ignores
+   * `color`. Drawn pixelated (crisp, no smoothing), matching this project's
+   * own sprite convention.
+   */
+  icon?: string;
+  /** `glyph` color — ignored when `icon` is given (an image has its own fixed appearance). @default "red" */
   color?: string;
   /** Seconds the bubble stays fully visible before fading out. @default 0.9 */
   hold?: number;
@@ -23,14 +36,17 @@ export interface ExclamationBubbleOptions {
 
 /**
  * A disposable Pokémon-style "!" notice — a small filled rounded square with
- * an exclamation mark that pops in above `target`'s head, holds briefly,
- * then fades out and removes itself. Pure DOM/CSS, same spirit as the other
- * effects in this folder: no canvas drawing, no scene wiring — the sprite's
- * on-screen position is read once at the moment this is called (fine for a
- * cue this brief) via the same canvas-rect trick `iris-reveal.ts` uses.
+ * a glyph (or an image, via `icon`) that pops in above `target`'s head,
+ * holds briefly, then fades out and removes itself. Pure DOM/CSS, same
+ * spirit as the other effects in this folder: no canvas drawing, no scene
+ * wiring — the sprite's on-screen position is read once at the moment this
+ * is called (fine for a cue this brief) via the same canvas-rect trick
+ * `iris-reveal.ts` uses.
  *
  * @example playExclamation(GAME_STATE.mama);
  * @example playExclamation(GAME_STATE.mama, { hold: 1, fill: "#ffe066" });
+ * @example playExclamation(GAME_STATE.mama, { glyph: "?" });
+ * @example playExclamation(GAME_STATE.mama, { icon: img("others/garden-shears.png") });
  */
 export function playExclamation(target: Sprite, options: ExclamationBubbleOptions = {}) {
   const {
@@ -38,6 +54,8 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
     margin = 10,
     fill = "#fff",
     stroke = "black",
+    glyph = "!",
+    icon,
     color = "red",
     hold = 0.9,
     delay = 0,
@@ -55,7 +73,6 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
   const anchorY = (canvasRect?.top ?? 0) + local.y - margin;
 
   const el = document.createElement("div");
-  el.textContent = "!";
   el.className = "game-effect-overlay font-game";
   el.style.left = `${anchorX}px`;
   el.style.top = `${anchorY}px`;
@@ -67,10 +84,24 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
   el.style.borderRadius = "6px";
   el.style.background = fill;
   el.style.border = `2px solid ${stroke}`;
-  el.style.color = color;
-  el.style.fontWeight = "700";
-  el.style.fontSize = "32px";
   el.style.transformOrigin = "center bottom"; // pops up from the point just above the head
+
+  if (icon) {
+    const img = document.createElement("img");
+    img.src = icon;
+    img.alt = "";
+    img.style.width = "70%";
+    img.style.height = "70%";
+    img.style.objectFit = "contain";
+    img.style.imageRendering = "pixelated"; // stays crisp, not smoothed — every frame, for an animated GIF too
+    el.appendChild(img);
+  } else {
+    el.textContent = glyph;
+    el.style.color = color;
+    el.style.fontWeight = "700";
+    el.style.fontSize = "32px";
+  }
+
   document.body.appendChild(el);
 
   const state = { scale: 0, opacity: 1 };

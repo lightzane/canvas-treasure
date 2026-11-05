@@ -20,7 +20,7 @@ export type WalkLeg = [number, number] | { direction: Direction; steps: number }
 export interface WalkOptions {
   /** World position the tile grid is measured from, same as `placeAtTile`'s `origin`. Only affects absolute-tile legs. @default {x:0,y:0} */
   origin?: Position;
-  /** Switches `npc` to its "walk" play-state for the walk, back to "idle" on arrival. Only pass this for NPCs that actually declare a `walk` animation — one that doesn't will throw. @default false */
+  /** Switches `npc` to its "walk" play-state for the walk, back to "idle" on arrival. Every real call site animates — pass `false` only for an NPC that doesn't declare a `walk` animation (one that does, with this left on, would throw). @default true */
   animated?: boolean;
   /** Runs once the NPC has reached the final tile. */
   onComplete?: () => void;
@@ -99,7 +99,7 @@ export function walk(
   path: WalkLeg | WalkLeg[],
   options: WalkOptions = {},
 ): WalkHandle {
-  const { origin = { x: 0, y: 0 }, animated = false, onComplete } = options;
+  const { origin = { x: 0, y: 0 }, animated = true, onComplete } = options;
   const legs: WalkLeg[] = isSingleLeg(path) ? [path] : path;
 
   const timeline = gsap.timeline({

@@ -184,12 +184,19 @@ class Dialogue {
    * can fire from anywhere, whenever the thing it's actually waiting on
    * completes.
    *
+   * `lock()` and whatever will eventually call `unlock()` must be *started*
+   * from the same effect, before the locked message — never from a later
+   * one queued after it. `pending` runs strictly in order, so anything
+   * queued after a locked message can't run until that message is
+   * dismissed, which is exactly what the lock is blocking: a deadlock, the
+   * key sitting on the far side of the locked door.
+   *
    * @example
-   * DIALOGUE.effect(() => DIALOGUE.lock());
-   * DIALOGUE.queue("JP: Happy birthday!");
    * DIALOGUE.effect(() => {
+   *   DIALOGUE.lock();
    *   walk(jp, [[20, 10]], { onComplete: () => DIALOGUE.unlock() });
    * });
+   * DIALOGUE.queue("JP: Happy birthday!");
    */
   lock() {
     this.locked = true;

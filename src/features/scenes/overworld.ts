@@ -72,6 +72,7 @@ const IMG_MESSAGE_BOTTLE_H = img("others/message-bottle-h.png");
 const IMG_CHEST_CLOSE = img("others/chest-close.png");
 const IMG_CHEST_OPEN = img("others/chest-open.png");
 const IMG_CHEST_EMPTY = img("others/chest-empty.png");
+const ICON_RED_HEART = img("others/red-heart.png");
 
 const MAIN_EVENT_PLAYER_MOVESPEED = 100;
 
@@ -514,10 +515,7 @@ function cutsceneRunningShoes() {
   hudSetBagIconVisible(false);
 
   DIALOGUE.effect(disableAccess, 0.00001);
-  DIALOGUE.effect(
-    () => walk(GAME_STATE.player, [58.9, 42], { animated: true, onComplete: convo }),
-    0.5,
-  );
+  DIALOGUE.effect(() => walk(GAME_STATE.player, [58.9, 42], { onComplete: convo }), 0.5);
 
   function convo() {
     const mama = GAME_STATE.mama;
@@ -826,16 +824,10 @@ function interactPaperMulti() {
   paperWindAnimating = true;
 
   gsap.delayedCall(1, () =>
-    walk(
-      GAME_STATE.huazelei,
-      [
-        [82, 36],
-        [82, 41],
-      ],
-      {
-        animated: true,
-      },
-    ),
+    walk(GAME_STATE.huazelei, [
+      [82, 36],
+      [82, 41],
+    ]),
   );
 
   let gsapDelay = 0.5;
@@ -852,7 +844,7 @@ function interactPaperMulti() {
     });
   });
 
-  walk(GAME_STATE.player, [82, 43], { animated: true });
+  walk(GAME_STATE.player, [82, 43]);
 
   drift(paperWind1, {
     to: { direction: "a", distance: 11 * TILE_SIZE },
@@ -894,7 +886,6 @@ function interactPaperMulti() {
             [84.5, 36],
           ],
           {
-            animated: true,
             onComplete: () => GAME_STATE.huazelei.face("w"),
           },
         );
@@ -982,7 +973,7 @@ function interactPaper2Part2() {
     bagIncItem("paper2");
   }, 1.5);
   DIALOGUE.effect(() => {
-    walk(GAME_STATE.huazelei, [37, 71], { animated: true });
+    walk(GAME_STATE.huazelei, [37, 71]);
     playAttentionBounce(GAME_STATE.player, { delay: 1 });
     playExclamation(GAME_STATE.player, { delay: 1 });
     gsap.delayedCall(0.5, () => GAME_STATE.player.face("a"));
@@ -1012,7 +1003,7 @@ function interactPaper2Part2() {
     DIALOGUE.clearPortrait();
     DIALOGUE.hideBox();
   });
-  DIALOGUE.effect(() => walk(GAME_STATE.huazelei, [37, 65], { animated: true }), 2);
+  DIALOGUE.effect(() => walk(GAME_STATE.huazelei, [37, 65]), 2);
   DIALOGUE.effect(() => {
     const q = GAME_STATE.quests.get("running_shoes")!;
     playQuestToast(questCatchSheets);
@@ -1171,12 +1162,10 @@ function openMazeChest() {
     respawnNPC(GAME_STATE.daomingsi, [108, 7]);
     respawnNPC(GAME_STATE.huazelei, [107.5, 7.25]);
     walk(GAME_STATE.daomingsi, [111.5, 7], {
-      animated: true,
       onComplete: () => GAME_STATE.daomingsi.face("s"),
     });
     gsap.delayedCall(0.1, () =>
       walk(GAME_STATE.huazelei, [111, 7.25], {
-        animated: true,
         onComplete: () => GAME_STATE.huazelei.face("w"),
       }),
     );
@@ -1199,8 +1188,7 @@ function openMazeChest() {
     disableAccess();
     GAME_STATE.huazelei.face("d");
     playExclamation(GAME_STATE.daomingsi, {
-      onComplete: () =>
-        walk(GAME_STATE.daomingsi, { direction: "d", steps: 2 }, { animated: true }),
+      onComplete: () => walk(GAME_STATE.daomingsi, { direction: "d", steps: 2 }),
     });
     playAttentionBounce(GAME_STATE.daomingsi, { hops: 5, duration: 0.05, delay: 2 });
     playExclamation(GAME_STATE.daomingsi, { delay: 2 });
@@ -1209,15 +1197,11 @@ function openMazeChest() {
     playExclamation(GAME_STATE.daomingsi, { delay: 4 });
     playExclamation(GAME_STATE.player, { delay: 4 });
     gsap.delayedCall(0.8, () =>
-      walk(
-        GAME_STATE.huazelei,
-        [
-          { direction: "a", steps: 2 },
-          { direction: "s", steps: 2.5 },
-          { direction: "d", steps: 8.5 },
-        ],
-        { animated: true },
-      ),
+      walk(GAME_STATE.huazelei, [
+        { direction: "a", steps: 2 },
+        { direction: "s", steps: 2.5 },
+        { direction: "d", steps: 8.5 },
+      ]),
     );
   }, 5);
   DIALOGUE.queue({
@@ -1226,7 +1210,7 @@ function openMazeChest() {
   });
   DIALOGUE.effect(() => {
     disableAccess();
-    walk(GAME_STATE.huazelei, { direction: "w", steps: 2.5 }, { animated: true });
+    walk(GAME_STATE.huazelei, { direction: "w", steps: 2.5 });
     playAttentionBounce(GAME_STATE.player, { hops: 2, duration: 0.09 });
     playExclamation(GAME_STATE.player, { hold: 10 });
   }, 1);
@@ -1266,7 +1250,6 @@ function openMazeChest() {
       GAME_STATE.daomingsi,
       { direction: "a", steps: 10 },
       {
-        animated: true,
         onComplete() {
           despawnNPC(GAME_STATE.daomingsi);
         },
@@ -1295,7 +1278,6 @@ function openMazeChest() {
         { direction: "a", steps: 10 },
       ],
       {
-        animated: true,
         onComplete: initMarketEvent,
       },
     );
@@ -1358,7 +1340,6 @@ function cutsceneMarket() {
 
   DIALOGUE.effect(() => {
     walk(GAME_STATE.player, [101.5, 75], {
-      animated: true,
       onComplete: () => {
         GAME_STATE.player.face("w");
         playExclamation(GAME_STATE.meizuo);
@@ -1533,7 +1514,6 @@ function cutsceneMidAisle() {
 
   DIALOGUE.effect(() => {
     walk(GAME_STATE.player, [94, 50.25], {
-      animated: true,
       onComplete: () => GAME_STATE.player.face("w"),
     });
   }, 1);
@@ -1558,16 +1538,12 @@ function cutsceneMidAisle() {
   `);
   DIALOGUE.effect(disableAccess, 1.5);
   DIALOGUE.effect(() => {
-    walk(
-      GAME_STATE.huazelei,
-      [
-        //
-        { direction: "s", steps: 2 },
-        { direction: "d", steps: 1 },
-        [95.25, 46.5],
-      ],
-      { animated: true },
-    );
+    walk(GAME_STATE.huazelei, [
+      //
+      { direction: "s", steps: 2 },
+      { direction: "d", steps: 1 },
+      [95.25, 46.5],
+    ]);
   });
   DIALOGUE.effect(() => {
     playExclamation(GAME_STATE.daomingsi);
@@ -1605,15 +1581,11 @@ function cutsceneMidAisle() {
   DIALOGUE.effect(() => {
     disableAccess();
     GAME_STATE.player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
-    walk(
-      GAME_STATE.daomingsi,
-      [
-        //
-        { direction: "a", steps: 1.25 },
-        [92.75, 46.5],
-      ],
-      { animated: true },
-    );
+    walk(GAME_STATE.daomingsi, [
+      //
+      { direction: "a", steps: 1.25 },
+      [92.75, 46.5],
+    ]);
   }, 5);
   DIALOGUE.queue(`Sige na CHE, diretso ka lang pumunta sa stage.`);
   DIALOGUE.effect(() => {
@@ -1653,7 +1625,10 @@ function cutsceneMidAisleLei() {
   DIALOGUE.queue("...iaabot niya na lang sa iyo kasama ang music box.");
   DIALOGUE.effect(disableAccess, 0.5);
   DIALOGUE.queue({ text: "... ... ...", portrait: null, color: "black" });
-  DIALOGUE.effect(disableAccess, 1.5);
+  DIALOGUE.effect(() => {
+    disableAccess();
+    playExclamation(GAME_STATE.player, { glyph: "?", color: "darkviolet", hold: 5 });
+  }, 2.5);
   DIALOGUE.queue(`...niya?`);
   DIALOGUE.effect(() => {
     disableAccess();
@@ -1731,18 +1706,13 @@ function cutsceneMidAisleJp() {
     GAME_STATE.cameraFollow = false;
     panCameraToTile([94, 44.05], { duration: 2 });
 
-    gsap.delayedCall(3.5, () =>
-      walk(jp, [94.35, 42], {
-        animated: true,
-      }),
-    );
+    gsap.delayedCall(3.5, () => walk(jp, [94.35, 42]));
 
     GAME_STATE.player.moveSpeed = 50;
     walk(
       player, //
       [93.75, 42],
       {
-        animated: true,
         onComplete: () => {
           player.face("d");
           jp.face("a");
@@ -1752,13 +1722,24 @@ function cutsceneMidAisleJp() {
 
     // slowly prep the F4
     gsap.delayedCall(2, () => {
-      walk(ximen, [93.5, 47], { animated: true });
+      walk(ximen, [93.5, 47]);
       walk(meizuo, [94.5, 47], {
-        animated: true,
         onComplete: () => {
           daomingsi.face("w");
           huazelei.face("w");
-          f4.forEach((f) => walk(f, { direction: "w", steps: 2 }, { animated: true }));
+          f4.forEach((f, i) =>
+            walk(
+              f,
+              { direction: "w", steps: 2 },
+              {
+                onComplete: () => {
+                  if (i !== f4.length - 1) return; // not yet the last walk
+                  // the last walk
+                  DIALOGUE.unlock();
+                },
+              },
+            ),
+          );
         },
       });
     });
@@ -1770,41 +1751,37 @@ function cutsceneMidAisleJp() {
       birthdayConfetti();
     });
     gsap.delayedCall(1, () => {
-      playExclamation(GAME_STATE.player);
+      playExclamation(GAME_STATE.jp, { icon: ICON_RED_HEART, hold: 15 });
+      playExclamation(GAME_STATE.player, { icon: ICON_RED_HEART, hold: 15 });
       playAttentionBounce(GAME_STATE.player, { hops: 2 });
     });
   }, 0.1);
+  // lock() and the walks that will eventually unlock() it must start from
+  // the SAME effect, before the locked message — not a later one queued
+  // after it. DIALOGUE.pending runs strictly in order, so anything queued
+  // after a locked message can never run until that message is dismissed,
+  // and dismissing it is exactly what the lock is blocking: a deadlock,
+  // the key sitting on the far side of the locked door. Once *started*
+  // here, the walks run on their own independent gsap timers, so they can
+  // call unlock() whenever they actually finish regardless of what the
+  // dialogue queue is doing.
   DIALOGUE.effect(() => DIALOGUE.lock());
   DIALOGUE.queue(`JP: 🎂 HAPPY BIRTHDAY LOVE LOVE!`);
-
   DIALOGUE.effect(() => {
     gsap.delayedCall(0.3, () =>
-      walk(
-        daomingsi,
-        [
-          { direction: "d", steps: 0.75 },
-          { direction: "w", steps: 2 },
-        ],
-        { animated: true },
-      ),
+      walk(daomingsi, [
+        { direction: "d", steps: 0.75 },
+        { direction: "w", steps: 2 },
+      ]),
     );
     gsap.delayedCall(0.6, () =>
-      walk(
-        huazelei,
-        [
-          { direction: "a", steps: 0.75 },
-          { direction: "w", steps: 2 },
-        ],
-        { animated: true },
-      ),
+      walk(huazelei, [
+        { direction: "a", steps: 0.75 },
+        { direction: "w", steps: 2 },
+      ]),
     );
-    gsap.delayedCall(1.5, () => walk(ximen, [{ direction: "w", steps: 1 }], { animated: true }));
-    gsap.delayedCall(1.8, () =>
-      walk(meizuo, [{ direction: "w", steps: 1 }], {
-        animated: true,
-        onComplete: () => DIALOGUE.unlock(),
-      }),
-    );
+    gsap.delayedCall(1.5, () => walk(ximen, [{ direction: "w", steps: 1 }]));
+    gsap.delayedCall(1.8, () => walk(meizuo, [{ direction: "w", steps: 1 }]));
   }, 0.1);
 
   // DIALOGUE.queue(`Nakita ko ito'ng sketch sa tracing paper...`);
