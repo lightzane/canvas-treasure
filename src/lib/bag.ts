@@ -8,6 +8,7 @@ import { GAME_STATE } from "@/features/game-state";
  */
 export type ItemName =
   | "parcel"
+  | "treasure"
   | "shoes"
   | "journal"
   | "sketch"
@@ -59,4 +60,8 @@ export function bagAddItem(name: ItemName, qty = 1) {
   else {
     GAME_STATE.bag.set(name, { type: "equip", quantity: qty });
   }
+}
+
+export function bagRemoveItem(name: ItemName) {
+  return GAME_STATE.bag.delete(name);
 }

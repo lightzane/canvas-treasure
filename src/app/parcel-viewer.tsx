@@ -18,7 +18,8 @@ export function ParcelViewer({ onClose }: { onClose: () => void }) {
   // overworld.ts's `bagIncItem("parcel")` right after the final-reveal
   // dialogue) — this non-stackable keepsake's quantity has no other
   // meaning past that point.
-  const revealed = GAME_STATE.bag.get("parcel")?.quantity === 2;
+  const revealed =
+    GAME_STATE.bag.get("parcel")?.quantity === 2 || GAME_STATE.bag.get("treasure")?.quantity;
   const parcelPhoto = revealed ? PARCEL_PHOTO_REVEALED : PARCEL_PHOTO_EMPTY;
   const parcelPhotoCloseup = revealed ? PARCEL_PHOTO_REVEALED_CLOSEUP : PARCEL_PHOTO_CLOSEUP;
 

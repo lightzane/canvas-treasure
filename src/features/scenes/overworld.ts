@@ -18,7 +18,7 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { addOnce, remove } from "@/lib/array";
-import { bagHasItem, bagIncItem } from "@/lib/bag";
+import { bagHasItem, bagIncItem, bagRemoveItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
@@ -38,7 +38,7 @@ import { playShine, type ShineHandle } from "@/lib/effects/shine";
 import { drawFootprints, trackFootstep, updateFootprints } from "@/lib/footprints";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
-import { movePlayer, panCameraToTile } from "@/lib/map-movement";
+import { movePlayer, panCameraToTile, setCameraToTile } from "@/lib/map-movement";
 import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
@@ -315,16 +315,6 @@ EAST_GUARDS.forEach((npc, i) => {
   npc.face("d");
 });
 
-placeAtTile({ sprite: AISLE_GUARDS_ROW_A[0], tile: [92.75, 54.5] });
-placeAtTile({ sprite: AISLE_GUARDS_ROW_A[1], tile: [95.25, 54.5] });
-placeAtTile({ sprite: AISLE_GUARDS_ROW_B[0], tile: [92.75, 58] });
-placeAtTile({ sprite: AISLE_GUARDS_ROW_B[1], tile: [95.25, 58] });
-
-AISLE_GUARDS.forEach((npc, i) => {
-  if (i % 2 === 0) npc.face("d");
-  else npc.face("a");
-});
-
 export const overworldScene: Scene = {
   fadeIn: 1,
   fadeOut: 0.5,
@@ -406,7 +396,8 @@ export const overworldScene: Scene = {
   },
 
   draw(ctx) {
-    if (questDaoMingKeys.status === "resolved") drawViewportClamped(ctx, backgroundEvent);
+    if (questDaoMingKeys.status === "resolved" && !GAME_STATE.sequence.closing_remarks)
+      drawViewportClamped(ctx, backgroundEvent);
     else drawViewportClamped(ctx, background);
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
@@ -414,7 +405,8 @@ export const overworldScene: Scene = {
     drawFootprints(ctx);
     drawYSorted(ctx, [player, ...NPCS.filter(isInViewport)]);
 
-    if (questDaoMingKeys.status === "resolved") drawViewportClamped(ctx, foreground);
+    if (questDaoMingKeys.status === "resolved" && !GAME_STATE.sequence.closing_remarks)
+      drawViewportClamped(ctx, foreground);
     else drawViewportClamped(ctx, foreground);
 
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
@@ -424,7 +416,10 @@ export const overworldScene: Scene = {
 };
 
 function initQuests() {
-  if (GAME_STATE.sequence.closing_remarks) return;
+  if (questMain.status === "resolved") {
+    initFreeRoam();
+    return;
+  }
 
   // Season 1:
   initQuestsDaomingsi();
@@ -433,6 +428,7 @@ function initQuests() {
   initCoreMessageBottle();
   spawnMazeChest();
   initMarketEvent();
+  initMainEventGuards();
   initMainEvent();
 }
 
@@ -650,6 +646,11 @@ function interactions(target: Sprite | undefined) {
   }
 
   if (PARK_EVENT_GUARDS.includes(target as PlayerSprite)) {
+    DIALOGUE.show(`Bawal po muna dito ang entrance. Pasensiya na. May private event lang po...`);
+    return;
+  }
+
+  if (AISLE_GUARDS.includes(target as PlayerSprite)) {
     DIALOGUE.show(`Bawal po muna dito ang entrance. Pasensiya na. May private event lang po...`);
     return;
   }
@@ -1194,7 +1195,7 @@ function openMazeChest() {
     });
   }, 0.3);
   DIALOGUE.queue({
-    text: `DAO MING SI: LEI, kailangan natin maayos na ang park para sa event mamaya...`,
+    text: `DAO MING SI: LEI, kailangan natin maayos na ang park para sa event mamaya dahil meron na'ng nakahanap ng treasure...`,
     color: DIALOGUE_COLOR_DAOMINGSI,
     portrait: PORTRAIT_DAOMINGSI,
   });
@@ -1212,7 +1213,7 @@ function openMazeChest() {
     playExclamation(daomingsi, { delay: 2 });
     playExclamation(player, { delay: 2 });
     playAttentionBounce(daomingsi, { hops: 5, duration: 0.05, delay: 4 });
-    playExclamation(daomingsi, { delay: 4 });
+    playExclamation(daomingsi, { glyph: "🔥", delay: 4 });
     playExclamation(player, { delay: 4 });
     gsap.delayedCall(0.8, () =>
       walk(huazelei, [
@@ -1230,7 +1231,7 @@ function openMazeChest() {
     disableAccess();
     walk(huazelei, { direction: "w", steps: 2.5 });
     playAttentionBounce(player, { hops: 2, duration: 0.09 });
-    playExclamation(player, { hold: 10 });
+    playExclamation(player, { hold: 5 });
   }, 1);
   DIALOGUE.queue({ text: `... ... ...`, portrait: null, color: "teal" });
   DIALOGUE.effect(() => huazelei.face("a"));
@@ -1259,7 +1260,7 @@ function openMazeChest() {
   });
   DIALOGUE.effect(() => daomingsi.face("s"));
   DIALOGUE.queue({
-    text: `DAO MING SI: Tumatakbo ang oras, tayo na LEI, may gagawin pa tayo.`,
+    text: `DAO MING SI: Tumatakbo ang oras, tayo na LEI, may gagawin pa tayo sa park.`,
     portrait: PORTRAIT_DAOMINGSI,
     color: DIALOGUE_COLOR_DAOMINGSI,
   });
@@ -1283,7 +1284,26 @@ function openMazeChest() {
     color: DIALOGUE_COLOR_HUAZELEI,
   });
   DIALOGUE.effect(() => huazelei.face("s"));
+  DIALOGUE.effect(() => {
+    GAME_STATE.cameraFollow = false;
+    DIALOGUE.lock();
+    gsap.delayedCall(2, () => setCameraToTile([86, 19]));
+    gsap.delayedCall(3, () => panCameraToTile([91, 31]));
+    gsap.delayedCall(6, () => DIALOGUE.unlock());
+  });
   DIALOGUE.queue(`Makikita mo lang sila kung pumunta ka sa timog na bahagi nitong mansion.`);
+  DIALOGUE.effect(() => {
+    DIALOGUE.lock();
+    panCameraToTile([92, 66], {
+      duration: 5,
+      onComplete() {
+        gsap.delayedCall(3, () => {
+          GAME_STATE.cameraFollow = true;
+          DIALOGUE.unlock();
+        });
+      },
+    });
+  });
   DIALOGUE.queue(`Sa timog ng park mismo makikita mo ang market dito.`);
   DIALOGUE.queue(`Sa market ginagawa ni XI MEN at MEI ZUO ang bahagi nila para sa event.`);
   DIALOGUE.queue(`Mauna na ako...`);
@@ -1296,7 +1316,10 @@ function openMazeChest() {
         { direction: "a", steps: 10 },
       ],
       {
-        onComplete: initMarketEvent,
+        onComplete: () => {
+          despawnNPC(huazelei);
+          initMarketEvent();
+        },
       },
     );
   }, 1.5);
@@ -1310,6 +1333,9 @@ function openMazeChest() {
     questSetStatus(questMazeChest, "resolved");
     playQuestToast(questMazeChest);
     playQuestCompleteBanner(`Completed!`);
+    gsap.delayedCall(2, () => playQuestToast(quests.get("meet_meizuo")!));
+    gsap.delayedCall(2.5, () => playQuestToast(quests.get("meet_ximen")!));
+    initMainEventGuards();
   }, 3.5);
   DIALOGUE.onComplete = () => {
     hudSetBagIconVisible(true);
@@ -1511,7 +1537,8 @@ function cutsceneMarket() {
 }
 
 function cutsceneMidAisle() {
-  if (GAME_STATE.sequence.mid_aisle_cutscene) player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
+  if (GAME_STATE.sequence.mid_aisle_cutscene && questMain.status !== "resolved")
+    player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
   if (
     questDaoMingKeys.status !== "resolved" ||
     questMain.status !== "active" ||
@@ -2075,7 +2102,7 @@ function cutsceneMainQuestReveal() {
     bagIncItem("parcel");
   }, 0.000001);
   DIALOGUE.queue({
-    text: `Kailangan ko buksan yung chest na galing parcel sa bag...`,
+    text: `YOU: (thinking) Kailangan ko buksan yung chest na galing parcel sa bag...`,
     color: "black",
   });
   DIALOGUE.queue(`Yung treasure nasa ilalim lang ng first layer nito...`);
@@ -2092,6 +2119,8 @@ function cutsceneMainQuestReveal() {
   DIALOGUE.queue(`... ... ...!`);
   DIALOGUE.onComplete = () => {
     GAME_STATE.movementLocked = true;
+    bagRemoveItem("parcel");
+    bagIncItem("treasure");
     questSetStatus(questMain, "resolved");
     playQuestToast(questMain);
     playQuestCompleteBanner("Treasure Found — Quest Completed!");
@@ -2118,7 +2147,7 @@ function closingRemarks() {
   DIALOGUE.queue(`I love you always and more!`);
   DIALOGUE.onComplete = () => {
     GAME_STATE.movementLocked = true;
-    GAME_STATE.sequence.closing_remarks = true;
+    // GAME_STATE.sequence.closing_remarks = true; // set at home scene
     panCameraToTile([94, 42], { duration: 3 });
     const iris = playIrisReveal({
       direction: "out",
@@ -2136,7 +2165,10 @@ function closingRemarks() {
 }
 
 function initFreeRoam() {
-  // TODO
+  if (questMain.status !== "resolved") return;
+  const cleanupNpcs = [...f4, ...AISLE_GUARDS, ...PARK_EVENT_GUARDS];
+  cleanupNpcs.forEach((npc) => despawnNPC(npc));
+  respawnNPC(GAME_STATE.papa, [63, 39]);
 }
 
 function interactMeizuo() {
@@ -2193,6 +2225,29 @@ function interactXimen() {
   };
 }
 
+function initMainEventGuards() {
+  if (questMazeChest.status !== "resolved") return;
+
+  PARK_EVENT_GUARDS.forEach((npc) => respawnNPC(npc));
+  PARK_EVENT_GUARDS.forEach((npc) => {
+    addOnce(INTERACTABLES, { sprite: npc, probeDistance: 8 });
+  });
+
+  if (questDaoMingKeys.status !== "resolved") {
+    placeAtTile({ sprite: AISLE_GUARDS_ROW_A[0], tile: [92.5, 58] });
+    placeAtTile({ sprite: AISLE_GUARDS_ROW_A[1], tile: [93.5, 57.5] });
+    placeAtTile({ sprite: AISLE_GUARDS_ROW_B[0], tile: [94.5, 57.5] });
+    placeAtTile({ sprite: AISLE_GUARDS_ROW_B[1], tile: [95.5, 58] });
+    AISLE_GUARDS.forEach((npc) => {
+      respawnNPC(npc);
+      npc.face("s");
+      addOnce(INTERACTABLES, { sprite: npc });
+    });
+  } else if (questDaoMingKeys.status === "resolved") {
+    AISLE_GUARDS.forEach((npc) => removeInteractable(INTERACTABLES, npc));
+  }
+}
+
 function initMainEvent() {
   if (questDaoMingKeys.status !== "resolved") return;
   addOnce(DECORS, chestEmpty);
@@ -2225,12 +2280,17 @@ function initMainEvent() {
   } else {
     respawnNPC(daomingsi, [94, 45.5]);
     respawnNPC(huazelei, [94.25, 43]);
+    daomingsi.face("s");
   }
 
-  PARK_EVENT_GUARDS.forEach((npc) => respawnNPC(npc));
+  placeAtTile({ sprite: AISLE_GUARDS_ROW_A[0], tile: [92.75, 54.5] });
+  placeAtTile({ sprite: AISLE_GUARDS_ROW_A[1], tile: [95.25, 54.5] });
+  placeAtTile({ sprite: AISLE_GUARDS_ROW_B[0], tile: [92.75, 58] });
+  placeAtTile({ sprite: AISLE_GUARDS_ROW_B[1], tile: [95.25, 58] });
   AISLE_GUARDS.forEach((npc) => respawnNPC(npc));
-  PARK_EVENT_GUARDS.forEach((npc) => {
-    addOnce(INTERACTABLES, { sprite: npc, probeDistance: 8 });
+  AISLE_GUARDS.forEach((npc, i) => {
+    if (i % 2 === 0) npc.face("d");
+    else npc.face("a");
   });
 }
 
@@ -2259,6 +2319,7 @@ function f4Speaker(speaker: "daomingsi" | "huazelei" | "meizuo" | "ximen", messa
 }
 
 function restrictRun(restricted = true) {
+  if (questMain.status === "resolved") return;
   if (questDaoMingKeys.status !== "resolved") return;
 
   if (restricted) {

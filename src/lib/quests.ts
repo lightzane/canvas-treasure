@@ -63,12 +63,12 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "daoming_keys",
     {
       description: "Help DAO MING SI find his missing keys.",
-      status: "resolved",
+      status: "active",
     },
   ],
   ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
-  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "resolved" }],
-  ["meet_ximen", { description: "Find and meet XI MEN", status: "resolved" }],
+  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "active" }],
+  ["meet_ximen", { description: "Find and meet XI MEN", status: "active" }],
   [
     "catch_sheets",
     {
@@ -103,7 +103,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "resolved",
+      status: "active",
     },
   ],
   [

@@ -74,6 +74,7 @@ function scheduleMamaFaceNorth() {
 let isMamaOutside = false;
 
 const questRunningShoes = GAME_STATE.quests.get("running_shoes")!;
+const questMain = GAME_STATE.quests.get("invitation_postcard")!;
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
@@ -88,10 +89,11 @@ export const homeScene: Scene = {
   ),
 
   enter() {
-    if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible)
+    if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible && !GAME_STATE.sequence.closing_remarks)
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
-    if (GAME_STATE.sequence.closing_remarks) GAME_STATE.cameraFollow = true;
+    // Main quest just completed
+    if (!GAME_STATE.cameraFollow && questMain.status === "resolved") GAME_STATE.cameraFollow = true;
 
     isMamaOutside = questRunningShoes.status !== "inactive";
 
@@ -99,11 +101,21 @@ export const homeScene: Scene = {
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_HOME);
 
     let spawnLocation: [number, number] = [13, 19];
+    let jpSpawnLocation: [number, number] = [3.75, 14]; // [13, 19.5] use this coordinate when "npc follow player" feature exists
+
+    if (questMain.status === "resolved") {
+      GAME_STATE.jp.face("s");
+    }
 
     if (!GAME_STATE.sequence.intro) {
       spawnLocation = [3, 14];
       homeScene.fadeIn = 0.5;
       homeScene.fadeOut = 1;
+    } else if (!GAME_STATE.sequence.closing_remarks && questMain.status === "resolved") {
+      spawnLocation = [3, 14];
+      jpSpawnLocation = [3.75, 14];
+      GAME_STATE.jp.face("a");
+      GAME_STATE.sequence.closing_remarks = true;
     } else {
       GAME_STATE.player.face("a");
     }
@@ -120,19 +132,29 @@ export const homeScene: Scene = {
       tile: spawnLocation,
       spriteSize: GAME_STATE.player.boxSize,
     });
-    if (!bagHasItem("parcel")) placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
-    if (!bagHasItem("journal")) placeAtTile({ sprite: journal, tile: [7, 4] });
+
+    if (!GAME_STATE.sequence.closing_remarks) {
+      if (!bagHasItem("parcel")) placeAtTile({ sprite: parcel, tile: [8.7, 4.3] });
+      if (!bagHasItem("journal")) placeAtTile({ sprite: journal, tile: [7, 4] });
+    }
 
     placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
+    if (questMain.status === "resolved") {
+      placeAtTile({ sprite: GAME_STATE.jp, tile: jpSpawnLocation });
+      GAME_STATE.obstacles = [GAME_STATE.jp];
+      interactables = [{ sprite: GAME_STATE.jp }];
+    }
 
     // Mama at home
     if (!isMamaOutside) {
       GAME_STATE.obstacles = [GAME_STATE.mama]; // blocks walking through her, tracking wherever she currently is
     }
 
-    interactables = bagHasItem("parcel")
-      ? [MAMA_INTERACTABLE]
-      : [MAMA_INTERACTABLE, PARCEL_INTERACTABLE];
+    if (!GAME_STATE.sequence.closing_remarks) {
+      interactables = bagHasItem("parcel")
+        ? [MAMA_INTERACTABLE]
+        : [MAMA_INTERACTABLE, PARCEL_INTERACTABLE];
+    }
 
     if (!bagHasItem("shoes") && questRunningShoes.status === "active") {
       placeAtTile({ sprite: runningShoes, tile: [10, 22] });
@@ -149,6 +171,7 @@ export const homeScene: Scene = {
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
     if (!isMamaOutside) GAME_STATE.mama.update(dt);
+    if (questMain.status === "resolved") GAME_STATE.jp.update(dt); // drives its clip/frames — face()/play() alone only set intent, this is what applies it (see PlayerSprite.update)
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
@@ -162,6 +185,7 @@ export const homeScene: Scene = {
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
     if (!isMamaOutside) drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
+    else if (questMain.status === "resolved") drawYSorted(ctx, [GAME_STATE.player, GAME_STATE.jp]);
     else GAME_STATE.player.draw(ctx);
     drawViewportClamped(ctx, foreground);
 
@@ -230,6 +254,14 @@ function interactions(target: Sprite | undefined) {
       gsap.delayedCall(0.5, revealParcel);
     };
   }
+
+  if (target === GAME_STATE.jp) {
+    hudSetBagIconVisible(false);
+    GAME_STATE.movementLocked = true;
+    playExclamation(GAME_STATE.jp, { glyph: "☺️" });
+    DIALOGUE.queue({ text: `JP: Yes Love Love...`, color: "blue" });
+    DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
+  }
 }
 
 function revealParcel() {
@@ -249,9 +281,8 @@ function revealParcel() {
   DIALOGUE.queue(`Iyan usap-usapan ngayon, mag marites ulit ako sa labas mamaya.`);
   DIALOGUE.effect(() => {
     DIALOGUE.hideBox();
-    const quest = QUESTS.get("invitation_postcard")!;
-    playQuestToast({ description: quest.description });
-    questSetStatus(quest, "active");
+    questSetStatus(questMain, "active");
+    playQuestToast(questMain);
     playQuestCompleteBanner(`Treasure Hunt Begins...!`);
   }, 3.5);
   DIALOGUE.effect(() => {
@@ -343,7 +374,7 @@ function exitZone() {
     return; // no parcel yet — stay home
   }
 
-  if (!bagHasItem("parcel")) {
+  if (!bagHasItem("parcel") && questMain.status !== "resolved") {
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Paki kuha nitong parcel.", color: "red" });
     return; // no parcel yet — stay home
   }

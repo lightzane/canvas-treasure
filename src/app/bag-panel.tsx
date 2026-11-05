@@ -10,6 +10,7 @@ import { useState } from "react";
 const ITEM_LABEL: Record<ItemName, string> = {
   journal: "Journal",
   parcel: "Parcel",
+  treasure: "Treasure",
   shoes: "Running Shoes",
   sketch: "ZZ's Sketch",
   papers: "ZZ's Tracing Papers Scrambled",
@@ -33,12 +34,13 @@ interface ItemIcon {
    */
   scale?: number;
 }
-
+// TODO: Do not auto open journal if no active quests
 // Only items with their own art get a real icon — anything else falls back
 // to a plain text label in its slot.
 const ITEM_ICON: Partial<Record<ItemName, ItemIcon>> = {
   journal: { src: img("others/book-and-pencil.png"), scale: 0.8 },
   parcel: { src: img("others/parcel.png"), scale: 1.5 },
+  treasure: { src: img("others/chest-close.png"), scale: 1.5 },
   shoes: { src: img("others/shoes.png"), scale: 0.6 },
   sketch: { src: img("others/sketch.png"), scale: 0.8 },
   papers: { src: img("others/paper-multi.png"), scale: 1.5 },
@@ -97,6 +99,10 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
     journal: () => {
       GAME_STATE.bagViewedItems.add("journal");
       setJournalOpen(true);
+    },
+    treasure: () => {
+      GAME_STATE.bagViewedItems.add("treasure");
+      setParcelOpen(true);
     },
     parcel: () => {
       GAME_STATE.bagViewedItems.add("parcel");
