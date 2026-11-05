@@ -107,7 +107,11 @@ export const GAME_STATE = {
    */
   spawnLocation: undefined as [number, number] | undefined,
   sceneName: "overworld" as SceneName,
-  /** One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events"). `true` = complete. */
+  /**
+   * One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events").
+   * `true` = complete.
+   * Add here conditions / progress that should not be listed under Quests.
+   */
   sequence: {
     intro: true,
     mama_parcel: true,
@@ -121,6 +125,7 @@ export const GAME_STATE = {
     mid_aisle_cutscene: true,
     mid_aisle_lei_cutscene: true,
     mid_aisle_jp_cutscene: false,
+    closing_remarks: false,
   },
   quests: QUESTS,
   /**
@@ -147,16 +152,32 @@ export const GAME_STATE = {
   /**
    * One-shot callback — if set, fires the moment the bag panel actually
    * closes (the × button, clicking the bag icon again, pressing Enter —
-   * see `layout.tsx`'s `setBagOpen`), then clears itself automatically.
-   * For a scene that needs to react to "the player is done looking in the
-   * bag" (e.g. starting a cutscene once they close out of a just-solved
-   * puzzle) without polling `bagOpen` every frame for a falling edge
-   * itself. Mutate directly from scene code, same as `movementLocked`/
-   * `bagIconVisible` above — no wrapper needed, nothing on the React side
-   * needs telling that this was set.
+   * see `layout.tsx`'s `setBagOpen`), passed the set of item names
+   * actually opened/viewed during that session (`bagViewedItems` below),
+   * then clears itself automatically — BEFORE being called, not after:
+   * a callback that itself hides the bag icon mid-call (e.g. `disableAccess`)
+   * re-enters `setBagOpen(false)` synchronously, and if this were still set
+   * at that point it would fire again immediately, recursing forever.
+   *
+   * If the callback's own condition isn't actually met yet (e.g.
+   * `!viewed.has("parcel")` — closed without looking), it must re-arm
+   * itself explicitly (`GAME_STATE.onBagClose = thisSameFunction`) before
+   * returning, rather than relying on anything here to do it — same
+   * self-rearming shape `checkSketchCompletion` in overworld.ts already
+   * uses. Mutate directly from scene code, same as `movementLocked`/
+   * `bagIconVisible` above — no wrapper needed.
    * @default null
    */
-  onBagClose: null as (() => void) | null,
+  onBagClose: null as ((viewed: ReadonlySet<ItemName>) => void) | null,
+  /**
+   * Which bag items the player actually opened/viewed during the bag's
+   * current (or just-ended) open session — cleared the instant the bag
+   * opens, added to by `BagPanel`'s own item-click handlers as the player
+   * looks at things, and handed to `onBagClose` right before it fires.
+   * Lets a scene tell "closed without ever looking" apart from "looked,
+   * then closed."
+   */
+  bagViewedItems: new Set<ItemName>(),
   bag: new Map<ItemName, BagEntry>([
     ["journal", { type: "item", quantity: 1 }],
     ["parcel", { type: "item", quantity: 1 }],

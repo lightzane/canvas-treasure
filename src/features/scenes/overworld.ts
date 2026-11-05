@@ -57,6 +57,8 @@ import { DIALOGUE_COLOR_XIMEN, PORTRAIT_XIMEN } from "@/sprites/xi-men";
 import gsap from "gsap";
 
 const PHOTO_BIRTHDAY_POSTCARD = img("treasure/cheryl_birthday_postcard.jpg");
+const PHOTO_TREASURE = img("treasure/treasure-full.png");
+const PHOTO_TREASURE_CLOSEUP = img("treasure/treasure-full-closeup.png");
 
 const IMG_MAP_BG = img("maps/overworld.png");
 const IMG_MAP_FG = img("maps/overworld-fg.png");
@@ -78,6 +80,7 @@ const IMG_CHEST_EMPTY = img("others/chest-empty.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const ICON_SHEARS = img("others/garden-shears.png");
 const ICON_PAPERS = img("others/paper-multi-32x32.png");
+const ICON_PARCEL = img("others/parcel-32x32.png");
 
 const MAIN_EVENT_PLAYER_MOVESPEED = 100;
 
@@ -214,7 +217,7 @@ let sandZoneCount = 0;
 
 let tracingPaper2ShineHandle: ShineHandle | undefined;
 let coreMsgBottleShineHandle: ShineHandle | undefined;
-let jpShineHandle: ShineHandle;
+let jpShineHandle: ShineHandle | undefined;
 
 function scheduleMamaFacePapa() {
   scheduleFaceDirection(GAME_STATE.mama, "d");
@@ -421,6 +424,9 @@ export const overworldScene: Scene = {
 };
 
 function initQuests() {
+  if (GAME_STATE.sequence.closing_remarks) return;
+
+  // Season 1:
   initQuestsDaomingsi();
   initQuestsHuazelei();
   initTracingPaper2();
@@ -1672,7 +1678,7 @@ function cutsceneMidAisleJp() {
   }, 1);
 
   DIALOGUE.effect(() => {
-    playExclamation(player);
+    playExclamation(player, { glyph: "😳", hold: 2 });
     playAttentionBounce(player);
   }, 0.5);
 
@@ -1682,7 +1688,7 @@ function cutsceneMidAisleJp() {
   }, 0.5);
 
   DIALOGUE.effect(() => {
-    playExclamation(player);
+    playExclamation(player, { glyph: "?", color: "darkviolet", hold: 2 });
     playAttentionBounce(player);
     player.face("a");
   }, 0.5);
@@ -1714,7 +1720,7 @@ function cutsceneMidAisleJp() {
   }, 2);
 
   DIALOGUE.effect(() => {
-    jpShineHandle.stop();
+    jpShineHandle?.stop();
     GAME_STATE.cameraFollow = false;
     panCameraToTile([94, 44.05], { duration: 2 });
 
@@ -1914,33 +1920,38 @@ function cutsceneMidAisleJp() {
 
 function cutsceneShowBirthdayPostcard() {
   if (questSketchUnity.status !== "resolved") return;
+  DIALOGUE.effect(disableAccess, 0.00001);
 
   DIALOGUE.effect(() => {
     playExclamation(daomingsi);
     gsap.delayedCall(3, () => playExclamation(huazelei, { glyph: "😅", hold: 5 }));
   });
-  f4Speaker(`daomingsi`, "Pero sketch lang iyan ni HUA ZE LEI!");
+  f4Speaker(`daomingsi`, "DAO MING SI: Pero sketch lang iyan ni HUA ZE LEI!");
   DIALOGUE.effect(() => playExclamation(ximen));
-  f4Speaker(`ximen`, `Ibig sabihin hindi pa ito final...`);
+  f4Speaker(`ximen`, `XI MEN: Ibig sabihin hindi pa ito final...`);
   DIALOGUE.effect(() => playExclamation(huazelei));
-  f4Speaker(`huazelei`, `Hindi ka nagkakamali.`);
+  f4Speaker(`huazelei`, `HUA ZE LEI: Hindi ka nagkakamali.`);
   DIALOGUE.effect(() => {
-    playExclamation(meizuo, { glyph: `🤘🏻` });
+    DIALOGUE.lock();
     gsap.delayedCall(0.2, () => {
-      playExclamation(meizuo, { glyph: `🤘🏻`, hold: 5 });
+      playExclamation(meizuo, { glyph: `🤘🏻`, hold: 2, onComplete: () => DIALOGUE.unlock() });
       playAttentionBounce(meizuo);
     });
   });
-  f4Speaker(`meizuo`, `🤘🏻 Alright ipakita na natin! Whoooah`);
+  f4Speaker(`meizuo`, `MEI ZUO: 🤘🏻 Yeah alright ipakita na natin! Whooo!`);
+  DIALOGUE.effect(() => playExclamation(huazelei, { glyph: "😅" }));
+  DIALOGUE.queue({ text: "... ... ...", portrait: null, color: "black" });
   DIALOGUE.onComplete = () => {
     GAME_STATE.movementLocked = true;
-    playImagePreview(PHOTO_BIRTHDAY_POSTCARD, { onComplete: cutsceneMainQuestReveal });
+    playImagePreview(PHOTO_BIRTHDAY_POSTCARD, { hold: 10, onComplete: cutsceneMainQuestReminder });
     birthdayConfetti();
   };
 }
 
-function cutsceneMainQuestReveal() {
-  if (questSketchUnity.status !== "resolved") return;
+let questToast: QuestToastHandle | undefined;
+
+function cutsceneMainQuestReminder() {
+  DIALOGUE.effect(disableAccess, 0.00001);
   DIALOGUE.effect(() => {
     playExclamation(daomingsi);
     gsap.delayedCall(0.5, () => {
@@ -1948,12 +1959,184 @@ function cutsceneMainQuestReveal() {
       playAttentionBounce(daomingsi);
     });
   });
-  f4Speaker("daomingsi", "Teka nga muna, meron pa isang last quest!");
+  f4Speaker("daomingsi", "DAO MING SI: Teka nga muna, meron pa isang last quest!");
   DIALOGUE.effect(() => {
     disableAccess();
-    playQuestToast(questMain);
+    playQuestToast({ ...questMain, hold: 8 });
+    gsap.delayedCall(0.5, () => {
+      player.face("s");
+      jp.face("s");
+    });
   }, 3);
-  f4Speaker("meizuo", "Ou nga tama si AH SI.");
+  DIALOGUE.effect(() => {
+    disableAccess();
+    playExclamation(meizuo);
+    playAttentionBounce(meizuo);
+    meizuo.face("s");
+  });
+  f4Speaker("meizuo", "MEI ZUO: Ou nga tama si AH SI.");
+  f4Speaker("meizuo", "Kaya nandito tayo lahat para ipadiwang sa kaganapang ito...");
+  f4Speaker("daomingsi", "DAO MING SI: Kaya sino sa inyo ang nakahanap ng treasure?");
+  DIALOGUE.effect(() => {
+    disableAccess();
+    playExclamation(ximen);
+    playAttentionBounce(ximen);
+    ximen.face("s");
+  });
+  f4Speaker("ximen", "XI MEN: Kasama ito sa mga invitation at parcel sa simula pa lamang.");
+  DIALOGUE.queue({ text: "... ... ...", portrait: null, color: "black" });
+  DIALOGUE.effect(disableAccess, 1.5);
+  DIALOGUE.effect(() => {
+    playExclamation(player, { icon: ICON_PARCEL, hold: 5 });
+    playAttentionBounce(player);
+  }, 2.5);
+  DIALOGUE.queue({
+    text: "Kailangan ko tingnan iyung parcel sa bag ko...",
+    portrait: null,
+    color: "black",
+  });
+  DIALOGUE.effect(() => playQuestToast(questMain));
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.movementLocked = true;
+    hudSetBagIconVisible(true);
+
+    GAME_STATE.onBagClose = function onParcelBagClose(viewed) {
+      if (!viewed.has("parcel")) {
+        hudSetBagIconVisible(false);
+        DIALOGUE.effect(() => playExclamation(player));
+        DIALOGUE.show("Nalimot ko, kailangan ko muna makita yung parcel sa bag ko...");
+        DIALOGUE.onComplete = () => {
+          hudSetBagIconVisible(true);
+          questToast?.stop();
+          questToast = playQuestToast(questMain);
+          GAME_STATE.movementLocked = true;
+          GAME_STATE.onBagClose = onParcelBagClose; // closed without opening it — re-arm for next time (cleared before this call, see game-state.ts)
+        };
+        return;
+      }
+      cutsceneMainQuestReveal();
+    };
+  };
+}
+
+function cutsceneMainQuestReveal() {
+  disableAccess();
+  hudSetBagIconVisible(false);
+  DIALOGUE.effect(() => playExclamation(daomingsi), 0.5);
+  DIALOGUE.effect(() => {
+    playExclamation(daomingsi);
+    playAttentionBounce(daomingsi);
+  }, 0.5);
+  f4Speaker("daomingsi", `DAO MING SI: Tulad ng nabanggit ko kanina...`);
+  f4Speaker(
+    "daomingsi",
+    `...na hindi lahat ng treasure o kayamanan ay 
+    isang uri ng bagay tulad na lamang ng music box,
+    at hindi rin ito treasure chest na kailangan buksan
+    ng keys o ng kung anuman.`,
+  );
+  DIALOGUE.effect(() => playExclamation(huazelei), 0.5);
+  DIALOGUE.effect(() => {
+    playExclamation(huazelei);
+    playAttentionBounce(huazelei);
+  }, 0.5);
+  f4Speaker(
+    "huazelei",
+    `HUA ZE LEI: Tama ka AH SI. At tulad na rin ng nasabi ko kanina kay CHERYL...`,
+  );
+  f4Speaker(`huazelei`, `Ang tunay na kayamanan ay nasa puso ng tao...`);
+  f4Speaker(`huazelei`, `At ang keys o susi nito, ay nasa tamang tao lamang...`);
+  f4Speaker(`huazelei`, `At siya lang ang taong makakakita ng tunay na kayamanan.`);
+  DIALOGUE.effect(() => playExclamation(jp), 0.5);
+  DIALOGUE.effect(() => {
+    playExclamation(jp);
+    playAttentionBounce(jp);
+    gsap.delayedCall(2, () => jp.face("a"));
+    gsap.delayedCall(3, () => player.face("d"));
+    gsap.delayedCall(3.5, () => {
+      playExclamation(jp, { icon: ICON_RED_HEART, hold: 3 });
+      playExclamation(player, { icon: ICON_RED_HEART, hold: 3 });
+    });
+  }, 0.5);
+  DIALOGUE.queue({
+    text: `JP: At nasa ating mga puso ang susi na mabigyan ng halaga...`,
+    portrait: null,
+    color: "blue",
+  });
+  DIALOGUE.queue({
+    text: `LOVE LOVE, buksan mo ulit yung chest na nakuha mo sa parcel.`,
+    color: "blue",
+  });
+  DIALOGUE.queue(
+    `Iyung missing treasure, ay natakpan lamang ng mabuti sa ilalim ng first layer nito.`,
+  );
+  DIALOGUE.effect(() => {
+    GAME_STATE.movementLocked = true;
+    bagIncItem("parcel");
+  }, 0.000001);
+  DIALOGUE.queue({
+    text: `Kailangan ko buksan yung chest na galing parcel sa bag...`,
+    color: "black",
+  });
+  DIALOGUE.queue(`Yung treasure nasa ilalim lang ng first layer nito...`);
+  DIALOGUE.effect(() => {
+    playExclamation(player);
+    playAttentionBounce(player, { hops: 3 });
+    gsap.delayedCall(2, () => playExclamation(jp, { glyph: "☺️", hold: 2.5 }));
+  }, 2.5);
+  DIALOGUE.queue(`... ... ...!`);
+  DIALOGUE.effect(() => {
+    playExclamation(player, { icon: ICON_RED_HEART, hold: 1.5 });
+    playAttentionBounce(player, { hops: 3 });
+  }, 0.5);
+  DIALOGUE.queue(`... ... ...!`);
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.movementLocked = true;
+    questSetStatus(questMain, "resolved");
+    playQuestToast(questMain);
+    playQuestCompleteBanner("Treasure Found — Quest Completed!");
+    birthdayConfetti(20);
+    playImagePreview(PHOTO_TREASURE, {
+      hold: 5,
+      onComplete() {
+        playImagePreview(PHOTO_TREASURE_CLOSEUP, { hold: 10, onComplete: closingRemarks });
+      },
+    });
+  };
+}
+
+function closingRemarks() {
+  DIALOGUE.effect(() => {
+    playExclamation(player, { icon: ICON_RED_HEART, hold: 2 });
+    playExclamation(jp, { icon: ICON_RED_HEART, hold: 2 });
+  }, 3);
+  DIALOGUE.queue({
+    text: `HAPPY BIRTHDAY LOVE LOVE! You're my Treasure!`,
+    color: "blue",
+    // TODO: add my portrait
+  });
+  DIALOGUE.queue(`I love you always and more!`);
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.movementLocked = true;
+    GAME_STATE.sequence.closing_remarks = true;
+    panCameraToTile([94, 42], { duration: 3 });
+    const iris = playIrisReveal({
+      direction: "out",
+      duration: 3,
+      softness: 20,
+      onComplete: () => {
+        gsap.delayedCall(overworldScene.fadeOut! + 0.5, () => iris.stop());
+        GAME_STATE.player.moveSpeed = 200; // restore
+        GAME_STATE.allowRunning = true; // restore
+        GAME_STATE.sceneName = "home";
+      },
+    });
+    // TODO: Download font game so it can be loaded offline
+  };
+}
+
+function initFreeRoam() {
+  // TODO
 }
 
 function interactMeizuo() {

@@ -91,6 +91,8 @@ export const homeScene: Scene = {
     if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible)
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
+    if (GAME_STATE.sequence.closing_remarks) GAME_STATE.cameraFollow = true;
+
     isMamaOutside = questRunningShoes.status !== "inactive";
 
     GAME_STATE.boundaries = createBoundaries(COLLISION_HOME);

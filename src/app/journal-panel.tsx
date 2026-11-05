@@ -16,6 +16,16 @@ export function JournalPanel({ onClose }: { onClose: () => void }) {
     ([, quest]) => quest.status === wantedStatus,
   );
 
+  // Both counted in one pass over the full quest list, not derived from
+  // questEntries above (which only ever holds the *current* tab's quests) —
+  // the tab labels need both counts displayed at once, regardless of which
+  // tab is currently active.
+  const tabCounts = { active: 0, completed: 0 };
+  for (const quest of GAME_STATE.quests.values()) {
+    if (quest.status === "active") tabCounts.active++;
+    else if (quest.status === "resolved") tabCounts.completed++;
+  }
+
   return (
     <div className="absolute top-4 left-4 w-full max-w-md max-h-[calc(100%-2rem)] overflow-y-auto rounded-xl border-slate-800 bg-linear-to-b from-[#fdf3dd] to-[#ecd9ab] p-5 shadow-[0_0_10px_black]">
       <div className="flex items-center justify-between border-b-2 border-amber-800/40 pb-2">
@@ -48,7 +58,7 @@ export function JournalPanel({ onClose }: { onClose: () => void }) {
                 : "border-transparent text-amber-950/50 hover:text-amber-950/80"
             }`}
           >
-            {t}
+            {t} ({tabCounts[t]})
           </button>
         ))}
       </div>

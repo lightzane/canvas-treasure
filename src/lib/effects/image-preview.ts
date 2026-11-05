@@ -107,8 +107,9 @@ function runPreview(src: string, options: ImagePreviewOptions): () => void {
   backdrop.style.justifyContent = "center";
   backdrop.style.padding = "32px";
   backdrop.style.background = "rgba(0, 0, 0, 0.6)";
-  backdrop.style.cursor = "pointer";
+  backdrop.style.cursor = hold === "manual" ? "pointer" : "default";
   backdrop.style.opacity = "0";
+  backdrop.style.userSelect = "none";
 
   const image = document.createElement("img");
   image.src = src;
@@ -121,35 +122,43 @@ function runPreview(src: string, options: ImagePreviewOptions): () => void {
   image.style.boxShadow = "0 0 24px rgba(0, 0, 0, 0.6)";
   image.style.cursor = "default";
   image.style.background = backgroundColor ?? DEFAULT_BG;
+  image.style.userSelect = "none";
   if (pixelated) image.style.imageRendering = "pixelated";
   image.addEventListener("click", (e) => e.stopPropagation()); // clicking the image itself shouldn't dismiss, only the backdrop/× should
   backdrop.appendChild(image);
 
-  const closeBtn = document.createElement("button");
-  closeBtn.type = "button";
-  closeBtn.textContent = "×";
-  closeBtn.style.position = "absolute"; // relative to backdrop — `game-effect-overlay` makes it a positioned ancestor (position: fixed)
-  closeBtn.style.top = "16px";
-  closeBtn.style.right = "16px";
-  closeBtn.style.width = "32px";
-  closeBtn.style.height = "32px";
-  closeBtn.style.borderRadius = "9999px";
-  closeBtn.style.border = "2px solid #92400e";
-  closeBtn.style.background = "#fffbeb"; // amber-50
-  closeBtn.style.color = "#451a03"; // amber-950
-  closeBtn.style.fontFamily = GAME_FONT_FAMILY;
-  closeBtn.style.fontSize = "18px";
-  closeBtn.style.lineHeight = "1";
-  closeBtn.style.cursor = "pointer";
-  closeBtn.style.boxShadow = "2px 2px 0 rgba(0, 0, 0, 0.3)";
-  closeBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    dismiss();
-  });
-  backdrop.appendChild(closeBtn);
+  // A timed `hold` means the player shouldn't be able to force it away or
+  // touch anything behind it early — no × button, no click-to-dismiss. The
+  // backdrop stays `pointer-events: auto` regardless (see above), so the
+  // canvas underneath stays unreachable either way; it just doesn't do
+  // anything with that click when timed.
+  if (hold === "manual") {
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.textContent = "×";
+    closeBtn.style.position = "absolute"; // relative to backdrop — `game-effect-overlay` makes it a positioned ancestor (position: fixed)
+    closeBtn.style.top = "16px";
+    closeBtn.style.right = "16px";
+    closeBtn.style.width = "32px";
+    closeBtn.style.height = "32px";
+    closeBtn.style.borderRadius = "9999px";
+    closeBtn.style.border = "2px solid #92400e";
+    closeBtn.style.background = "#fffbeb"; // amber-50
+    closeBtn.style.color = "#451a03"; // amber-950
+    closeBtn.style.fontFamily = GAME_FONT_FAMILY;
+    closeBtn.style.fontSize = "18px";
+    closeBtn.style.lineHeight = "1";
+    closeBtn.style.cursor = "pointer";
+    closeBtn.style.boxShadow = "2px 2px 0 rgba(0, 0, 0, 0.3)";
+    closeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dismiss();
+    });
+    backdrop.appendChild(closeBtn);
+    backdrop.addEventListener("click", dismiss);
+  }
 
   document.body.appendChild(backdrop);
-  backdrop.addEventListener("click", dismiss);
 
   let done = false;
   function cleanup() {

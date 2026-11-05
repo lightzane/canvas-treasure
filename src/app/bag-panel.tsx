@@ -58,6 +58,12 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   // in layout.tsx, so it fully remounts fresh every time the bag opens —
   // this makes the journal open automatically alongside it, every time.
   const [journalOpen, setJournalOpen] = useState(true);
+  // It auto-opens alongside the bag (see journalOpen above), so it counts
+  // as viewed from that moment too — no click needed. Safe to call every
+  // render (Set.add of an already-present value is a no-op); BagPanel only
+  // ever mounts fresh while the bag is open, same reasoning as journalOpen
+  // itself always starting true.
+  GAME_STATE.bagViewedItems.add("journal");
   const [parcelOpen, setParcelOpen] = useState(false);
   const [puzzleOpen, setPuzzleOpen] = useState(false);
   // Bumped whenever something mutates GAME_STATE.quests while JournalPanel is
@@ -76,16 +82,30 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   // `backgroundColor` is optional — only items whose art is a transparent
   // PNG (the tracing papers) need one, to replace ImageViewer's default
   // cream gradient with something that doesn't fight the art.
-  const viewImage = (name: ItemName, file: string, backgroundColor?: string) => () =>
+  const viewImage = (name: ItemName, file: string, backgroundColor?: string) => () => {
+    GAME_STATE.bagViewedItems.add(name);
     setViewingImage({ src: img(file), alt: ITEM_LABEL[name], backgroundColor });
+  };
 
   // Few/specific items are clickable, each with its own distinct effect —
   // not every entry, and not a blanket rule off BagEntry's own `type`. Items
   // with no handler here render as plain, non-interactive display slots.
+  // Each one also records itself in `bagViewedItems` — see that field's own
+  // doc comment in game-state.ts for why (distinguishing "closed without
+  // looking" from "looked, then closed" for `onBagClose`).
   const onItemClick: Partial<Record<ItemName, () => void>> = {
-    journal: () => setJournalOpen(true),
-    parcel: () => setParcelOpen(true),
-    papers: () => setPuzzleOpen(true),
+    journal: () => {
+      GAME_STATE.bagViewedItems.add("journal");
+      setJournalOpen(true);
+    },
+    parcel: () => {
+      GAME_STATE.bagViewedItems.add("parcel");
+      setParcelOpen(true);
+    },
+    papers: () => {
+      GAME_STATE.bagViewedItems.add("papers");
+      setPuzzleOpen(true);
+    },
     sketch: viewImage("sketch", "treasure/cheryl_birthday_postcard_sketch.jpg"),
     paper1: viewImage("paper1", "puzzle/tp1.png", PAPER_BG_COLOR),
     paper2: viewImage("paper2", "puzzle/tp2.png", PAPER_BG_COLOR),

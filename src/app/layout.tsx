@@ -34,6 +34,7 @@ export default function Layout() {
     if (open) {
       lockedBeforeBag.current = GAME_STATE.movementLocked; // remember whatever it already was (e.g. still mid-dialogue/cutscene) — restored, not just cleared, on close below
       GAME_STATE.movementLocked = true; // lock player movement while the bag itself is open
+      GAME_STATE.bagViewedItems.clear(); // fresh session each time the bag opens
     } else {
       GAME_STATE.movementLocked = lockedBeforeBag.current;
     }
@@ -41,8 +42,8 @@ export default function Layout() {
     setBagOpenState(open);
     if (!open) {
       const onClose = GAME_STATE.onBagClose;
-      GAME_STATE.onBagClose = null; // one-shot — cleared before calling, so the callback itself can safely re-arm for next time
-      onClose?.();
+      GAME_STATE.onBagClose = null; // cleared BEFORE calling — a callback that itself hides the bag icon (e.g. disableAccess) re-enters this same branch synchronously (hudSetBagIconVisible -> setBagIconVisible -> setBagOpen(false) again); leaving the old value in place here would re-fire it, forever. A callback whose own condition isn't met yet re-arms itself explicitly (see overworld.ts's checkSketchCompletion/onParcelBagClose) instead of this auto-persisting it.
+      onClose?.(GAME_STATE.bagViewedItems);
     }
   }, []);
 
@@ -74,7 +75,7 @@ export default function Layout() {
 
   return (
     <div className="w-full min-h-dvh flex justify-center items-center">
-      <div className="relative">
+      <div className="relative select-none">
         <canvas id="treasure" ref={canvasRef}></canvas>
 
         {bagIconVisible && (

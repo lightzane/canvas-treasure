@@ -11,6 +11,13 @@ import gsap from "gsap";
  * @example playIrisReveal({ duration: 1.5 });
  * @example playIrisReveal({ delay: 1 }); // wait 1s (e.g. to clear a scene's fadeOut) before it starts
  * @example playIrisReveal({ softness: 40 }); // a soft, blurred edge instead of a sharp cut
+ * @example
+ * // "out" leaves the screen black — remove it explicitly once you're ready
+ * // to show whatever comes next (e.g. right after switching GAME_STATE.sceneName;
+ * // the destination scene's own fadeIn, if any, takes over from there).
+ * const handle = playIrisReveal({ direction: "out" });
+ * // ...later...
+ * handle.stop();
  */
 export interface IrisRevealOptions {
   duration?: number;
@@ -18,16 +25,42 @@ export interface IrisRevealOptions {
   delay?: number;
   /** Pixels of blur/feather on the circle's edge. `0` (default) is a sharp cut. */
   softness?: number;
-  /** Runs after the disposable overlay has removed itself. */
+  /**
+   * `"in"` (default) opens from black to reveal the scene, then removes
+   * itself. `"out"` is the reverse — circle closes down to black — for an
+   * old-school ending; since removing the overlay at that point would
+   * reveal the scene again (defeating the whole effect), `"out"` leaves it
+   * covering the screen once finished instead of removing it.
+   * @default "in"
+   */
+  direction?: "in" | "out";
+  /** Runs once the animation finishes — after the overlay removes itself (`"in"`), or once it's fully black and staying put (`"out"`). */
   onComplete?: () => void;
 }
 
-export function playIrisReveal(options: IrisRevealOptions = {}) {
-  const { duration = 1, delay = 0, softness = 0, onComplete } = options;
+export interface IrisRevealHandle {
+  /**
+   * Removes the overlay immediately, mid-animation or after it's finished.
+   * The only way an `"out"` overlay ever goes away, since it otherwise stays
+   * on purpose (see `direction`) — safe to call more than once.
+   */
+  stop: () => void;
+}
+
+export function playIrisReveal(options: IrisRevealOptions = {}): IrisRevealHandle {
+  const { duration = 1, delay = 0, softness = 0, direction = "in", onComplete } = options;
 
   if (delay > 0) {
-    gsap.delayedCall(delay, () => playIrisReveal({ duration, softness, onComplete }));
-    return;
+    let inner: IrisRevealHandle | null = null;
+    const call = gsap.delayedCall(delay, () => {
+      inner = playIrisReveal({ duration, softness, direction, onComplete });
+    });
+    return {
+      stop: () => {
+        call.kill();
+        inner?.stop();
+      },
+    };
   }
 
   // Scoped to the game canvas's own rect, not the whole viewport — on a
@@ -49,7 +82,17 @@ export function playIrisReveal(options: IrisRevealOptions = {}) {
   el.style.background = "black";
   document.body.appendChild(el);
 
-  const state = { radius: 0 };
+  // The closed extreme is `-softness`, not `0` — `inner` clamps at 0 but
+  // `outer` (= radius + softness) doesn't, so landing exactly on `radius: 0`
+  // left a permanent `transparent 0px, black {softness}px` ring: a small
+  // circle at dead center that never finished fading to black. Overshooting
+  // to `-softness` collapses both stops to 0 at the true end, closing it
+  // completely. Symmetric with the open extreme already overshooting to
+  // `maxRadius + softness` so the transparent edge still reaches `maxRadius`.
+  const start = direction === "in" ? -softness : maxRadius + softness;
+  const end = direction === "in" ? maxRadius + softness : -softness;
+
+  const state = { radius: start };
   const setMask = () => {
     const inner = Math.max(state.radius - softness, 0);
     const outer = state.radius + softness;
@@ -57,16 +100,30 @@ export function playIrisReveal(options: IrisRevealOptions = {}) {
     el.style.maskImage = mask;
     el.style.webkitMaskImage = mask; // Safari still needs the prefix
   };
-  setMask(); // fully opaque before the first animation frame — no flash
+  setMask(); // matches the starting state before the first animation frame — no flash
 
-  gsap.to(state, {
-    radius: maxRadius + softness, // so the inner (fully transparent) edge still reaches maxRadius at the end
+  let removed = false;
+  const remove = () => {
+    if (removed) return;
+    removed = true;
+    el.remove();
+  };
+
+  const tween = gsap.to(state, {
+    radius: end,
     duration,
-    ease: "none", // linear — constant expansion speed, not a decelerating one
+    ease: "none", // linear — constant expansion/contraction speed, not a decelerating one
     onUpdate: setMask,
     onComplete: () => {
-      el.remove();
+      if (direction === "in") remove(); // "out" stays — removing it here would undo the whole point; see the returned handle
       onComplete?.();
     },
   });
+
+  return {
+    stop: () => {
+      tween.kill();
+      remove();
+    },
+  };
 }
