@@ -16,7 +16,8 @@ export type QuestId =
   | "garden_shears"
   | "running_shoes"
   | "message_in_bottle"
-  | "maze_chest";
+  | "maze_chest"
+  | "sketch_unity";
 
 /**
  * `"inactive"` — not yet discovered, never shown in the journal.
@@ -103,6 +104,13 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     {
       description: "Find the treasure chest.",
       status: "resolved",
+    },
+  ],
+  [
+    "sketch_unity",
+    {
+      description: "Find out what is Hua Ze Lei's sketch is about.",
+      status: "inactive",
     },
   ],
 ]);

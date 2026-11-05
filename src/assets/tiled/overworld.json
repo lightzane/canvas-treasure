@@ -13769,7 +13769,7 @@
                  "name":"restrict",
                  "objects":[
                         {
-                         "height":48,
+                         "height":33,
                          "id":52,
                          "name":"allow_run",
                          "opacity":1,
@@ -13781,7 +13781,7 @@
                          "y":1856.37
                         }, 
                         {
-                         "height":48,
+                         "height":33,
                          "id":53,
                          "name":"disallow_run",
                          "opacity":1,
@@ -13790,7 +13790,7 @@
                          "visible":true,
                          "width":96,
                          "x":2976.01,
-                         "y":1807.37
+                         "y":1822.37
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -14201,7 +14201,7 @@
                          "y":1389.5
                         }, 
                         {
-                         "height":48,
+                         "height":33,
                          "id":54,
                          "name":"mid_aisle",
                          "opacity":1,
@@ -14210,10 +14210,10 @@
                          "visible":true,
                          "width":96,
                          "x":2975.87,
-                         "y":1596.21
+                         "y":1611.21
                         }, 
                         {
-                         "height":48,
+                         "height":33,
                          "id":55,
                          "name":"mid_aisle_lei",
                          "opacity":1,
@@ -14222,10 +14222,10 @@
                          "visible":true,
                          "width":96,
                          "x":2975.87,
-                         "y":1514.21
+                         "y":1529.21
                         }, 
                         {
-                         "height":48,
+                         "height":33,
                          "id":56,
                          "name":"mid_aisle_jp",
                          "opacity":1,
@@ -14234,7 +14234,7 @@
                          "visible":true,
                          "width":96,
                          "x":2975.87,
-                         "y":1488.21
+                         "y":1503.21
                         }],
                  "opacity":1,
                  "type":"objectgroup",

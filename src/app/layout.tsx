@@ -16,6 +16,12 @@ export default function Layout() {
   // while this started false): there must be only one place that sets it.
   const [bagIconVisible, setBagIconVisibleState] = useState(GAME_STATE.bagIconVisible);
   const [bagOpen, setBagOpenState] = useState(GAME_STATE.bagOpen);
+  // Whatever GAME_STATE.movementLocked was the moment the bag opened — a
+  // ref, not state, since setBagOpen only ever reads/writes it as a side
+  // effect, never something a render needs to react to. Restored (not just
+  // cleared) on close, so closing the bag mid-dialogue/cutscene can't
+  // release a lock the bag itself didn't set.
+  const lockedBeforeBag = useRef(false);
 
   // useCallback (stable identity, empty deps) rather than a plain function:
   // game.on below is assigned once, inside a mount-only effect, so it
@@ -24,16 +30,14 @@ export default function Layout() {
   // GAME_STATE.bagIconVisible (always current) instead of the React state
   // variable sidesteps that same staleness for the open-guard below.
   const setBagOpen = useCallback((open: boolean) => {
-    if (open && !GAME_STATE.bagIconVisible) return; // see the comment on bagIconVisible in game-state.ts — nothing left to close it otherwise
-    // Also refuse to open while movement is already locked for some other
-    // reason (mid-dialogue — DIALOGUE.show() itself sets this; a cutscene;
-    // a scene transition). That's what makes the unconditional unlock below
-    // safe on close: opening only ever succeeds from an already-unlocked
-    // state, so closing can't accidentally release a lock something else
-    // still needs.
-    if (open && GAME_STATE.movementLocked) return;
+    if (open && !GAME_STATE.bagIconVisible) return; // see the comment on bagIconVisible in game-state.ts — nothing left to close it otherwise, and the ONLY gate: opening is allowed any time the icon is visible, regardless of movementLocked/dialogue — a scene that truly wants the bag unavailable hides the icon explicitly instead
+    if (open) {
+      lockedBeforeBag.current = GAME_STATE.movementLocked; // remember whatever it already was (e.g. still mid-dialogue/cutscene) — restored, not just cleared, on close below
+      GAME_STATE.movementLocked = true; // lock player movement while the bag itself is open
+    } else {
+      GAME_STATE.movementLocked = lockedBeforeBag.current;
+    }
     GAME_STATE.bagOpen = open;
-    GAME_STATE.movementLocked = open; // lock player movement while the bag is open
     setBagOpenState(open);
   }, []);
 

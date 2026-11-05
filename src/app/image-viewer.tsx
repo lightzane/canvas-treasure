@@ -12,10 +12,18 @@
 export function ImageViewer({
   src,
   alt,
+  backgroundColor,
   onClose,
 }: {
   src: string;
   alt: string;
+  /**
+   * Overrides the default cream gradient behind the image — for a
+   * transparent PNG that doesn't read well against it (e.g. one of the
+   * scattered tracing-paper pages). Any valid CSS `background` value, e.g.
+   * `"#979796"`. Omit for the default gradient.
+   */
+  backgroundColor?: string;
   onClose: () => void;
 }) {
   return (
@@ -28,14 +36,16 @@ export function ImageViewer({
           fixed padding) — not against an intermediate `auto`-height wrapper
           capped by its own `max-height`, which doesn't give percentage
           children anything definite to resolve against and silently lets
-          them overflow. `bg-white` shows through these images' transparent
-          regions (the tracing papers are scattered, transparent PNGs)
-          instead of the game scene behind the popup. */}
+          them overflow. The background (default gradient, or `backgroundColor`
+          if given) shows through these images' transparent regions (the
+          tracing papers are scattered, transparent PNGs) instead of the game
+          scene behind the popup. */}
       <img
         src={src}
         alt={alt}
         onClick={(e) => e.stopPropagation()}
-        className="max-w-full max-h-full object-contain rounded-xl border-2 border-amber-800 bg-linear-to-b from-white to-amber-50 shadow-[0_0_24px_rgba(0,0,0,0.6)]"
+        style={backgroundColor ? { background: backgroundColor } : undefined}
+        className={`max-w-full max-h-full object-contain rounded-xl border-2 border-amber-800 shadow-[0_0_24px_rgba(0,0,0,0.6)] ${backgroundColor ? "" : "bg-linear-to-b from-white to-amber-50"}`}
       />
       <button
         type="button"

@@ -67,10 +67,17 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   const [journalRefreshKey, setJournalRefreshKey] = useState(0);
   // One slot, not three booleans — only ever one image previewed at a time,
   // and each paper needs its own src/alt, not just an open/closed flag.
-  const [viewingImage, setViewingImage] = useState<{ src: string; alt: string } | null>(null);
+  const [viewingImage, setViewingImage] = useState<{
+    src: string;
+    alt: string;
+    backgroundColor?: string;
+  } | null>(null);
 
-  const viewImage = (name: ItemName, file: string) => () =>
-    setViewingImage({ src: img(file), alt: ITEM_LABEL[name] });
+  // `backgroundColor` is optional — only items whose art is a transparent
+  // PNG (the tracing papers) need one, to replace ImageViewer's default
+  // cream gradient with something that doesn't fight the art.
+  const viewImage = (name: ItemName, file: string, backgroundColor?: string) => () =>
+    setViewingImage({ src: img(file), alt: ITEM_LABEL[name], backgroundColor });
 
   // Few/specific items are clickable, each with its own distinct effect —
   // not every entry, and not a blanket rule off BagEntry's own `type`. Items
@@ -80,9 +87,9 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
     parcel: () => setParcelOpen(true),
     papers: () => setPuzzleOpen(true),
     sketch: viewImage("sketch", "treasure/cheryl_birthday_postcard_sketch.jpg"),
-    paper1: viewImage("paper1", "puzzle/tp1.png"),
-    paper2: viewImage("paper2", "puzzle/tp2.png"),
-    paper3: viewImage("paper3", "puzzle/tp3.png"),
+    paper1: viewImage("paper1", "puzzle/tp1.png", "#979796"),
+    paper2: viewImage("paper2", "puzzle/tp2.png", "#979796"),
+    paper3: viewImage("paper3", "puzzle/tp3.png", "#979796"),
     treasure_map: viewImage("treasure_map", "others/treasure-map.jpg"),
   };
 
@@ -171,6 +178,7 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
         <ImageViewer
           src={viewingImage.src}
           alt={viewingImage.alt}
+          backgroundColor={viewingImage.backgroundColor}
           onClose={() => setViewingImage(null)}
         />
       )}

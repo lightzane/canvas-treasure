@@ -32,6 +32,7 @@ import gsap from "gsap";
 
 const IMG_MAP_BG = img("maps/flowershop.png");
 const IMG_MAP_FG = img("maps/flowershop-fg.png");
+const ICON_SHEARS = img("others/garden-shears.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
@@ -189,7 +190,7 @@ function mainQuestGardenShears() {
   if (!bagHasItem("shears") && questGardenShears.status === "active") {
     hudSetBagIconVisible(false);
     GAME_STATE.movementLocked = true;
-    DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
+    DIALOGUE.effect(() => playExclamation(GAME_STATE.player, { icon: ICON_SHEARS, hold: 3 }), 0.5);
     DIALOGUE.queue(`Ahh pang gupit o trim sa halaman...`);
     DIALOGUE.queue(`Ito po, hiramin niyo ang GARDEN SHEARS namin.`);
     DIALOGUE.effect(() => {

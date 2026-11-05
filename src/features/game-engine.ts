@@ -154,17 +154,17 @@ export class GameEngine {
     FADE.draw(this.ctx);
 
     // A universal shortcut, not tied to any one scene. Closing is always
-    // allowed, regardless of movementLocked — once the bag is open, IT is
-    // the thing holding that lock (see setBagOpen in layout.tsx), so
-    // gating the close on it too would make Enter unable to ever close its
-    // own panel. Opening still gates on !DIALOGUE.isActive/!movementLocked
-    // (same as updateInteraction's own canAct check in interact.ts) so it
-    // can't pop the bag open over mid-dialogue text or a locked cutscene —
-    // the open-guard in layout.tsx's setBagOpen double-checks this anyway,
+    // allowed. Opening gates on bagIconVisible alone — not DIALOGUE.isActive
+    // or movementLocked, which aren't about bag availability at all, just
+    // about movement/dialogue. A scene that genuinely wants the bag
+    // unavailable during a cutscene calls hudSetBagIconVisible(false)
+    // explicitly, same as it already does for every other such moment —
+    // that's the one real signal, not a side effect of locking movement.
+    // The open-guard in layout.tsx's setBagOpen double-checks this anyway,
     // this just avoids firing the event pointlessly.
     if (GAME_STATE.keys.justPressed.enter) {
       if (GAME_STATE.bagOpen) this.on?.({ type: "menu:bag.open", open: false });
-      else if (!DIALOGUE.isActive && !GAME_STATE.movementLocked) {
+      else if (GAME_STATE.bagIconVisible) {
         this.on?.({ type: "menu:bag.open", open: true });
       }
     }

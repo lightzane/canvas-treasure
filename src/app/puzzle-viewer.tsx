@@ -185,7 +185,7 @@ export function PuzzleViewer({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Larger column — the stacked puzzle itself, or the reveal once solved */}
-        <div className="relative aspect-2/3 h-full overflow-hidden rounded-xl border-2 border-amber-800 bg-linear-to-b from-white to-amber-50 shadow-[0_0_24px_rgba(0,0,0,0.6)]">
+        <div className="relative aspect-2/3 h-full overflow-hidden rounded-xl border-2 border-amber-800 bg-[#979796] from-white to-amber-50 shadow-[0_0_24px_rgba(0,0,0,0.6)]">
           {phase === "solved" ? (
             <img
               ref={solvedRefs}
@@ -206,7 +206,10 @@ export function PuzzleViewer({
               />
             ))
           )}
-          <div ref={flashRef} className="pointer-events-none absolute inset-0 bg-white opacity-0" />
+          <div
+            ref={flashRef}
+            className="pointer-events-none absolute inset-0 bg-[#979796] opacity-0"
+          />
         </div>
 
         {/* Smaller column — one paper per row, each with its own flip/rotate controls */}
@@ -216,7 +219,7 @@ export function PuzzleViewer({
               key={src}
               className="flex flex-col items-center gap-2 rounded-lg border-2 border-amber-800/60 bg-linear-to-b from-white to-amber-50 p-3 shadow-[0_0_8px_rgba(0,0,0,0.3)]"
             >
-              <div className="h-24 w-16 overflow-hidden rounded bg-linear-to-b from-white to-amber-100">
+              <div className="h-24 w-16 overflow-hidden rounded bg-[#979796] from-white to-amber-100">
                 <img
                   ref={(el) => {
                     thumbRefs.current[i] = el;

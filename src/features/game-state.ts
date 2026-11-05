@@ -119,7 +119,7 @@ export const GAME_STATE = {
     mama_starts_bottle: true,
     market_cutscene: true,
     mid_aisle_cutscene: true,
-    mid_aisle_lei_cutscene: false,
+    mid_aisle_lei_cutscene: true,
     mid_aisle_jp_cutscene: false,
   },
   quests: QUESTS,

@@ -73,6 +73,7 @@ const IMG_CHEST_CLOSE = img("others/chest-close.png");
 const IMG_CHEST_OPEN = img("others/chest-open.png");
 const IMG_CHEST_EMPTY = img("others/chest-empty.png");
 const ICON_RED_HEART = img("others/red-heart.png");
+const ICON_SHEARS = img("others/garden-shears.png");
 
 const MAIN_EVENT_PLAYER_MOVESPEED = 100;
 
@@ -259,6 +260,7 @@ const questRunningShoes = quests.get("running_shoes")!;
 const questMessageBottle = quests.get("message_in_bottle")!;
 const questMazeChest = quests.get("maze_chest")!;
 const questDaoMingKeys = quests.get("daoming_keys")!;
+const questSketchUnity = quests.get("sketch_unity")!;
 
 placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
 placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
@@ -1039,6 +1041,7 @@ function interactWildBush(bushSprite: Sprite) {
     return;
   }
 
+  playExclamation(GAME_STATE.player, { icon: ICON_SHEARS, hold: 3 });
   DIALOGUE.show(`Using garden shears to trim the wild bush...`);
   DIALOGUE.onComplete = () => {
     removeInteractable(INTERACTABLES, bushSprite);
@@ -1727,17 +1730,25 @@ function cutsceneMidAisleJp() {
         onComplete: () => {
           daomingsi.face("w");
           huazelei.face("w");
+          let delay = 0;
           f4.forEach((f, i) =>
-            walk(
-              f,
-              { direction: "w", steps: 2 },
-              {
-                onComplete: () => {
-                  if (i !== f4.length - 1) return; // not yet the last walk
-                  // the last walk
-                  DIALOGUE.unlock();
+            gsap.delayedCall((delay += f === meizuo ? 0.6 : 0.3), () =>
+              walk(
+                f,
+                { direction: "w", steps: 2 },
+                {
+                  onComplete: () => {
+                    if (i !== f4.length - 1) return; // not yet the last walk
+                    // the last walk
+                    gsap.delayedCall(2, () => DIALOGUE.unlock());
+                    // walking animation is still ongoing
+                    // until to the dialogue part of the
+                    // happy birthday greeting
+                    // so you'll find the "lock" at that line
+                    // and this will unlock that lock.
+                  },
                 },
-              },
+              ),
             ),
           );
         },
@@ -1751,8 +1762,8 @@ function cutsceneMidAisleJp() {
       birthdayConfetti();
     });
     gsap.delayedCall(1, () => {
-      playExclamation(GAME_STATE.jp, { icon: ICON_RED_HEART, hold: 15 });
-      playExclamation(GAME_STATE.player, { icon: ICON_RED_HEART, hold: 15 });
+      playExclamation(GAME_STATE.jp, { icon: ICON_RED_HEART, hold: 10 });
+      playExclamation(GAME_STATE.player, { icon: ICON_RED_HEART, hold: 10 });
       playAttentionBounce(GAME_STATE.player, { hops: 2 });
     });
   }, 0.1);
@@ -1769,27 +1780,97 @@ function cutsceneMidAisleJp() {
   DIALOGUE.queue(`JP: 🎂 HAPPY BIRTHDAY LOVE LOVE!`);
   DIALOGUE.effect(() => {
     gsap.delayedCall(0.3, () =>
-      walk(daomingsi, [
-        { direction: "d", steps: 0.75 },
-        { direction: "w", steps: 2 },
-      ]),
+      walk(
+        daomingsi,
+        [
+          { direction: "d", steps: 0.75 },
+          { direction: "w", steps: 2 },
+          { direction: "a", steps: 0.5 },
+          { direction: "w", steps: 1.5 },
+        ],
+        {
+          onComplete() {
+            daomingsi.face("d");
+            gsap.delayedCall(0.5, () => daomingsi.face("s"));
+          },
+        },
+      ),
     );
     gsap.delayedCall(0.6, () =>
-      walk(huazelei, [
-        { direction: "a", steps: 0.75 },
-        { direction: "w", steps: 2 },
-      ]),
+      walk(
+        huazelei,
+        [
+          { direction: "a", steps: 0.75 },
+          { direction: "w", steps: 2 },
+          { direction: "d", steps: 0.5 },
+          { direction: "w", steps: 1.5 },
+        ],
+        {
+          onComplete() {
+            huazelei.face("a");
+            gsap.delayedCall(0.5, () => huazelei.face("s"));
+          },
+        },
+      ),
     );
-    gsap.delayedCall(1.5, () => walk(ximen, [{ direction: "w", steps: 1 }]));
-    gsap.delayedCall(1.8, () => walk(meizuo, [{ direction: "w", steps: 1 }]));
+    gsap.delayedCall(1.5, () =>
+      walk(
+        ximen,
+        [
+          { direction: "w", steps: 2.5 },
+          { direction: "a", steps: 1 },
+          { direction: "w", steps: 1 },
+        ],
+        {
+          onComplete() {
+            ximen.face("d");
+          },
+        },
+      ),
+    );
+    gsap.delayedCall(1.8, () =>
+      walk(
+        meizuo,
+        [
+          { direction: "w", steps: 2.5 },
+          { direction: "d", steps: 1 },
+          { direction: "w", steps: 1 },
+        ],
+        {
+          onComplete() {
+            meizuo.face("a");
+          },
+        },
+      ),
+    );
   }, 0.1);
-
-  // DIALOGUE.queue(`Nakita ko ito'ng sketch sa tracing paper...`);
-  // DIALOGUE.queue(`Sabi sa akin ni LEI, ito daw yung kinokolekta mo.`);
-  // DIALOGUE.queue(`Sabi sa akin ni LEI, ito daw yung kinokolekta mo.`);
-
-  DIALOGUE.onComplete = () => {
+  DIALOGUE.queue(`Ito nga pala yung last page na sketch paper na hinahabol mo...`);
+  DIALOGUE.effect(() => {
+    disableAccess();
+    playExclamation(player);
+    playAttentionBounce(player, { hops: 3 });
+    questSetProgress(questCatchSheets, 3);
+    questSetStatus(questCatchSheets, "resolved");
+    playQuestToast(questCatchSheets);
+    playQuestCompleteBanner(`Quest Completed!`);
+    bagIncItem("paper3");
+    bagIncItem("papers");
+  }, 5);
+  DIALOGUE.queue(`
+    Makikita mo lang ang nilalaman ng tracing papers na iyan
+    once na stacked or patong-patong mo na yung mga papel na
+    iyan sa isa't isa.
+  `);
+  DIALOGUE.queue(`Saka mo lang makikita yung buong sketch.`);
+  DIALOGUE.queue(`Tingnan mo ngayon sa bag kung anu nilalaman ng sketch.`);
+  DIALOGUE.effect(() => {
+    disableAccess();
+    questSetStatus("sketch_unity", "active");
+    playQuestToast(questSketchUnity);
     hudSetBagIconVisible(true);
+  }, 5);
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.movementLocked = true;
     GAME_STATE.sequence.mid_aisle_jp_cutscene = true;
   };
 }
