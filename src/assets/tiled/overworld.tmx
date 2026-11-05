@@ -12866,10 +12866,10 @@
    <object id="48" name="running_shoes" x="1825" y="1389.5" width="126.5" height="41.5"/>
    <object id="54" name="mid_aisle" x="2975.87" y="1596.21" width="96" height="48"/>
    <object id="55" name="mid_aisle_lei" x="2975.87" y="1514.21" width="96" height="48"/>
-   <object id="56" name="mid_aisle_jp" x="2975.87" y="1438.21" width="96" height="48"/>
+   <object id="56" name="mid_aisle_jp" x="2975.87" y="1488.21" width="96" height="48"/>
   </objectgroup>
  </group>
- <objectgroup color="#000000" id="168" name="camera_ruler">
+ <objectgroup color="#000000" id="168" name="camera_ruler" visible="0">
   <object id="57" name="camera" x="2704.42" y="1247.11" width="640" height="360"/>
  </objectgroup>
 </map>

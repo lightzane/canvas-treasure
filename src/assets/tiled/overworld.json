@@ -13777,8 +13777,8 @@
                          "type":"",
                          "visible":true,
                          "width":96,
-                         "x":2976.00872769589,
-                         "y":1856.36951248045
+                         "x":2976.01,
+                         "y":1856.37
                         }, 
                         {
                          "height":48,
@@ -13789,8 +13789,8 @@
                          "type":"",
                          "visible":true,
                          "width":96,
-                         "x":2976.008727696,
-                         "y":1807.36951248
+                         "x":2976.01,
+                         "y":1807.37
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -13838,7 +13838,7 @@
                          "visible":true,
                          "width":33,
                          "x":1884,
-                         "y":1290.22565
+                         "y":1290.23
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -14209,8 +14209,8 @@
                          "type":"",
                          "visible":true,
                          "width":96,
-                         "x":2975.86753147166,
-                         "y":1596.20506102626
+                         "x":2975.87,
+                         "y":1596.21
                         }, 
                         {
                          "height":48,
@@ -14221,8 +14221,8 @@
                          "type":"",
                          "visible":true,
                          "width":96,
-                         "x":2975.86753147166,
-                         "y":1514.20506102626
+                         "x":2975.87,
+                         "y":1514.21
                         }, 
                         {
                          "height":48,
@@ -14233,8 +14233,8 @@
                          "type":"",
                          "visible":true,
                          "width":96,
-                         "x":2975.86753147166,
-                         "y":1438.20506102626
+                         "x":2975.87,
+                         "y":1488.21
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -14248,9 +14248,33 @@
          "visible":true,
          "x":0,
          "y":0
+        }, 
+        {
+         "color":"#000000",
+         "draworder":"topdown",
+         "id":168,
+         "name":"camera_ruler",
+         "objects":[
+                {
+                 "height":360,
+                 "id":57,
+                 "name":"camera",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":640,
+                 "x":2704.42,
+                 "y":1247.11
+                }],
+         "opacity":1,
+         "type":"objectgroup",
+         "visible":false,
+         "x":0,
+         "y":0
         }],
- "nextlayerid":168,
- "nextobjectid":57,
+ "nextlayerid":169,
+ "nextobjectid":58,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

@@ -78,6 +78,8 @@ class Dialogue {
   private resolvingEffects = false;
   /** True for the current pause only — see `hideBox()`. Reset automatically the moment the next message is ready to show. */
   private hidden = false;
+  /** Manually set via `lock()`/`unlock()` — blocks player-driven advancement the same way `resolvingEffects` does, but under the caller's own control instead of tied to an effect's `delay`. Also hides the "read more" indicator while true, see `drawReadMore()`. */
+  private locked = false;
   private revealedChars = 0;
   private wasHeld = false;
   private blinkElapsed = 0;
@@ -97,6 +99,7 @@ class Dialogue {
     this.lastColor = "black"; // a new conversation always starts from the default, not whatever the last one ended on
     this.lastPortrait = undefined; // same reasoning — no carrying over the previous conversation's speaker
     this.hidden = false; // in case a previous conversation got interrupted mid-hideBox()
+    this.locked = false; // same reasoning — don't inherit a stale lock() from a previous conversation
     GAME_STATE.movementLocked = true;
     this.enqueue(input);
   }
@@ -165,6 +168,36 @@ class Dialogue {
    */
   hideBox() {
     this.hidden = true;
+  }
+
+  /**
+   * Blocks the player from advancing past whatever's currently showing —
+   * the typewriter still finishes revealing normally, but pressing Z/X does
+   * nothing past that, and the "read more" indicator stays hidden the whole
+   * time (so it doesn't suggest advancing is possible when it isn't). For
+   * cutscene beats where a message needs to sit on screen until something
+   * else finishes (an NPC walking into position, a timed animation) rather
+   * than until the player happens to press a key. Call `unlock()` once
+   * that's done — nothing else releases this automatically. Same
+   * `effect()`-callback placement convention as `hideBox()`/`clearPortrait()`,
+   * but the lock itself isn't tied to that effect's own `delay` — `unlock()`
+   * can fire from anywhere, whenever the thing it's actually waiting on
+   * completes.
+   *
+   * @example
+   * DIALOGUE.effect(() => DIALOGUE.lock());
+   * DIALOGUE.queue("JP: Happy birthday!");
+   * DIALOGUE.effect(() => {
+   *   walk(jp, [[20, 10]], { onComplete: () => DIALOGUE.unlock() });
+   * });
+   */
+  lock() {
+    this.locked = true;
+  }
+
+  /** Releases a `lock()` — the player can advance again immediately (right away if the current page is already fully revealed). */
+  unlock() {
+    this.locked = false;
   }
 
   private enqueue(input: DialogueInput) {
@@ -240,7 +273,9 @@ class Dialogue {
     const speed = REVEAL_CHARS_PER_SECOND * (held ? REVEAL_SPEED_MULTIPLIER : 1);
     this.revealedChars = Math.min(totalChars, this.revealedChars + speed * dt);
 
-    if (justPressed && this.revealedChars >= totalChars) this.advance();
+    // The typewriter still finishes revealing normally while locked — only
+    // the actual advance is blocked, see lock()'s own doc comment.
+    if (justPressed && this.revealedChars >= totalChars && !this.locked) this.advance();
   }
 
   draw(ctx: CanvasRenderingContext2D) {
@@ -365,7 +400,7 @@ class Dialogue {
     const totalChars = page.join("").length;
     const fullyRevealed = this.revealedChars >= totalChars;
     const hasMore = this.pageIndex < this.pages.length - 1 || this.pending.length > 0;
-    if (!fullyRevealed || !hasMore) return;
+    if (!fullyRevealed || !hasMore || this.locked) return;
 
     const blinkOn = Math.floor(this.blinkElapsed / READ_MORE_BLINK_INTERVAL) % 2 === 0;
     if (!blinkOn) return;
