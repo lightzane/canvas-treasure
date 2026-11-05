@@ -144,6 +144,19 @@ export const GAME_STATE = {
    * canvas-can't-rerender-React caveat as `bagIconVisible` above.
    */
   bagOpen: false,
+  /**
+   * One-shot callback — if set, fires the moment the bag panel actually
+   * closes (the × button, clicking the bag icon again, pressing Enter —
+   * see `layout.tsx`'s `setBagOpen`), then clears itself automatically.
+   * For a scene that needs to react to "the player is done looking in the
+   * bag" (e.g. starting a cutscene once they close out of a just-solved
+   * puzzle) without polling `bagOpen` every frame for a falling edge
+   * itself. Mutate directly from scene code, same as `movementLocked`/
+   * `bagIconVisible` above — no wrapper needed, nothing on the React side
+   * needs telling that this was set.
+   * @default null
+   */
+  onBagClose: null as (() => void) | null,
   bag: new Map<ItemName, BagEntry>([
     ["journal", { type: "item", quantity: 1 }],
     ["parcel", { type: "item", quantity: 1 }],

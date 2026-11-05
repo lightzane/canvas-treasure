@@ -39,6 +39,11 @@ export default function Layout() {
     }
     GAME_STATE.bagOpen = open;
     setBagOpenState(open);
+    if (!open) {
+      const onClose = GAME_STATE.onBagClose;
+      GAME_STATE.onBagClose = null; // one-shot — cleared before calling, so the callback itself can safely re-arm for next time
+      onClose?.();
+    }
   }, []);
 
   const setBagIconVisible = useCallback(

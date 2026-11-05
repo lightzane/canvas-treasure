@@ -27,6 +27,7 @@ import { birthdayConfetti } from "@/lib/confetti";
 import { drift } from "@/lib/drift";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
+import { playImagePreview } from "@/lib/effects/image-preview";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import {
   playQuestCompleteBanner,
@@ -55,6 +56,8 @@ import { DIALOGUE_COLOR_MEIZUO, PORTRAIT_MEIZUO } from "@/sprites/mei-zuo";
 import { DIALOGUE_COLOR_XIMEN, PORTRAIT_XIMEN } from "@/sprites/xi-men";
 import gsap from "gsap";
 
+const PHOTO_BIRTHDAY_POSTCARD = img("treasure/cheryl_birthday_postcard.jpg");
+
 const IMG_MAP_BG = img("maps/overworld.png");
 const IMG_MAP_FG = img("maps/overworld-fg.png");
 
@@ -74,6 +77,7 @@ const IMG_CHEST_OPEN = img("others/chest-open.png");
 const IMG_CHEST_EMPTY = img("others/chest-empty.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const ICON_SHEARS = img("others/garden-shears.png");
+const ICON_PAPERS = img("others/paper-multi-32x32.png");
 
 const MAIN_EVENT_PLAYER_MOVESPEED = 100;
 
@@ -82,6 +86,10 @@ const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
 
 const backgroundEvent = new Sprite({ src: IMG_MAP_EVENT_BG });
+
+// Main and core characters
+const { player, jp, daomingsi, huazelei, meizuo, ximen } = GAME_STATE;
+const f4 = [daomingsi, huazelei, meizuo, ximen];
 
 // static decors
 const smallFountainA = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
@@ -195,7 +203,7 @@ const INTERACTABLES: Interactable[] = [
   { sprite: spMansion2, ...signpostInteractablesCfgs },
   { sprite: msgBottle1, ...msgBottleInteractablesCfgs },
 ];
-const HUAZELEI_INTERACTABLE: Interactable = { sprite: GAME_STATE.huazelei, label: "Talk" };
+const HUAZELEI_INTERACTABLE: Interactable = { sprite: huazelei, label: "Talk" };
 let paperWindAnimating = false;
 
 // Incremented/decremented by the "sand" trigger below, not a plain boolean —
@@ -206,6 +214,7 @@ let sandZoneCount = 0;
 
 let tracingPaper2ShineHandle: ShineHandle | undefined;
 let coreMsgBottleShineHandle: ShineHandle | undefined;
+let jpShineHandle: ShineHandle;
 
 function scheduleMamaFacePapa() {
   scheduleFaceDirection(GAME_STATE.mama, "d");
@@ -330,7 +339,7 @@ export const overworldScene: Scene = {
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(overworldScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
-    GAME_STATE.player.face("s");
+    player.face("s");
     GAME_STATE.papa.face("s");
     // Spawn at specific tiles (col, row from Tiled's bottom-left readout).
     // Default here is "arrived from home" — whichever scene set spawnLocation
@@ -340,9 +349,9 @@ export const overworldScene: Scene = {
     // comment in home.ts, or spriteSize's own doc in positioning.ts.
     const spawnTile = GAME_STATE.spawnLocation ?? [58.9, 42];
     placeAtTile({
-      sprite: GAME_STATE.player,
+      sprite: player,
       tile: spawnTile,
-      spriteSize: GAME_STATE.player.boxSize,
+      spriteSize: player.boxSize,
     });
     GAME_STATE.spawnLocation = undefined;
 
@@ -389,7 +398,7 @@ export const overworldScene: Scene = {
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
     updateFootprints(dt);
-    trackFootstep(GAME_STATE.player, sandZoneCount > 0);
+    trackFootstep(player, sandZoneCount > 0);
     updateInteraction(INTERACTABLES, interactions);
   },
 
@@ -400,7 +409,7 @@ export const overworldScene: Scene = {
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
     DECORS.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
     drawFootprints(ctx);
-    drawYSorted(ctx, [GAME_STATE.player, ...NPCS.filter(isInViewport)]);
+    drawYSorted(ctx, [player, ...NPCS.filter(isInViewport)]);
 
     if (questDaoMingKeys.status === "resolved") drawViewportClamped(ctx, foreground);
     else drawViewportClamped(ctx, foreground);
@@ -429,9 +438,9 @@ function initQuestsDaomingsi() {
     if (questMazeChest.status === "active") {
       return; // Do not spawn Hua Ze Lei at the park to prep for maze chest cutscene
     }
-    respawnNPC(GAME_STATE.huazelei, [81.5, 35]);
+    respawnNPC(huazelei, [81.5, 35]);
     addOnce(INTERACTABLES, HUAZELEI_INTERACTABLE);
-    GAME_STATE.huazelei.face("w");
+    huazelei.face("w");
   }
 }
 
@@ -517,7 +526,7 @@ function cutsceneRunningShoes() {
   hudSetBagIconVisible(false);
 
   DIALOGUE.effect(disableAccess, 0.00001);
-  DIALOGUE.effect(() => walk(GAME_STATE.player, [58.9, 42], { onComplete: convo }), 0.5);
+  DIALOGUE.effect(() => walk(player, [58.9, 42], { onComplete: convo }), 0.5);
 
   function convo() {
     const mama = GAME_STATE.mama;
@@ -554,7 +563,7 @@ function cutsceneStartMessageBottle() {
 
   exitMap();
 
-  GAME_STATE.player.face("w");
+  player.face("w");
   const mama = GAME_STATE.mama;
   mama.face("s");
   playAttentionBounce(mama);
@@ -584,7 +593,7 @@ function interactions(target: Sprite | undefined) {
     case GAME_STATE.mama:
       interactMama();
       break;
-    case GAME_STATE.huazelei:
+    case huazelei:
       interactHuazelei();
       break;
     case paperMulti:
@@ -626,10 +635,10 @@ function interactions(target: Sprite | undefined) {
     case chestClose:
       openMazeChest();
       break;
-    case GAME_STATE.ximen:
+    case ximen:
       interactXimen();
       break;
-    case GAME_STATE.meizuo:
+    case meizuo:
       interactMeizuo();
       break;
   }
@@ -741,27 +750,27 @@ function meetLeiConversation() {
   f4Speaker("huazelei", `F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?`);
 
   DIALOGUE.effect(() => {
-    playExclamation(GAME_STATE.player);
-    playAttentionBounce(GAME_STATE.player, { hops: 3, duration: 0.1 });
-    shineHandle = playShine(GAME_STATE.player);
+    playExclamation(player);
+    playAttentionBounce(player, { hops: 3, duration: 0.1 });
+    shineHandle = playShine(player);
     gsap.delayedCall(8, () => shineHandle?.stop());
   }, 0.5);
   DIALOGUE.queue(`...si "DAO MING SI" naghahanap ng kiss?`);
-  DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
+  DIALOGUE.effect(() => playExclamation(player), 0.5);
   DIALOGUE.queue(`Ahh, hinahanap niya ang "keys" o susi niya...`);
   DIALOGUE.queue(`Paumanhin ngunit wala naman sa akin ang mga keys niya.`);
   DIALOGUE.effect(() => {
     DIALOGUE.clearPortrait();
     DIALOGUE.hideBox();
-    playExclamation(GAME_STATE.huazelei);
+    playExclamation(huazelei);
     playAttentionBounce(paperSingle, { hops: 8, delay: 1, onComplete: removePaperSingle });
 
     function removePaperSingle() {
       remove(DECORS, paperSingle);
       paperWindAnimating = true;
       gsap.delayedCall(1.5, () => {
-        GAME_STATE.huazelei.face("s");
-        GAME_STATE.player.face("s");
+        huazelei.face("s");
+        player.face("s");
       });
       drift(paperWind1, {
         to: [82, 45],
@@ -782,8 +791,8 @@ function meetLeiConversation() {
     DIALOGUE.clearPortrait();
     DIALOGUE.hideBox();
     gsap.delayedCall(0.5, () => {
-      playExclamation(GAME_STATE.player);
-      playAttentionBounce(GAME_STATE.player, { hops: 2 });
+      playExclamation(player);
+      playAttentionBounce(player, { hops: 2 });
     });
   }, 1);
 
@@ -813,8 +822,8 @@ function interactPaperMulti() {
 
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true;
-  playExclamation(GAME_STATE.player);
-  playAttentionBounce(GAME_STATE.player);
+  playExclamation(player);
+  playAttentionBounce(player);
 
   // Based on the initial tile spawn of paperMulti
   placeAtTile({ sprite: paperWind1, tile: [82 - 0.5, 44] });
@@ -826,27 +835,27 @@ function interactPaperMulti() {
   paperWindAnimating = true;
 
   gsap.delayedCall(1, () =>
-    walk(GAME_STATE.huazelei, [
+    walk(huazelei, [
       [82, 36],
       [82, 41],
     ]),
   );
 
   let gsapDelay = 0.5;
-  gsap.delayedCall(0.5, () => GAME_STATE.player.face("a"));
-  gsap.delayedCall((gsapDelay += 0.5), () => GAME_STATE.player.face("d"));
-  gsap.delayedCall((gsapDelay += 0.5), () => GAME_STATE.player.face("a"));
-  gsap.delayedCall((gsapDelay += 0.5), () => GAME_STATE.player.face("d"));
-  gsap.delayedCall((gsapDelay += 0.5), () => GAME_STATE.player.face("a"));
-  gsap.delayedCall((gsapDelay += 0.5), () => GAME_STATE.player.face("w"));
+  gsap.delayedCall(0.5, () => player.face("a"));
+  gsap.delayedCall((gsapDelay += 0.5), () => player.face("d"));
+  gsap.delayedCall((gsapDelay += 0.5), () => player.face("a"));
+  gsap.delayedCall((gsapDelay += 0.5), () => player.face("d"));
+  gsap.delayedCall((gsapDelay += 0.5), () => player.face("a"));
+  gsap.delayedCall((gsapDelay += 0.5), () => player.face("w"));
   gsap.delayedCall((gsapDelay += 0.5), () => {
-    playExclamation(GAME_STATE.player);
-    playAttentionBounce(GAME_STATE.player, {
+    playExclamation(player);
+    playAttentionBounce(player, {
       onComplete: () => gsap.delayedCall(0.5, convo),
     });
   });
 
-  walk(GAME_STATE.player, [82, 43]);
+  walk(player, [82, 43]);
 
   drift(paperWind1, {
     to: { direction: "a", distance: 11 * TILE_SIZE },
@@ -881,20 +890,20 @@ function interactPaperMulti() {
       DIALOGUE.hideBox();
       gsap.delayedCall(1, () => {
         walk(
-          GAME_STATE.huazelei,
+          huazelei,
           [
             [82, 37],
             [84.5, 37],
             [84.5, 36],
           ],
           {
-            onComplete: () => GAME_STATE.huazelei.face("w"),
+            onComplete: () => huazelei.face("w"),
           },
         );
       });
     }, 0.5);
 
-    DIALOGUE.effect(() => GAME_STATE.player.face("s"), 0.5);
+    DIALOGUE.effect(() => player.face("s"), 0.5);
 
     DIALOGUE.queue({
       text: `May nakuha naman ako isa bwehehehe. Hanapin ko pa yung iba...`,
@@ -929,9 +938,9 @@ function interactPaper2Part1() {
   remove(DECORS, paperSingle);
 
   gsap.delayedCall(0.5, () => {
-    GAME_STATE.player.face("s");
-    playAttentionBounce(GAME_STATE.player);
-    playExclamation(GAME_STATE.player);
+    player.face("s");
+    playAttentionBounce(player);
+    playExclamation(player);
   });
 
   DIALOGUE.effect(() => {
@@ -965,7 +974,7 @@ function interactPaper2Part2() {
 
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true;
-  placeAtTile({ sprite: GAME_STATE.huazelei, tile: [37, 65] });
+  placeAtTile({ sprite: huazelei, tile: [37, 65] });
 
   DIALOGUE.show(`Nahuli rin kita — 2 down! 1 to go...`);
   DIALOGUE.effect(() => {
@@ -975,12 +984,12 @@ function interactPaper2Part2() {
     bagIncItem("paper2");
   }, 1.5);
   DIALOGUE.effect(() => {
-    walk(GAME_STATE.huazelei, [37, 71]);
-    playAttentionBounce(GAME_STATE.player, { delay: 1 });
-    playExclamation(GAME_STATE.player, { delay: 1 });
-    gsap.delayedCall(0.5, () => GAME_STATE.player.face("a"));
+    walk(huazelei, [37, 71]);
+    playAttentionBounce(player, { delay: 1 });
+    playExclamation(player, { delay: 1 });
+    gsap.delayedCall(0.5, () => player.face("a"));
   }, 2);
-  DIALOGUE.effect(() => GAME_STATE.huazelei.face("d"));
+  DIALOGUE.effect(() => huazelei.face("d"));
 
   DIALOGUE.queue({
     text: `HUA ZE LEI: Oh CHERYL, nakita ko hinahabol mo pa rin sketch paper ko.`,
@@ -1005,13 +1014,13 @@ function interactPaper2Part2() {
     DIALOGUE.clearPortrait();
     DIALOGUE.hideBox();
   });
-  DIALOGUE.effect(() => walk(GAME_STATE.huazelei, [37, 65]), 2);
+  DIALOGUE.effect(() => walk(huazelei, [37, 65]), 2);
   DIALOGUE.effect(() => {
     const q = GAME_STATE.quests.get("running_shoes")!;
     playQuestToast(questCatchSheets);
     gsap.delayedCall(0.8, () => playQuestToast(q));
     questSetStatus(q, "active");
-    placeAtTile({ sprite: GAME_STATE.huazelei, tile: [84.5, 36] });
+    placeAtTile({ sprite: huazelei, tile: [84.5, 36] });
     hudSetBagIconVisible(true);
     spawnMamaAtOverworld();
   });
@@ -1041,7 +1050,7 @@ function interactWildBush(bushSprite: Sprite) {
     return;
   }
 
-  playExclamation(GAME_STATE.player, { icon: ICON_SHEARS, hold: 3 });
+  playExclamation(player, { icon: ICON_SHEARS, hold: 3 });
   DIALOGUE.show(`Using garden shears to trim the wild bush...`);
   DIALOGUE.onComplete = () => {
     removeInteractable(INTERACTABLES, bushSprite);
@@ -1102,8 +1111,8 @@ function completeCoreMsgBottle() {
 
   DIALOGUE.queue(`... ... ...`);
   DIALOGUE.effect(() => {
-    playAttentionBounce(GAME_STATE.player);
-    playExclamation(GAME_STATE.player);
+    playAttentionBounce(player);
+    playExclamation(player);
   }, 1.5);
   DIALOGUE.queue(`Ito na yung meron treasure map sa loob!`);
   DIALOGUE.effect(() => {
@@ -1119,7 +1128,7 @@ function completeCoreMsgBottle() {
     playQuestToast(questMessageBottle);
     playQuestCompleteBanner(`Treasure Map Obtained!`);
 
-    despawnNPC(GAME_STATE.huazelei);
+    despawnNPC(huazelei);
   }, 3);
 
   DIALOGUE.queue(`Mahahanap ko na rin ang teasure para sa event!`);
@@ -1153,7 +1162,7 @@ function openMazeChest() {
     addOnce(DECORS, chestOpen);
     addOnce(GAME_STATE.obstacles, chestOpen);
     removeInteractable(INTERACTABLES, chestClose);
-    playExclamation(GAME_STATE.player);
+    playExclamation(player);
   });
   DIALOGUE.effect(disableAccess, 1.5);
   DIALOGUE.queue(`A music box...!`);
@@ -1162,20 +1171,20 @@ function openMazeChest() {
     disableAccess();
     addOnce(DECORS, chestEmpty);
     addOnce(GAME_STATE.obstacles, chestEmpty);
-    respawnNPC(GAME_STATE.daomingsi, [108, 7]);
-    respawnNPC(GAME_STATE.huazelei, [107.5, 7.25]);
-    walk(GAME_STATE.daomingsi, [111.5, 7], {
-      onComplete: () => GAME_STATE.daomingsi.face("s"),
+    respawnNPC(daomingsi, [108, 7]);
+    respawnNPC(huazelei, [107.5, 7.25]);
+    walk(daomingsi, [111.5, 7], {
+      onComplete: () => daomingsi.face("s"),
     });
     gsap.delayedCall(0.1, () =>
-      walk(GAME_STATE.huazelei, [111, 7.25], {
-        onComplete: () => GAME_STATE.huazelei.face("w"),
+      walk(huazelei, [111, 7.25], {
+        onComplete: () => huazelei.face("w"),
       }),
     );
-    gsap.delayedCall(0.5, () => GAME_STATE.player.face("a"));
+    gsap.delayedCall(0.5, () => player.face("a"));
     gsap.delayedCall(1.3, () => {
-      playAttentionBounce(GAME_STATE.player, { hops: 3, duration: 0.09 });
-      playExclamation(GAME_STATE.player);
+      playAttentionBounce(player, { hops: 3, duration: 0.09 });
+      playExclamation(player);
     });
   }, 0.3);
   DIALOGUE.queue({
@@ -1185,22 +1194,22 @@ function openMazeChest() {
   });
   DIALOGUE.effect(() => {
     disableAccess();
-    GAME_STATE.daomingsi.face("d");
+    daomingsi.face("d");
   }, 2);
   DIALOGUE.effect(() => {
     disableAccess();
-    GAME_STATE.huazelei.face("d");
-    playExclamation(GAME_STATE.daomingsi, {
-      onComplete: () => walk(GAME_STATE.daomingsi, { direction: "d", steps: 2 }),
+    huazelei.face("d");
+    playExclamation(daomingsi, {
+      onComplete: () => walk(daomingsi, { direction: "d", steps: 2 }),
     });
-    playAttentionBounce(GAME_STATE.daomingsi, { hops: 5, duration: 0.05, delay: 2 });
-    playExclamation(GAME_STATE.daomingsi, { delay: 2 });
-    playExclamation(GAME_STATE.player, { delay: 2 });
-    playAttentionBounce(GAME_STATE.daomingsi, { hops: 5, duration: 0.05, delay: 4 });
-    playExclamation(GAME_STATE.daomingsi, { delay: 4 });
-    playExclamation(GAME_STATE.player, { delay: 4 });
+    playAttentionBounce(daomingsi, { hops: 5, duration: 0.05, delay: 2 });
+    playExclamation(daomingsi, { delay: 2 });
+    playExclamation(player, { delay: 2 });
+    playAttentionBounce(daomingsi, { hops: 5, duration: 0.05, delay: 4 });
+    playExclamation(daomingsi, { delay: 4 });
+    playExclamation(player, { delay: 4 });
     gsap.delayedCall(0.8, () =>
-      walk(GAME_STATE.huazelei, [
+      walk(huazelei, [
         { direction: "a", steps: 2 },
         { direction: "s", steps: 2.5 },
         { direction: "d", steps: 8.5 },
@@ -1213,25 +1222,25 @@ function openMazeChest() {
   });
   DIALOGUE.effect(() => {
     disableAccess();
-    walk(GAME_STATE.huazelei, { direction: "w", steps: 2.5 });
-    playAttentionBounce(GAME_STATE.player, { hops: 2, duration: 0.09 });
-    playExclamation(GAME_STATE.player, { hold: 10 });
+    walk(huazelei, { direction: "w", steps: 2.5 });
+    playAttentionBounce(player, { hops: 2, duration: 0.09 });
+    playExclamation(player, { hold: 10 });
   }, 1);
   DIALOGUE.queue({ text: `... ... ...`, portrait: null, color: "teal" });
-  DIALOGUE.effect(() => GAME_STATE.huazelei.face("a"));
+  DIALOGUE.effect(() => huazelei.face("a"));
   DIALOGUE.queue({
     text: `HUA ZE LEI: Pasensiya ka na AH SI. May pinapahanap kasi ako sa kanya kanina...`,
     color: DIALOGUE_COLOR_HUAZELEI,
     portrait: PORTRAIT_HUAZELEI,
   });
-  DIALOGUE.effect(() => GAME_STATE.huazelei.face("d"));
+  DIALOGUE.effect(() => huazelei.face("d"));
   DIALOGUE.queue(`
     (pabulong) Ibigay mo na sa akin yung
     nakuha mo bago pa tayo mabisto ni AH SI
     na nagpapanggap.
   `);
   DIALOGUE.queue(`Maraming salamat sa paghanap nito sa akin.`);
-  DIALOGUE.effect(() => GAME_STATE.huazelei.face("a"));
+  DIALOGUE.effect(() => huazelei.face("a"));
   DIALOGUE.queue({
     text: `DAO MING SI: Bakit naman kasi meron ka iniiwan na gamit mo dito sa hardin ko...`,
     portrait: PORTRAIT_DAOMINGSI_INTIMIDATE,
@@ -1242,7 +1251,7 @@ function openMazeChest() {
     portrait: PORTRAIT_HUAZELEI,
     color: DIALOGUE_COLOR_HUAZELEI,
   });
-  DIALOGUE.effect(() => GAME_STATE.daomingsi.face("s"));
+  DIALOGUE.effect(() => daomingsi.face("s"));
   DIALOGUE.queue({
     text: `DAO MING SI: Tumatakbo ang oras, tayo na LEI, may gagawin pa tayo.`,
     portrait: PORTRAIT_DAOMINGSI,
@@ -1250,15 +1259,15 @@ function openMazeChest() {
   });
   DIALOGUE.effect(() => {
     walk(
-      GAME_STATE.daomingsi,
+      daomingsi,
       { direction: "a", steps: 10 },
       {
         onComplete() {
-          despawnNPC(GAME_STATE.daomingsi);
+          despawnNPC(daomingsi);
         },
       },
     );
-    GAME_STATE.huazelei.face("d");
+    huazelei.face("d");
   });
   DIALOGUE.queue({
     text: `
@@ -1267,7 +1276,7 @@ function openMazeChest() {
     portrait: PORTRAIT_HUAZELEI,
     color: DIALOGUE_COLOR_HUAZELEI,
   });
-  DIALOGUE.effect(() => GAME_STATE.huazelei.face("s"));
+  DIALOGUE.effect(() => huazelei.face("s"));
   DIALOGUE.queue(`Makikita mo lang sila kung pumunta ka sa timog na bahagi nitong mansion.`);
   DIALOGUE.queue(`Sa timog ng park mismo makikita mo ang market dito.`);
   DIALOGUE.queue(`Sa market ginagawa ni XI MEN at MEI ZUO ang bahagi nila para sa event.`);
@@ -1275,7 +1284,7 @@ function openMazeChest() {
   DIALOGUE.effect(() => {
     disableAccess();
     walk(
-      GAME_STATE.huazelei,
+      huazelei,
       [
         { direction: "s", steps: 2.5 },
         { direction: "a", steps: 10 },
@@ -1286,8 +1295,8 @@ function openMazeChest() {
     );
   }, 1.5);
   DIALOGUE.effect(() => {
-    playAttentionBounce(GAME_STATE.player);
-    playExclamation(GAME_STATE.player);
+    playAttentionBounce(player);
+    playExclamation(player);
   });
   DIALOGUE.queue({ text: `Pero iyung teasure ko...`, portrait: null, color: "black" });
   DIALOGUE.effect(() => {
@@ -1323,9 +1332,7 @@ function disableAccess() {
 
 function initMarketEvent() {
   if (questMazeChest.status !== "resolved") return;
-  despawnNPC(GAME_STATE.huazelei);
-  const meizuo = GAME_STATE.meizuo;
-  const ximen = GAME_STATE.ximen;
+  despawnNPC(huazelei);
   respawnNPC(meizuo, [101.5, 74]);
   respawnNPC(ximen, [105.5, 74]);
   addOnce(INTERACTABLES, { sprite: meizuo });
@@ -1342,11 +1349,11 @@ function cutsceneMarket() {
   DIALOGUE.effect(disableAccess, 0.00000000000001);
 
   DIALOGUE.effect(() => {
-    walk(GAME_STATE.player, [101.5, 75], {
+    walk(player, [101.5, 75], {
       onComplete: () => {
-        GAME_STATE.player.face("w");
-        playExclamation(GAME_STATE.meizuo);
-        playExclamation(GAME_STATE.ximen);
+        player.face("w");
+        playExclamation(meizuo);
+        playExclamation(ximen);
       },
     });
   }, 3);
@@ -1355,7 +1362,7 @@ function cutsceneMarket() {
 
   DIALOGUE.effect(() => {
     disableAccess();
-    playExclamation(GAME_STATE.ximen);
+    playExclamation(ximen);
   }, 0.5);
 
   f4Speaker("ximen", `F4 XI MEN: Isang halik kay MEI ZUO kada isang gawa/humihip ng lobo!`);
@@ -1374,19 +1381,19 @@ function cutsceneMarket() {
     playQuestCompleteBanner(`Meet Mei Zuo & Xi Men Complete!`);
   }, 5);
 
-  DIALOGUE.effect(() => playExclamation(GAME_STATE.meizuo), 0.5);
+  DIALOGUE.effect(() => playExclamation(meizuo), 0.5);
 
   DIALOGUE.effect(() => {
-    playAttentionBounce(GAME_STATE.meizuo);
-    playExclamation(GAME_STATE.meizuo);
+    playAttentionBounce(meizuo);
+    playExclamation(meizuo);
   }, 0.5);
 
   f4Speaker("meizuo", `Oii si CHE pala nandito!`);
   f4Speaker("meizuo", `XI MEN tingnan mo hahaha!`);
 
   DIALOGUE.effect(() => {
-    playAttentionBounce(GAME_STATE.ximen);
-    playExclamation(GAME_STATE.ximen);
+    playAttentionBounce(ximen);
+    playExclamation(ximen);
   }, 0.5);
 
   f4Speaker(
@@ -1394,40 +1401,40 @@ function cutsceneMarket() {
     `XI MEN: Hi CHE, naghahanda kami ni MEI ZUO ng mga lobo para sa event mamaya.`,
   );
 
-  DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
+  DIALOGUE.effect(() => playExclamation(player), 0.5);
 
   f4Speaker("meizuo", `MEI ZUO: Anu sabi mo CHE— naghahanap ka rin ng kiss?`);
 
-  DIALOGUE.effect(() => playExclamation(GAME_STATE.player), 0.5);
+  DIALOGUE.effect(() => playExclamation(player), 0.5);
 
   f4Speaker("meizuo", `Ahh yung "keys" ni AH SI?`);
 
   DIALOGUE.effect(() =>
     gsap.delayedCall(1, () => {
-      GAME_STATE.meizuo.face("d");
-      playAttentionBounce(GAME_STATE.meizuo);
+      meizuo.face("d");
+      playAttentionBounce(meizuo);
     }),
   );
 
   f4Speaker("meizuo", `Wala sa akin. Nasa iyo ba XI MEN?`);
   f4Speaker("ximen", `XI MEN: Anung keys— ito talaga si AH SI.`);
   f4Speaker("ximen", `Alam ko binalik na namin iyun nasa mansion lang ni AH SI yun.`);
-  DIALOGUE.effect(() => GAME_STATE.meizuo.face("s"));
+  DIALOGUE.effect(() => meizuo.face("s"));
   f4Speaker("meizuo", `MEI ZUO: CHE, Mabuti pa balik ka ulit sa mansion.`);
   f4Speaker("ximen", `XI MEN: Sabihin mo kay LIU wala sa amin.`);
 
-  DIALOGUE.effect(() => GAME_STATE.meizuo.face("d"));
+  DIALOGUE.effect(() => meizuo.face("d"));
   f4Speaker("meizuo", `MEI ZUO: Hindi kaya keys ng treasure chest iyun?`);
 
   DIALOGUE.effect(() => {
     disableAccess();
-    GAME_STATE.ximen.face("a");
-    gsap.delayedCall(0.5, () => playAttentionBounce(GAME_STATE.meizuo));
-    gsap.delayedCall(0.7, () => playAttentionBounce(GAME_STATE.ximen));
-    gsap.delayedCall(1, () => playExclamation(GAME_STATE.meizuo));
-    gsap.delayedCall(1.7, () => playExclamation(GAME_STATE.ximen));
-    gsap.delayedCall(2, () => GAME_STATE.meizuo.face("s"));
-    gsap.delayedCall(2.3, () => GAME_STATE.ximen.face("s"));
+    ximen.face("a");
+    gsap.delayedCall(0.5, () => playAttentionBounce(meizuo));
+    gsap.delayedCall(0.7, () => playAttentionBounce(ximen));
+    gsap.delayedCall(1, () => playExclamation(meizuo));
+    gsap.delayedCall(1.7, () => playExclamation(ximen));
+    gsap.delayedCall(2, () => meizuo.face("s"));
+    gsap.delayedCall(2.3, () => ximen.face("s"));
   }, 3);
 
   f4Speaker(
@@ -1441,9 +1448,9 @@ function cutsceneMarket() {
 
   DIALOGUE.effect(disableAccess, 1);
   DIALOGUE.effect(() => {
-    GAME_STATE.meizuo.face("d");
-    playAttentionBounce(GAME_STATE.meizuo);
-    playExclamation(GAME_STATE.meizuo);
+    meizuo.face("d");
+    playAttentionBounce(meizuo);
+    playExclamation(meizuo);
   }, 0.5);
 
   f4Speaker(
@@ -1453,15 +1460,15 @@ function cutsceneMarket() {
 
   DIALOGUE.effect(() => {
     disableAccess();
-    GAME_STATE.ximen.face("a");
+    ximen.face("a");
   }, 1.5);
 
   DIALOGUE.effect(() => {
     disableAccess();
-    gsap.delayedCall(0.5, () => playAttentionBounce(GAME_STATE.meizuo));
-    gsap.delayedCall(0.7, () => playAttentionBounce(GAME_STATE.ximen));
-    gsap.delayedCall(1, () => playExclamation(GAME_STATE.meizuo));
-    gsap.delayedCall(1.7, () => playExclamation(GAME_STATE.ximen));
+    gsap.delayedCall(0.5, () => playAttentionBounce(meizuo));
+    gsap.delayedCall(0.7, () => playAttentionBounce(ximen));
+    gsap.delayedCall(1, () => playExclamation(meizuo));
+    gsap.delayedCall(1.7, () => playExclamation(ximen));
   }, 3);
 
   f4Speaker(`ximen`, `XI MEN: Kiss ni AH SI?`);
@@ -1470,20 +1477,20 @@ function cutsceneMarket() {
 
   DIALOGUE.effect(() => {
     disableAccess();
-    gsap.delayedCall(0.5, () => playAttentionBounce(GAME_STATE.meizuo));
-    gsap.delayedCall(0.7, () => playAttentionBounce(GAME_STATE.ximen));
-    gsap.delayedCall(1, () => playExclamation(GAME_STATE.meizuo));
-    gsap.delayedCall(1.7, () => playExclamation(GAME_STATE.ximen));
-    gsap.delayedCall(2, () => GAME_STATE.meizuo.face("s"));
-    gsap.delayedCall(2.3, () => GAME_STATE.ximen.face("s"));
+    gsap.delayedCall(0.5, () => playAttentionBounce(meizuo));
+    gsap.delayedCall(0.7, () => playAttentionBounce(ximen));
+    gsap.delayedCall(1, () => playExclamation(meizuo));
+    gsap.delayedCall(1.7, () => playExclamation(ximen));
+    gsap.delayedCall(2, () => meizuo.face("s"));
+    gsap.delayedCall(2.3, () => ximen.face("s"));
   }, 3);
 
   DIALOGUE.effect(() => {
     disableAccess();
-    playAttentionBounce(GAME_STATE.meizuo, {
+    playAttentionBounce(meizuo, {
       hops: 5,
       onComplete() {
-        playAttentionBounce(GAME_STATE.meizuo, { hops: 5, delay: 0.5 });
+        playAttentionBounce(meizuo, { hops: 5, delay: 0.5 });
       },
     });
   });
@@ -1498,8 +1505,7 @@ function cutsceneMarket() {
 }
 
 function cutsceneMidAisle() {
-  if (GAME_STATE.sequence.mid_aisle_cutscene)
-    GAME_STATE.player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
+  if (GAME_STATE.sequence.mid_aisle_cutscene) player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
   if (
     questDaoMingKeys.status !== "resolved" ||
     questMain.status !== "active" ||
@@ -1516,17 +1522,17 @@ function cutsceneMidAisle() {
   DIALOGUE.effect(disableAccess, 0.00000000000001);
 
   DIALOGUE.effect(() => {
-    walk(GAME_STATE.player, [94, 50.25], {
-      onComplete: () => GAME_STATE.player.face("w"),
+    walk(player, [94, 50.25], {
+      onComplete: () => player.face("w"),
     });
   }, 1);
 
   DIALOGUE.effect(() => {
-    playExclamation(GAME_STATE.daomingsi, {
+    playExclamation(daomingsi, {
       onComplete: () => {
         gsap.delayedCall(0.5, () => {
-          playExclamation(GAME_STATE.daomingsi);
-          playAttentionBounce(GAME_STATE.daomingsi);
+          playExclamation(daomingsi);
+          playAttentionBounce(daomingsi);
         });
       },
     });
@@ -1541,7 +1547,7 @@ function cutsceneMidAisle() {
   `);
   DIALOGUE.effect(disableAccess, 1.5);
   DIALOGUE.effect(() => {
-    walk(GAME_STATE.huazelei, [
+    walk(huazelei, [
       //
       { direction: "s", steps: 2 },
       { direction: "d", steps: 1 },
@@ -1549,8 +1555,8 @@ function cutsceneMidAisle() {
     ]);
   });
   DIALOGUE.effect(() => {
-    playExclamation(GAME_STATE.daomingsi);
-    playAttentionBounce(GAME_STATE.daomingsi);
+    playExclamation(daomingsi);
+    playAttentionBounce(daomingsi);
   }, 0.5);
   DIALOGUE.queue(`Minsan...`);
   DIALOGUE.queue(`
@@ -1559,8 +1565,8 @@ function cutsceneMidAisle() {
   `);
   DIALOGUE.effect(disableAccess, 1.5);
   DIALOGUE.effect(() => {
-    playExclamation(GAME_STATE.daomingsi);
-    playAttentionBounce(GAME_STATE.daomingsi);
+    playExclamation(daomingsi);
+    playAttentionBounce(daomingsi);
   }, 0.5);
   DIALOGUE.queue(`
     Lubos rin ako nagpapasalamat kay CHE para sa suporta,
@@ -1583,8 +1589,8 @@ function cutsceneMidAisle() {
   `);
   DIALOGUE.effect(() => {
     disableAccess();
-    GAME_STATE.player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
-    walk(GAME_STATE.daomingsi, [
+    player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
+    walk(daomingsi, [
       //
       { direction: "a", steps: 1.25 },
       [92.75, 46.5],
@@ -1594,8 +1600,8 @@ function cutsceneMidAisle() {
   DIALOGUE.effect(() => {
     disableAccess();
     spawnJp();
-    GAME_STATE.daomingsi.face("d");
-    GAME_STATE.huazelei.face("a");
+    daomingsi.face("d");
+    huazelei.face("a");
     playQuestToast(questMain);
   }, 1.5);
   DIALOGUE.onComplete = () => {
@@ -1615,7 +1621,7 @@ function cutsceneMidAisleLei() {
   hudSetBagIconVisible(false);
   DIALOGUE.effect(() => {
     disableAccess();
-    playExclamation(GAME_STATE.huazelei);
+    playExclamation(huazelei);
   }, 0.5);
   f4Speaker("huazelei", "HUA ZE LEI: CHERYL...");
   DIALOGUE.effect(() => {
@@ -1630,7 +1636,7 @@ function cutsceneMidAisleLei() {
   DIALOGUE.queue({ text: "... ... ...", portrait: null, color: "black" });
   DIALOGUE.effect(() => {
     disableAccess();
-    playExclamation(GAME_STATE.player, { glyph: "?", color: "darkviolet", hold: 5 });
+    playExclamation(player, { glyph: "?", color: "darkviolet", hold: 5 });
   }, 2.5);
   DIALOGUE.queue(`...niya?`);
   DIALOGUE.effect(() => {
@@ -1651,9 +1657,6 @@ function cutsceneMidAisleJp() {
   )
     return;
 
-  const { player, jp, daomingsi, huazelei, meizuo, ximen } = GAME_STATE;
-  const f4 = [daomingsi, huazelei, meizuo, ximen];
-
   hudSetBagIconVisible(false);
 
   DIALOGUE.effect(disableAccess, 0.00001);
@@ -1661,7 +1664,10 @@ function cutsceneMidAisleJp() {
   DIALOGUE.effect(() => {
     GAME_STATE.cameraFollow = false;
     panCameraToTile([94, 43.05], {
-      onComplete: () => playExclamation(player, { delay: 0.5 }),
+      onComplete: () => {
+        playExclamation(player, { delay: 0.5 });
+        jpShineHandle = playShine(jp);
+      },
     });
   }, 1);
 
@@ -1692,6 +1698,8 @@ function cutsceneMidAisleJp() {
       GAME_STATE.mama.face("w");
       GAME_STATE.papa.face("w");
     });
+
+    gsap.delayedCall(0.2, () => playExclamation(jp, { glyph: "🤗" }));
   });
 
   DIALOGUE.queue({
@@ -1701,17 +1709,18 @@ function cutsceneMidAisleJp() {
 
   DIALOGUE.effect(() => {
     disableAccess();
-    playExclamation(player);
+    playExclamation(player, { icon: ICON_RED_HEART, hold: 1.5 });
     playAttentionBounce(player, { hops: 2 });
   }, 2);
 
   DIALOGUE.effect(() => {
+    jpShineHandle.stop();
     GAME_STATE.cameraFollow = false;
     panCameraToTile([94, 44.05], { duration: 2 });
 
     gsap.delayedCall(3.5, () => walk(jp, [94.35, 42]));
 
-    GAME_STATE.player.moveSpeed = 50;
+    player.moveSpeed = 50;
     walk(
       player, //
       [93.75, 42],
@@ -1763,8 +1772,8 @@ function cutsceneMidAisleJp() {
     });
     gsap.delayedCall(1, () => {
       playExclamation(GAME_STATE.jp, { icon: ICON_RED_HEART, hold: 10 });
-      playExclamation(GAME_STATE.player, { icon: ICON_RED_HEART, hold: 10 });
-      playAttentionBounce(GAME_STATE.player, { hops: 2 });
+      playExclamation(player, { icon: ICON_RED_HEART, hold: 10 });
+      playAttentionBounce(player, { hops: 2 });
     });
   }, 0.1);
   // lock() and the walks that will eventually unlock() it must start from
@@ -1847,18 +1856,20 @@ function cutsceneMidAisleJp() {
   DIALOGUE.queue(`Ito nga pala yung last page na sketch paper na hinahabol mo...`);
   DIALOGUE.effect(() => {
     disableAccess();
-    playExclamation(player);
+    playExclamation(player, { icon: ICON_PAPERS, hold: 3 });
     playAttentionBounce(player, { hops: 3 });
+  }, 1.5);
+  DIALOGUE.effect(() => {
     questSetProgress(questCatchSheets, 3);
     questSetStatus(questCatchSheets, "resolved");
     playQuestToast(questCatchSheets);
     playQuestCompleteBanner(`Quest Completed!`);
     bagIncItem("paper3");
     bagIncItem("papers");
-  }, 5);
+  }, 3.5);
   DIALOGUE.queue(`
     Makikita mo lang ang nilalaman ng tracing papers na iyan
-    once na stacked or patong-patong mo na yung mga papel na
+    once na stacked or patong-patong mo na ang mga papel na
     iyan sa isa't isa.
   `);
   DIALOGUE.queue(`Saka mo lang makikita yung buong sketch.`);
@@ -1867,12 +1878,82 @@ function cutsceneMidAisleJp() {
     disableAccess();
     questSetStatus("sketch_unity", "active");
     playQuestToast(questSketchUnity);
-    hudSetBagIconVisible(true);
-  }, 5);
+  }, 2.5);
+  DIALOGUE.effect(() =>
+    gsap.delayedCall(0.3, () => playExclamation(player, { icon: ICON_PAPERS, hold: 3 })),
+  );
+  DIALOGUE.queue({ text: `Check ko sa bag yung tracing papers...`, color: "black" });
   DIALOGUE.onComplete = () => {
     GAME_STATE.movementLocked = true;
     GAME_STATE.sequence.mid_aisle_jp_cutscene = true;
+    hudSetBagIconVisible(true);
+
+    const checkSketchCompletion = () => {
+      if (questSketchUnity.status === "resolved") {
+        cutsceneShowBirthdayPostcard();
+        return;
+      }
+
+      disableAccess();
+      DIALOGUE.effect(() => playExclamation(player), 0.5);
+      DIALOGUE.show(`Wait lang, hindi ko pa nakikita yung nilalaman ng sketch`);
+      DIALOGUE.queue(`Nasa bag ko na lahat ng 3 tracing paper ni ZZ`);
+      DIALOGUE.queue(`Kailangan ko lang pagpatungin ng tama lahat ng papers.`);
+
+      GAME_STATE.onBagClose = checkSketchCompletion;
+      DIALOGUE.onComplete = () => {
+        GAME_STATE.movementLocked = true;
+        hudSetBagIconVisible(true);
+        playQuestToast(questSketchUnity);
+      };
+    };
+
+    GAME_STATE.onBagClose = checkSketchCompletion;
   };
+}
+
+function cutsceneShowBirthdayPostcard() {
+  if (questSketchUnity.status !== "resolved") return;
+
+  DIALOGUE.effect(() => {
+    playExclamation(daomingsi);
+    gsap.delayedCall(3, () => playExclamation(huazelei, { glyph: "😅", hold: 5 }));
+  });
+  f4Speaker(`daomingsi`, "Pero sketch lang iyan ni HUA ZE LEI!");
+  DIALOGUE.effect(() => playExclamation(ximen));
+  f4Speaker(`ximen`, `Ibig sabihin hindi pa ito final...`);
+  DIALOGUE.effect(() => playExclamation(huazelei));
+  f4Speaker(`huazelei`, `Hindi ka nagkakamali.`);
+  DIALOGUE.effect(() => {
+    playExclamation(meizuo, { glyph: `🤘🏻` });
+    gsap.delayedCall(0.2, () => {
+      playExclamation(meizuo, { glyph: `🤘🏻`, hold: 5 });
+      playAttentionBounce(meizuo);
+    });
+  });
+  f4Speaker(`meizuo`, `🤘🏻 Alright ipakita na natin! Whoooah`);
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.movementLocked = true;
+    playImagePreview(PHOTO_BIRTHDAY_POSTCARD, { onComplete: cutsceneMainQuestReveal });
+    birthdayConfetti();
+  };
+}
+
+function cutsceneMainQuestReveal() {
+  if (questSketchUnity.status !== "resolved") return;
+  DIALOGUE.effect(() => {
+    playExclamation(daomingsi);
+    gsap.delayedCall(0.5, () => {
+      playExclamation(daomingsi);
+      playAttentionBounce(daomingsi);
+    });
+  });
+  f4Speaker("daomingsi", "Teka nga muna, meron pa isang last quest!");
+  DIALOGUE.effect(() => {
+    disableAccess();
+    playQuestToast(questMain);
+  }, 3);
+  f4Speaker("meizuo", "Ou nga tama si AH SI.");
 }
 
 function interactMeizuo() {
@@ -1881,9 +1962,9 @@ function interactMeizuo() {
     return;
   }
 
-  cancelScheduledFace(GAME_STATE.meizuo);
-  playAttentionBounce(GAME_STATE.meizuo);
-  playExclamation(GAME_STATE.meizuo);
+  cancelScheduledFace(meizuo);
+  playAttentionBounce(meizuo);
+  playExclamation(meizuo);
 
   DIALOGUE.show({
     text: `MEI ZUO: Yo! CHERYL whazzup?`,
@@ -1892,7 +1973,7 @@ function interactMeizuo() {
   });
 
   DIALOGUE.onComplete = () => {
-    if (questDaoMingKeys.status !== "resolved") scheduleFaceDirection(GAME_STATE.meizuo, "s");
+    if (questDaoMingKeys.status !== "resolved") scheduleFaceDirection(meizuo, "s");
   };
 }
 
@@ -1905,7 +1986,7 @@ function interactXimen() {
   const color = DIALOGUE_COLOR_XIMEN;
   const portrait = PORTRAIT_XIMEN;
 
-  cancelScheduledFace(GAME_STATE.ximen);
+  cancelScheduledFace(ximen);
 
   if (GAME_STATE.sequence.market_cutscene && questDaoMingKeys.status !== "resolved") {
     DIALOGUE.show({
@@ -1925,7 +2006,7 @@ function interactXimen() {
   }
 
   DIALOGUE.onComplete = () => {
-    if (questDaoMingKeys.status !== "resolved") scheduleFaceDirection(GAME_STATE.ximen, "s");
+    if (questDaoMingKeys.status !== "resolved") scheduleFaceDirection(ximen, "s");
   };
 }
 
@@ -1934,16 +2015,16 @@ function initMainEvent() {
   addOnce(DECORS, chestEmpty);
   addOnce(GAME_STATE.obstacles, chestEmpty);
 
-  GAME_STATE.huazelei.moveSpeed = 50;
-  GAME_STATE.daomingsi.moveSpeed = 50;
-  GAME_STATE.meizuo.moveSpeed = 50;
-  GAME_STATE.ximen.moveSpeed = 50;
+  huazelei.moveSpeed = 50;
+  daomingsi.moveSpeed = 50;
+  meizuo.moveSpeed = 50;
+  ximen.moveSpeed = 50;
 
   // Mei Zuo & Xi Men
-  placeAtTile({ sprite: GAME_STATE.meizuo, tile: [95.25, 51] });
-  placeAtTile({ sprite: GAME_STATE.ximen, tile: [92.75, 51] });
-  GAME_STATE.meizuo.face("a");
-  GAME_STATE.ximen.face("d");
+  placeAtTile({ sprite: meizuo, tile: [95.25, 51] });
+  placeAtTile({ sprite: ximen, tile: [92.75, 51] });
+  meizuo.face("a");
+  ximen.face("d");
 
   // Papa & Mama
   placeAtTile({ sprite: GAME_STATE.mama, tile: [91.35, 45.75] });
@@ -1953,14 +2034,14 @@ function initMainEvent() {
 
   // Ah Si & Lei
   if (GAME_STATE.sequence.mid_aisle_cutscene) {
-    respawnNPC(GAME_STATE.daomingsi, [92.75, 46.5]);
-    respawnNPC(GAME_STATE.huazelei, [95.25, 46.5]);
-    GAME_STATE.daomingsi.face("d");
-    GAME_STATE.huazelei.face("a");
+    respawnNPC(daomingsi, [92.75, 46.5]);
+    respawnNPC(huazelei, [95.25, 46.5]);
+    daomingsi.face("d");
+    huazelei.face("a");
     spawnJp();
   } else {
-    respawnNPC(GAME_STATE.daomingsi, [94, 45.5]);
-    respawnNPC(GAME_STATE.huazelei, [94.25, 43]);
+    respawnNPC(daomingsi, [94, 45.5]);
+    respawnNPC(huazelei, [94.25, 43]);
   }
 
   PARK_EVENT_GUARDS.forEach((npc) => respawnNPC(npc));

@@ -96,10 +96,26 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
     img.style.imageRendering = "pixelated"; // stays crisp, not smoothed — every frame, for an animated GIF too
     el.appendChild(img);
   } else {
-    el.textContent = glyph;
-    el.style.color = color;
-    el.style.fontWeight = "700";
-    el.style.fontSize = "32px";
+    const span = document.createElement("span");
+    span.textContent = glyph;
+    span.style.display = "inline-block";
+    span.style.color = color;
+    span.style.fontWeight = "700";
+    span.style.fontSize = "32px";
+    // Flex centering (el's own alignItems/justifyContent) centers the
+    // text's *line box*, not the glyph's actual visual ink — a color emoji
+    // glyph bakes in extra space below its own baseline (for descenders it
+    // never uses), so it renders sitting visibly high with a gap
+    // underneath even though its line box is perfectly centered. Plain
+    // glyphs like the default "!" have the same asymmetry, just less of
+    // it. No font-size/line-height/padding value on the *outer* element
+    // fixes this — it's the glyph's own metrics, not the box around it. A
+    // small nudge on this inner span (not el itself, which owns the
+    // popup-in/scale transform below) compensates; tuned empirically
+    // against the system emoji font, not derived from anything CSS
+    // actually exposes.
+    span.style.transform = "translateY(0.1em)";
+    el.appendChild(span);
   }
 
   document.body.appendChild(el);
