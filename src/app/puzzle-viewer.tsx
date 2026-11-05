@@ -1,14 +1,24 @@
+import { ImageViewer } from "@/app/image-viewer";
 import { GAME_STATE } from "@/features/game-state";
 import { bagIncItem } from "@/lib/bag";
 import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { img } from "@/lib/img";
-import { questSetProgress, questSetStatus } from "@/lib/quests";
+import { questSetStatus } from "@/lib/quests";
 import gsap from "gsap";
 import { LucideFlipHorizontal2, LucideFlipVertical2, LucideRotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const LAYER_SRCS = [img("puzzle/tp1.png"), img("puzzle/tp2.png"), img("puzzle/tp3.png")];
 const REVEAL_SRC = img("treasure/cheryl_birthday_postcard_sketch.jpg");
+
+/**
+ * Backdrop for every tracing-paper PNG (transparent, scattered pages) —
+ * shared here as the one source of truth, instead of the same literal
+ * repeated at each spot that shows one of these pages (the stacked puzzle,
+ * its flash overlay, the per-paper thumbnails here, and bag-panel.tsx's
+ * own paper1/paper2/paper3 full-image views).
+ */
+export const PAPER_BG_COLOR = "#979796";
 
 interface LayerTransform {
   flipH: boolean;
@@ -103,6 +113,11 @@ export function PuzzleViewer({
 }) {
   const [layers, setLayers] = useState<LayerTransform[]>(() => LAYER_SRCS.map(() => IDENTITY));
   const [phase, setPhase] = useState<"playing" | "completing" | "solved">("playing");
+  // Same full-view popup the bag's own paper1/paper2/paper3 entries open —
+  // once all three are caught they stop showing in the bag list (see
+  // bag-panel.tsx), so this is the only place left to view each page at
+  // its native, unscrambled, untransformed size.
+  const [viewingImage, setViewingImage] = useState<{ src: string; alt: string } | null>(null);
 
   const solvedRefs = useRef<HTMLImageElement | null>(null);
   const stackRefs = useRef<(HTMLImageElement | null)[]>([]);
@@ -127,20 +142,15 @@ export function PuzzleViewer({
       gsap.to(flashRef.current, { opacity: 0, duration: FLASH_FADE_DURATION, ease: "power2.out" });
       gsap.set(solvedRefs.current, { opacity: 1 });
       // gsap.to(solvedRefs.current, { opacity: 1, duration: 1 });
-      const questCatchSheets = GAME_STATE.quests.get("catch_sheets")!;
+      const questSketchUnity = GAME_STATE.quests.get("sketch_unity")!;
 
-      if (questCatchSheets.status !== "resolved") {
+      if (questSketchUnity.status !== "resolved") {
         bagIncItem("sketch", 1);
-        questSetProgress(questCatchSheets, 3);
-        questSetStatus(questCatchSheets, "resolved");
+        questSetStatus(questSketchUnity, "resolved");
         onSolved?.();
         gsap.delayedCall(1, () => {
           playQuestCompleteBanner(`Completed!`);
-          playQuestToast({
-            description: GAME_STATE.quests.get("catch_sheets")!.description,
-            qty: 3,
-            totalQty: 3,
-          });
+          playQuestToast(questSketchUnity);
         });
       }
       return;
@@ -176,101 +186,124 @@ export function PuzzleViewer({
     updateLayer(index, { rotation: layers[index].rotation === 0 ? 180 : 0 });
 
   return (
-    <div
-      className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 p-8"
-      onClick={onClose}
-    >
+    <>
       <div
-        className="flex h-full max-h-[720px] w-full max-w-4xl gap-5"
-        onClick={(e) => e.stopPropagation()}
+        className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 p-8"
+        onClick={onClose}
       >
-        {/* Larger column — the stacked puzzle itself, or the reveal once solved */}
-        <div className="relative aspect-2/3 h-full overflow-hidden rounded-xl border-2 border-amber-800 bg-[#979796] from-white to-amber-50 shadow-[0_0_24px_rgba(0,0,0,0.6)]">
-          {phase === "solved" ? (
-            <img
-              ref={solvedRefs}
-              src={REVEAL_SRC}
-              alt="The assembled Heart Photo"
-              className="h-full w-full object-contain"
-            />
-          ) : (
-            LAYER_SRCS.map((src, i) => (
-              <img
-                key={src}
-                ref={(el) => {
-                  stackRefs.current[i] = el;
-                }}
-                src={src}
-                alt={`Tracing paper ${i + 1}`}
-                className="absolute inset-0 h-full w-full object-contain"
-              />
-            ))
-          )}
+        <div
+          className="flex h-full max-h-[720px] w-full max-w-4xl gap-5"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Larger column — the stacked puzzle itself, or the reveal once solved */}
           <div
-            ref={flashRef}
-            className="pointer-events-none absolute inset-0 bg-[#979796] opacity-0"
-          />
-        </div>
-
-        {/* Smaller column — one paper per row, each with its own flip/rotate controls */}
-        <div className="flex w-56 shrink-0 flex-col gap-3 overflow-y-auto">
-          {LAYER_SRCS.map((src, i) => (
-            <div
-              key={src}
-              className="flex flex-col items-center gap-2 rounded-lg border-2 border-amber-800/60 bg-linear-to-b from-white to-amber-50 p-3 shadow-[0_0_8px_rgba(0,0,0,0.3)]"
-            >
-              <div className="h-24 w-16 overflow-hidden rounded bg-[#979796] from-white to-amber-100">
+            style={{ background: PAPER_BG_COLOR }}
+            className="relative aspect-2/3 h-full overflow-hidden rounded-xl border-2 border-amber-800 shadow-[0_0_24px_rgba(0,0,0,0.6)]"
+          >
+            {phase === "solved" ? (
+              <img
+                ref={solvedRefs}
+                src={REVEAL_SRC}
+                alt="The assembled Heart Photo"
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              LAYER_SRCS.map((src, i) => (
                 <img
+                  key={src}
                   ref={(el) => {
-                    thumbRefs.current[i] = el;
+                    stackRefs.current[i] = el;
                   }}
                   src={src}
-                  alt={PAPER_LABELS[i]}
-                  className="h-full w-full object-contain"
+                  alt={`Tracing paper ${i + 1}`}
+                  className="absolute inset-0 h-full w-full object-contain"
                 />
+              ))
+            )}
+            <div
+              ref={flashRef}
+              style={{ background: PAPER_BG_COLOR }}
+              className="pointer-events-none absolute inset-0 opacity-0"
+            />
+          </div>
+
+          {/* Smaller column — one paper per row, each with its own flip/rotate controls */}
+          <div className="flex w-56 shrink-0 flex-col gap-3 overflow-y-auto">
+            {LAYER_SRCS.map((src, i) => (
+              <div
+                key={src}
+                className="flex flex-col items-center gap-2 rounded-lg border-2 border-amber-800/60 bg-linear-to-b from-white to-amber-50 p-3 shadow-[0_0_8px_rgba(0,0,0,0.3)]"
+              >
+                <button
+                  type="button"
+                  onClick={() => setViewingImage({ src, alt: PAPER_LABELS[i] })}
+                  style={{ background: PAPER_BG_COLOR }}
+                  className="h-24 w-16 cursor-pointer overflow-hidden rounded"
+                  aria-label={`View ${PAPER_LABELS[i]}`}
+                >
+                  <img
+                    ref={(el) => {
+                      thumbRefs.current[i] = el;
+                    }}
+                    src={src}
+                    alt={PAPER_LABELS[i]}
+                    className="h-full w-full object-contain"
+                  />
+                </button>
+                <span className="font-game text-xs font-bold text-amber-950">
+                  {PAPER_LABELS[i]}
+                </span>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    disabled={phase !== "playing"}
+                    onClick={() => flipH(i)}
+                    className="rounded-md border-2 border-amber-800 bg-amber-50 p-1.5 text-amber-950 hover:bg-amber-100 disabled:opacity-40 disabled:hover:bg-amber-50"
+                    aria-label={`Flip ${PAPER_LABELS[i]} horizontally`}
+                  >
+                    <LucideFlipHorizontal2 size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={phase !== "playing"}
+                    onClick={() => flipV(i)}
+                    className="rounded-md border-2 border-amber-800 bg-amber-50 p-1.5 text-amber-950 hover:bg-amber-100 disabled:opacity-40 disabled:hover:bg-amber-50"
+                    aria-label={`Flip ${PAPER_LABELS[i]} vertically`}
+                  >
+                    <LucideFlipVertical2 size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={phase !== "playing"}
+                    onClick={() => rotate(i)}
+                    className="rounded-md border-2 border-amber-800 bg-amber-50 p-1.5 text-amber-950 hover:bg-amber-100 disabled:opacity-40 disabled:hover:bg-amber-50"
+                    aria-label={`Rotate ${PAPER_LABELS[i]}`}
+                  >
+                    <LucideRotateCw size={16} />
+                  </button>
+                </div>
               </div>
-              <span className="font-game text-xs font-bold text-amber-950">{PAPER_LABELS[i]}</span>
-              <div className="flex gap-1.5">
-                <button
-                  type="button"
-                  disabled={phase !== "playing"}
-                  onClick={() => flipH(i)}
-                  className="rounded-md border-2 border-amber-800 bg-amber-50 p-1.5 text-amber-950 hover:bg-amber-100 disabled:opacity-40 disabled:hover:bg-amber-50"
-                  aria-label={`Flip ${PAPER_LABELS[i]} horizontally`}
-                >
-                  <LucideFlipHorizontal2 size={16} />
-                </button>
-                <button
-                  type="button"
-                  disabled={phase !== "playing"}
-                  onClick={() => flipV(i)}
-                  className="rounded-md border-2 border-amber-800 bg-amber-50 p-1.5 text-amber-950 hover:bg-amber-100 disabled:opacity-40 disabled:hover:bg-amber-50"
-                  aria-label={`Flip ${PAPER_LABELS[i]} vertically`}
-                >
-                  <LucideFlipVertical2 size={16} />
-                </button>
-                <button
-                  type="button"
-                  disabled={phase !== "playing"}
-                  onClick={() => rotate(i)}
-                  className="rounded-md border-2 border-amber-800 bg-amber-50 p-1.5 text-amber-950 hover:bg-amber-100 disabled:opacity-40 disabled:hover:bg-amber-50"
-                  aria-label={`Rotate ${PAPER_LABELS[i]}`}
-                >
-                  <LucideRotateCw size={16} />
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 size-8 rounded-full border-2 border-amber-800 bg-amber-50 font-game text-lg leading-none text-amber-950 shadow-[2px_2px_0_rgba(0,0,0,0.3)] hover:bg-amber-100"
+        >
+          ×
+        </button>
       </div>
 
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute top-4 right-4 size-8 rounded-full border-2 border-amber-800 bg-amber-50 font-game text-lg leading-none text-amber-950 shadow-[2px_2px_0_rgba(0,0,0,0.3)] hover:bg-amber-100"
-      >
-        ×
-      </button>
-    </div>
+      {viewingImage && (
+        <ImageViewer
+          src={viewingImage.src}
+          alt={viewingImage.alt}
+          backgroundColor={PAPER_BG_COLOR}
+          onClose={() => setViewingImage(null)}
+        />
+      )}
+    </>
   );
 }

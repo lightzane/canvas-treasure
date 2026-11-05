@@ -1,7 +1,7 @@
 import { ImageViewer } from "@/app/image-viewer";
 import { JournalPanel } from "@/app/journal-panel";
 import { ParcelViewer } from "@/app/parcel-viewer";
-import { PuzzleViewer } from "@/app/puzzle-viewer";
+import { PAPER_BG_COLOR, PuzzleViewer } from "@/app/puzzle-viewer";
 import { GAME_STATE } from "@/features/game-state";
 import { bagHasItem, type ItemName } from "@/lib/bag";
 import { img } from "@/lib/img";
@@ -87,13 +87,23 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
     parcel: () => setParcelOpen(true),
     papers: () => setPuzzleOpen(true),
     sketch: viewImage("sketch", "treasure/cheryl_birthday_postcard_sketch.jpg"),
-    paper1: viewImage("paper1", "puzzle/tp1.png", "#979796"),
-    paper2: viewImage("paper2", "puzzle/tp2.png", "#979796"),
-    paper3: viewImage("paper3", "puzzle/tp3.png", "#979796"),
+    paper1: viewImage("paper1", "puzzle/tp1.png", PAPER_BG_COLOR),
+    paper2: viewImage("paper2", "puzzle/tp2.png", PAPER_BG_COLOR),
+    paper3: viewImage("paper3", "puzzle/tp3.png", PAPER_BG_COLOR),
     treasure_map: viewImage("treasure_map", "others/treasure-map.jpg"),
   };
 
-  const entries = Array.from(GAME_STATE.bag.entries()).filter(([name]) => bagHasItem(name));
+  // Once all three are collected, they're viewable from inside the puzzle
+  // (PuzzleViewer's own per-paper column — each thumbnail opens the same
+  // dedicated PNG this bag entry would have), so showing them again here
+  // too is just clutter. Before that point they still need their own bag
+  // slots — that's the only way to notice/open each one as it's caught.
+  const allPapersCollected = bagHasItem("paper1") && bagHasItem("paper2") && bagHasItem("paper3");
+  const PAPER_NAMES: ItemName[] = ["paper1", "paper2", "paper3"];
+
+  const entries = Array.from(GAME_STATE.bag.entries()).filter(
+    ([name]) => bagHasItem(name) && !(allPapersCollected && PAPER_NAMES.includes(name)),
+  );
 
   return (
     <>
