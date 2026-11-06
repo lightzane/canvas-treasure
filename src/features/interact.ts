@@ -150,7 +150,7 @@ export function updateInteraction(
   interactables: Interactable[],
   onInteract: (target: Sprite | undefined) => void,
 ) {
-  const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked;
+  const canAct = !DIALOGUE.isActive && !GAME_STATE.movementLocked && GAME_STATE.gameStarted;
   GAME_STATE.facedTarget = canAct ? findFacedTarget(GAME_STATE.player, interactables) : undefined;
   if (canAct && GAME_STATE.keys.justPressed.z) {
     onInteract(interact(GAME_STATE.player, interactables));

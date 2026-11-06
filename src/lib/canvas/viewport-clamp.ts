@@ -2,6 +2,7 @@ import { CANVAS_CENTER, CANVAS_HEIGHT, CANVAS_WIDTH } from "@/constants/game-set
 import { GAME_STATE } from "@/features/game-state";
 import type { Sprite } from "@/features/sprite";
 import { toScreen } from "@/lib/canvas/screen";
+import { PRELOAD_PROGRESS } from "@/lib/preload";
 
 /** Pre-decoded bitmap for each sprite `prepareViewportClamped()` has warmed up. `WeakMap` so nothing here keeps a sprite alive past its own lifetime. */
 const bitmaps = new WeakMap<Sprite, ImageBitmap>();
@@ -23,9 +24,17 @@ const bitmaps = new WeakMap<Sprite, ImageBitmap>();
  * `<img>` to have actually finished loading first.
  */
 export async function prepareViewportClamped(sprites: Sprite[]): Promise<void> {
+  // This decode is real, uncounted work on top of preload()'s own image
+  // loads (see this function's doc comment, ~400ms per big map layer) — it
+  // runs after preload() resolves but before a scene's own `ready` does, so
+  // it needs to add into the same PRELOAD_PROGRESS tally (see that module's
+  // doc comment), or the Start screen's percentage would sit at 100% for a
+  // while before Start actually enables.
+  PRELOAD_PROGRESS.total += sprites.length;
   await Promise.all(
     sprites.map(async (sprite) => {
       bitmaps.set(sprite, await createImageBitmap(sprite.image));
+      PRELOAD_PROGRESS.loaded++;
     }),
   );
 }

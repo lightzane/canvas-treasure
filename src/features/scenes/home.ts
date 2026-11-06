@@ -165,7 +165,7 @@ export const homeScene: Scene = {
       });
     }
 
-    GAME_STATE.movementLocked = false;
+    if (GAME_STATE.sequence.intro) GAME_STATE.movementLocked = false;
   },
 
   update(dt) {

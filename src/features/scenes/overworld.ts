@@ -429,7 +429,16 @@ export const overworldScene: Scene = {
       wildBushBeach2,
     ];
 
-    if (!GAME_STATE.sequence.intro) {
+    // `&& GAME_STATE.gameStarted` guards against this scene's `enter()` ever
+    // running before the boot Start screen has been dismissed (currently
+    // possible via the dev-boot shortcut that defaults straight into
+    // "overworld") — this overlay's `.game-effect-overlay` class carries a
+    // `z-index: 9999`, so without this guard it would render right on top
+    // of the Start screen's own cover, visibly animating before the player
+    // ever clicked Start. The only place this reveal should ever play is
+    // the real in-game first-ever arrival at overworld, which can only
+    // happen after Start, by definition.
+    if (!GAME_STATE.sequence.intro && GAME_STATE.gameStarted) {
       GAME_STATE.sequence.intro = true;
       overworldScene.fadeIn = 0.5;
       playIrisReveal({

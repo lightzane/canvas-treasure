@@ -24,7 +24,7 @@ let wasLocked = false;
 export function movePlayer(dt: number): Rect | undefined {
   const player = GAME_STATE.player;
 
-  if (GAME_STATE.movementLocked) {
+  if (GAME_STATE.movementLocked || !GAME_STATE.gameStarted) {
     // Force idle only on the frame locking *begins*, not every frame it
     // stays locked — otherwise this fights anything else driving the
     // player's animation during the lock (e.g. a scripted `walk()` call),

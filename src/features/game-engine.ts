@@ -1,6 +1,6 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from "@/constants/game-settings";
 import { Controller } from "@/features/controller";
-import { assetsReady, GAME_STATE } from "@/features/game-state";
+import { GAME_STATE } from "@/features/game-state";
 import type { Scene, SceneEvent, SceneName } from "@/features/scene";
 import { flowershopScene } from "@/features/scenes/flowershop";
 import { homeScene } from "@/features/scenes/home";
@@ -8,6 +8,8 @@ import { mansionScene } from "@/features/scenes/mansion";
 import { overworldScene } from "@/features/scenes/overworld";
 import { DIALOGUE, dialogueFontReady } from "@/lib/canvas/dialogue";
 import { FADE } from "@/lib/canvas/fade-transition";
+import { getAllLoadedImages } from "@/lib/load-image";
+import { preload } from "@/lib/preload";
 
 const SCENES: Record<SceneName, Scene> = {
   home: homeScene,
@@ -41,6 +43,13 @@ function enterScene(from: SceneName, to: SceneName) {
 export class GameEngine {
   /** Overwrite this to listen for scene-emitted events (e.g. `game.on = (event) => {...}`). */
   on: (event: SceneEvent) => void = () => {};
+
+  /**
+   * Fires exactly once, right after assets + every scene's `ready` resolve
+   * and the first scene's `enter()` has run — the first moment it's safe to
+   * let the player act. Assign before calling `.start()`, same as `on`.
+   */
+  onReady: () => void = () => {};
 
   private ctx: CanvasRenderingContext2D;
   /** The game controls input by user */
@@ -90,13 +99,21 @@ export class GameEngine {
     window.addEventListener("keyup", this.controller.keyup);
     window.addEventListener("blur", this.controller.blur);
 
+    // Called now, not hoisted to module scope — by the time this class can
+    // even be constructed, every scene module above has already run its own
+    // top-level sprite creation (static ES imports resolve the whole graph
+    // first), so `getAllLoadedImages()` here genuinely captures every image
+    // in the game, not just whichever ones happened to exist yet at some
+    // earlier eval time. See that function's own doc comment.
+    const allImagesReady = preload(getAllLoadedImages());
     const scenesReady = Object.values(SCENES).map((scene) => scene.ready ?? Promise.resolve());
 
-    Promise.all([assetsReady, dialogueFontReady, ...scenesReady])
+    Promise.all([allImagesReady, dialogueFontReady, ...scenesReady])
       .then(() => {
         if (this.cancelled) return;
         SCENES[GAME_STATE.sceneName].enter?.();
         this.gameLoopId = requestAnimationFrame(this.tick);
+        this.onReady?.();
       })
       .catch((err) => console.error(err));
   }

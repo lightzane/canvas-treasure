@@ -4,7 +4,6 @@ import type { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
 import type { TriggerZone, Zone } from "@/features/zone";
 import type { BagEntry, ItemName } from "@/lib/bag";
-import { preload } from "@/lib/preload";
 import { QUESTS } from "@/lib/quests";
 import { IMGS_DAOMINGSI_IDLE, IMGS_DAOMINGSI_WALK } from "@/sprites/dao-ming-si";
 import { IMGS_HUAZELEI_IDLE, IMGS_HUAZELEI_WALK } from "@/sprites/hua-ze-lei";
@@ -106,7 +105,7 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "overworld" as SceneName,
+  sceneName: "home" as SceneName,
   /**
    * One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events").
    * `true` = complete.
@@ -190,8 +189,24 @@ export const GAME_STATE = {
     ["paper3", { type: "item", quantity: 0 }],
     ["treasure_map", { type: "item", quantity: 0 }],
     ["shears", { type: "item", quantity: 0 }],
-    ["shoes", { type: "equip" }], // TODO: comment this OUT on production
+    // ["shoes", { type: "equip" }], // TODO: comment this OUT on production
   ]),
+  /**
+   * Whether the player has clicked "Start" on the boot-time Start screen yet.
+   * The ONLY place this is ever set `true` is that click handler (wired in
+   * layout.tsx). Deliberately separate from `movementLocked`: that flag is
+   * each scene's own tool, flipped on/off all game long for its own
+   * cutscenes/dialogue — reusing it here would mean the Start screen either
+   * fighting whatever lock dance is mid-flight at boot, or having to restore
+   * the exact scene state on click. This is a one-way, app-boot-only gate
+   * ANDed on top instead: starts `false`, flips `true` once, never resets.
+   * Checked alongside `movementLocked` at the same two sites that already
+   * read it (`movePlayer`, `interact.ts`'s `canAct`) — not tied to
+   * `sceneName`/`sequence`, so it gates every boot unconditionally,
+   * regardless of any dev shortcut currently set there.
+   * @default false
+   */
+  gameStarted: false,
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,
   /** Whether running (hold X, with shoes) is allowed in the current scene — default on; a cramped interior (home, mansion) sets this `false` in its own `enter()`. Takes priority over everything else: no shoes, no X held, none of it matters here if this is `false`. */
@@ -207,7 +222,3 @@ export const GAME_STATE = {
    */
   emit: (() => {}) as (event: SceneEvent) => void,
 };
-
-const { player, mama, papa } = GAME_STATE;
-
-export const assetsReady = preload([...player.images, ...mama.images, ...papa.images]);

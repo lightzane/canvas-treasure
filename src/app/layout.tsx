@@ -1,6 +1,10 @@
 import { BagPanel } from "@/app/bag-panel";
+import { StartScreen } from "@/app/start-screen";
+import { TitleScreen } from "@/app/title-screen";
 import { GameEngine } from "@/features/game-engine";
 import { GAME_STATE } from "@/features/game-state";
+import { playIrisReveal } from "@/lib/effects/iris-reveal";
+import { PRELOAD_PROGRESS } from "@/lib/preload";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export default function Layout() {
@@ -22,6 +26,23 @@ export default function Layout() {
   // cleared) on close, so closing the bag mid-dialogue/cutscene can't
   // release a lock the bag itself didn't set.
   const lockedBeforeBag = useRef(false);
+  // Seeded FROM GAME_STATE, same reasoning as bagIconVisible/bagOpen above —
+  // one source of truth for the default, not two literals that can drift.
+  const [showStartScreen, setShowStartScreen] = useState(!GAME_STATE.gameStarted);
+  // Title art is the very first thing shown (its own baked-in "Press Any
+  // Key" prompt) — any key reveals StartScreen on top of it, as a
+  // translucent/blurred panel (title-screen.jpg stays mounted underneath,
+  // visible through that blur, rather than being swapped out). Both this
+  // and showStartScreen collapse together once Start is actually clicked.
+  const [titleDismissed, setTitleDismissed] = useState(false);
+  // Mirrors GameEngine.onReady — local state, not GAME_STATE, since nothing
+  // outside React ever needs to read "is the engine ready."
+  const [gameReady, setGameReady] = useState(false);
+  // 0-1 — polled from PRELOAD_PROGRESS (a plain mutable counter every
+  // preload() call anywhere adds to, see its own doc comment) rather than
+  // threaded through as a callback, since preload() is already called from
+  // many independent scene modules. Stops polling once gameReady fires.
+  const [loadProgress, setLoadProgress] = useState(0);
 
   // useCallback (stable identity, empty deps) rather than a plain function:
   // game.on below is assigned once, inside a mount-only effect, so it
@@ -57,6 +78,45 @@ export default function Layout() {
   );
 
   useEffect(() => {
+    if (titleDismissed) return;
+    const dismiss = () => setTitleDismissed(true);
+    window.addEventListener("keydown", dismiss, { once: true });
+    return () => window.removeEventListener("keydown", dismiss);
+  }, [titleDismissed]);
+
+  // Nothing persists yet (no save system), so a refresh/close/navigate-away
+  // loses all progress — warn before that happens, but only once there's
+  // real progress to lose (GAME_STATE.gameStarted), not from the title/
+  // start screen itself. Reads gameStarted fresh at event time rather than
+  // depending on a React state mirror, since nothing here needs a
+  // re-render when it flips — a mount-once listener is enough. Browsers no
+  // longer allow a custom message in this dialog (always their own generic
+  // text) — `preventDefault()` + `returnValue` is just what triggers it at
+  // all, per spec/Chrome's legacy requirement.
+  useEffect(() => {
+    if (import.meta.env.DEV) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!GAME_STATE.gameStarted) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, []);
+
+  useEffect(() => {
+    if (gameReady) return;
+    let raf: number;
+    const poll = () => {
+      const { loaded, total } = PRELOAD_PROGRESS;
+      setLoadProgress(total > 0 ? loaded / total : 0);
+      raf = requestAnimationFrame(poll);
+    };
+    raf = requestAnimationFrame(poll);
+    return () => cancelAnimationFrame(raf);
+  }, [gameReady]);
+
+  useEffect(() => {
     if (!canvasRef.current) return;
 
     const game = new GameEngine(canvasRef.current);
@@ -65,6 +125,7 @@ export default function Layout() {
       if (event.type === "menu:bag.open") setBagOpen(event.open);
       if (event.type === "hud:bag-icon.visible") setBagIconVisible(event.visible);
     };
+    game.onReady = () => setGameReady(true);
 
     game.start();
 
@@ -107,6 +168,26 @@ export default function Layout() {
         )}
 
         {bagOpen && <BagPanel onClose={() => setBagOpen(false)} />}
+
+        {showStartScreen && <TitleScreen />}
+
+        {showStartScreen && titleDismissed && (
+          <StartScreen
+            ready={gameReady}
+            progress={loadProgress}
+            onStart={() => {
+              setShowStartScreen(false);
+              GAME_STATE.gameStarted = true;
+              playIrisReveal({
+                duration: 3,
+                softness: 20,
+                onComplete() {
+                  GAME_STATE.movementLocked = false;
+                },
+              }); // same values as overworld's own intro reveal; direction defaults to "in"
+            }}
+          />
+        )}
       </div>
     </div>
   );
