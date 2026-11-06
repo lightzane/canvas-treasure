@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="170" nextobjectid="63">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="170" nextobjectid="84">
  <editorsettings>
   <export target="overworld.json" format="json"/>
  </editorsettings>
@@ -12865,7 +12865,26 @@
    <object id="41" name="sand" x="1632.33" y="2443.58" width="128.066" height="88.3036"/>
   </objectgroup>
   <objectgroup color="#00fdff" id="161" name="sound">
-   <object id="5" name="fountain_mansion" x="2508.44" y="661.948" width="544.845" height="170.954"/>
+   <object id="5" name="fountain" x="2508.44" y="616.643" width="544.845" height="329.469"/>
+   <object id="71" name="fountain" x="2815.1" y="2333.38" width="351.895" height="321.229"/>
+   <object id="72" name="fountain" x="3248.51" y="1538.77" width="351.895" height="321.229"/>
+   <object id="73" name="fountain" x="2446.84" y="1535.77" width="351.895" height="321.229"/>
+   <object id="63" name="market" x="2944.44" y="2221.92" width="96" height="33"/>
+   <object id="70" name="market_exit" x="2944.92" y="2187.34" width="96" height="33"/>
+   <object id="80" name="main" x="2944.92" y="2187.34" width="96" height="33"/>
+   <object id="64" name="market" x="2944.14" y="2729.89" width="96" height="33"/>
+   <object id="69" name="market_exit" x="2944.63" y="2763.98" width="96" height="33"/>
+   <object id="78" name="main" x="2944.63" y="2763.98" width="96" height="33"/>
+   <object id="65" name="market" x="2464.08" y="2431.52" width="33" height="96"/>
+   <object id="66" name="market" x="3495.35" y="2437.82" width="33" height="96"/>
+   <object id="67" name="market_exit" x="3529.51" y="2437.82" width="33" height="96"/>
+   <object id="81" name="main" x="3529.51" y="2437.82" width="33" height="96"/>
+   <object id="68" name="market_exit" x="2429.81" y="2432.4" width="33" height="96"/>
+   <object id="79" name="main" x="2429.81" y="2432.4" width="33" height="96"/>
+   <object id="74" name="beach" x="1088.27" y="2334.3" width="255.886" height="130.503"/>
+   <object id="77" name="beach_exit" x="1086.7" y="2297.36" width="255.886" height="33"/>
+   <object id="75" name="beach" x="602.176" y="1682.05" width="143.517" height="130.503"/>
+   <object id="76" name="beach_exit" x="602.658" y="1645.44" width="143.517" height="33"/>
   </objectgroup>
   <objectgroup color="#00f900" id="165" name="cutscene">
    <object id="48" name="running_shoes" x="1825" y="1389.5" width="126.5" height="41.5"/>

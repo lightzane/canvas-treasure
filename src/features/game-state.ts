@@ -39,7 +39,7 @@ export const GAME_STATE = {
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
     shadowOffset,
-    // moveSpeed: 500,
+    moveSpeed: 500,
   }),
   jp: new PlayerSprite({
     sprites: { idle: IMGS_JP_IDLE, walk: IMGS_JP_WALK },
@@ -112,8 +112,8 @@ export const GAME_STATE = {
    * Add here conditions / progress that should not be listed under Quests.
    */
   sequence: {
-    intro: false,
-    mama_parcel: false,
+    intro: true,
+    mama_parcel: true,
     meet_daomingsi: false,
     meet_huazelei: false,
     chasing_sheet_2: false,
@@ -178,9 +178,9 @@ export const GAME_STATE = {
    */
   bagViewedItems: new Set<ItemName>(),
   bag: new Map<ItemName, BagEntry>([
-    ["journal", { type: "item", quantity: 0 }],
+    ["journal", { type: "item", quantity: 1 }],
     ["treasure", { type: "item", quantity: 0 }],
-    ["parcel", { type: "item", quantity: 0 }],
+    ["parcel", { type: "item", quantity: 1 }],
     ["birthday_postcard", { type: "item", quantity: 0 }],
     ["sketch", { type: "item", quantity: 0 }],
     ["papers", { type: "item", quantity: 0 }],
@@ -206,7 +206,7 @@ export const GAME_STATE = {
    * regardless of any dev shortcut currently set there.
    * @default false
    */
-  gameStarted: false,
+  gameStarted: true,
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,
   /** Whether running (hold X, with shoes) is allowed in the current scene — default on; a cramped interior (home, mansion) sets this `false` in its own `enter()`. Takes priority over everything else: no shoes, no X held, none of it matters here if this is `false`. */

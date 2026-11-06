@@ -17,6 +17,7 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { addOnce } from "@/lib/array";
+import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
 import { bagAddItem, bagHasItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
@@ -89,6 +90,8 @@ export const homeScene: Scene = {
   ),
 
   enter() {
+    if (GAME_STATE.sequence.intro) audioPlayMusic("home", { seek: 0, volume: 0.6 });
+
     if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible && !GAME_STATE.sequence.closing_remarks)
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
@@ -169,7 +172,7 @@ export const homeScene: Scene = {
   },
 
   update(dt) {
-    // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
+    // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
     if (!isMamaOutside) GAME_STATE.mama.update(dt);
     if (questMain.status === "resolved") GAME_STATE.jp.update(dt); // drives its clip/frames — face()/play() alone only set intent, this is what applies it (see PlayerSprite.update)
 
@@ -367,6 +370,7 @@ function interactShoes() {
 }
 
 function exitZone() {
+  audioStopMusic(homeScene.fadeOut);
   hudSetBagIconVisible(false);
 
   if (!GAME_STATE.sequence.mama_parcel) {

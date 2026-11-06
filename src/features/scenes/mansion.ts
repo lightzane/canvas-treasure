@@ -12,6 +12,7 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { remove } from "@/lib/array";
+import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
@@ -100,6 +101,10 @@ export const mansionScene: Scene = {
   ]).then(() => prepareViewportClamped([background])),
 
   enter() {
+    gsap.delayedCall(mansionScene.fadeIn! + 0.5, () =>
+      audioPlayMusic("mansion", { seek: 63, fade: 2, volume: 0.7 }),
+    );
+
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(mansionScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
@@ -134,7 +139,7 @@ export const mansionScene: Scene = {
   },
 
   update(dt) {
-    // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
+    // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
     NPCS.filter(isInViewport).forEach((n) => n.update(dt));
 
     const playerBox = movePlayer(dt);
@@ -156,6 +161,7 @@ export const mansionScene: Scene = {
 };
 
 function exitZone() {
+  audioStopMusic(mansionScene.fadeOut);
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
   GAME_STATE.spawnLocation = [86.5, 16.5]; // rough placeholder, just south of enter_mansion's own tile — adjust to taste

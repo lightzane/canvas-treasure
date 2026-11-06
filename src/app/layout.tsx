@@ -3,6 +3,7 @@ import { StartScreen } from "@/app/start-screen";
 import { TitleScreen } from "@/app/title-screen";
 import { GameEngine } from "@/features/game-engine";
 import { GAME_STATE } from "@/features/game-state";
+import { audioPlayMusic } from "@/lib/audio";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { PRELOAD_PROGRESS } from "@/lib/preload";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -178,6 +179,7 @@ export default function Layout() {
             onStart={() => {
               setShowStartScreen(false);
               GAME_STATE.gameStarted = true;
+              audioPlayMusic("home", { fade: 1, volume: 0.6 });
               playIrisReveal({
                 duration: 3,
                 softness: 20,

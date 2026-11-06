@@ -1,5 +1,6 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, GAME_FONT_FAMILY } from "@/constants/game-settings";
 import { GAME_STATE } from "@/features/game-state";
+import { audioPlaySound } from "@/lib/audio";
 import gsap from "gsap";
 
 const MAX_LINES_PER_PAGE = 2;
@@ -226,6 +227,7 @@ class Dialogue {
   }
 
   advance() {
+    audioPlaySound("click", { volume: 0.5 });
     this.pageIndex++;
     this.revealedChars = 0;
     if (this.pageIndex < this.pages.length) return;

@@ -49,14 +49,14 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "parcel",
     {
       description: "Get the parcel.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [
     "invitation_postcard",
     {
       description: "Find out what's this treasure is about.",
-      status: "inactive",
+      status: "active",
     },
   ],
   [
@@ -66,9 +66,9 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
       status: "inactive",
     },
   ],
-  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
-  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "active" }],
-  ["meet_ximen", { description: "Find and meet XI MEN", status: "active" }],
+  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "inactive" }],
+  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "inactive" }],
+  ["meet_ximen", { description: "Find and meet XI MEN", status: "inactive" }],
   [
     "catch_sheets",
     {

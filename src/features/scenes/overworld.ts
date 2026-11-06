@@ -18,6 +18,7 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { addOnce, remove } from "@/lib/array";
+import { audioPlayAmbience, audioPlayMusic, audioStopAmbience, audioStopMusic } from "@/lib/audio";
 import { bagHasItem, bagIncItem, bagRemoveItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
@@ -286,6 +287,7 @@ function schedulePapaFaceMama() {
 }
 
 function exitMap() {
+  audioStopMusic(overworldScene.fadeOut);
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true;
   tracingPaper2ShineHandle?.stop();
@@ -318,6 +320,12 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   restrict_allow_run: { onEnter: () => restrictRun(false) },
   restrict_disallow_run: { onEnter: () => restrictRun(true) },
   restrict_mid_aisle_lock: { onEnter: () => restrictMidAisleExit() },
+  sound_main: { onEnter: soundMain },
+  sound_market: { onEnter: () => soundMarket() },
+  sound_market_exit: { onEnter: () => soundMarket(false) },
+  sound_fountain: { onEnter: () => soundFountain(), onLeave: () => soundFountain(false) },
+  sound_beach: { onEnter: () => soundBeach() },
+  sound_beach_exit: { onEnter: () => soundBeach(false) },
   sand: {
     onEnter: () => sandZoneCount++,
     onLeave: () => sandZoneCount--,
@@ -397,6 +405,12 @@ export const overworldScene: Scene = {
   ]).then(() => prepareViewportClamped([background, foreground, backgroundEvent])),
 
   enter() {
+    let bgMusicDelay = 0.5;
+    if (!GAME_STATE.sequence.intro) bgMusicDelay = 1;
+    gsap.delayedCall(overworldScene.fadeIn! + bgMusicDelay, () =>
+      audioPlayMusic("overworld", { seek: 0, fade: 2, volume: 0.6 }),
+    );
+
     sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(overworldScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
@@ -463,7 +477,7 @@ export const overworldScene: Scene = {
     NPCS.filter(isInViewport).forEach((n) => n.update(dt));
 
     if (paperWindAnimating) paperWind1.update(dt);
-    // if (GAME_STATE.sceneElapsed === 0) playMusic("map");
+    // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
@@ -2476,4 +2490,30 @@ function restrictMidAisleExit() {
 
 function spawnJp() {
   respawnNPC(GAME_STATE.jp, [94.5, 41]);
+}
+
+function soundMain() {
+  audioPlayMusic("overworld", { fade: 2 });
+}
+
+function soundMarket(enable = true) {
+  if (!enable) {
+    audioStopAmbience("amb_shopping_crowd", 2);
+    return;
+  }
+  audioPlayMusic("market", { fade: 2, volume: 0.2 });
+  audioPlayAmbience("amb_shopping_crowd", { fade: 2, volume: 0.4 });
+}
+
+function soundFountain(enable = true) {
+  if (enable) audioPlayAmbience("amb_water_flowing", { fade: 2, volume: 0.2 });
+  else audioStopAmbience("amb_water_flowing", 2);
+}
+
+function soundBeach(enable = true) {
+  if (!enable) {
+    audioStopAmbience("amb_beach", 2);
+    return;
+  }
+  audioPlayAmbience("amb_beach", { fade: 2, volume: 0.4 });
 }

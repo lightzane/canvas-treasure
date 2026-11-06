@@ -4,6 +4,7 @@ import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
 import type { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
+import { audioPlaySound } from "@/lib/audio";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { toScreen } from "@/lib/canvas/screen";
 
@@ -127,6 +128,7 @@ export function interact(
     match.sprite.face(OPPOSITE_DIRECTION[player.facing]);
   }
 
+  audioPlaySound("click", { volume: 0.5 });
   return match.sprite;
 }
 
