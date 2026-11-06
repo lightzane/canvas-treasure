@@ -1,12 +1,13 @@
 import react from "@vitejs/plugin-react";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 
 import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), excludeFromBuild(["react.svg"]), stripHtmlComments()],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
@@ -25,3 +26,33 @@ export default defineConfig({
   //   },
   // },
 });
+
+/** Strips HTML comments from `index.html` at build time.
+ *  Comments are for developers only and must never ship to production. */
+function stripHtmlComments(): Plugin {
+  return {
+    name: "strip-html-comments",
+    apply: "build",
+    transformIndexHtml(html) {
+      return html.replace(/<!--[\s\S]*?-->/g, "");
+    },
+  };
+}
+
+/** Deletes the given files from the build output after all assets (including public/) are copied. */
+function excludeFromBuild(files: string[]): Plugin {
+  let outDir = "dist";
+  return {
+    name: "exclude-from-build",
+    apply: "build",
+    configResolved(config) {
+      outDir = config.build.outDir;
+    },
+    closeBundle() {
+      for (const file of files) {
+        const target = fileURLToPath(new URL(`${outDir}/${file}`, import.meta.url));
+        if (fs.existsSync(target)) fs.unlinkSync(target);
+      }
+    },
+  };
+}

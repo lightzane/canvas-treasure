@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "custom.css";
 @import "game.css";
+@import "fonts.css";
 
 @custom-variant dark (&:is(.dark *));
 

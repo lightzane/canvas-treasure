@@ -1,0 +1,29 @@
+/* Self-hosted, not loaded from rsms.me/fonts.googleapis.com at runtime —
+   this game needs to work fully offline, and a <link> to an external CDN
+   in index.html would still reach out to the network from every `pnpm
+   build` output, online or offline. Both files below are the exact same
+   bytes those CDNs serve, just vendored into public/assets/fonts/.
+
+   Only one weight axis each (normal style, Latin subset) — this game's own
+   text never uses an italic Inter or the Latin-Extended diacritics
+   Google's CSS also offers alongside Oxanium, so there's nothing else here
+   that would ever actually get used. */
+
+@font-face {
+  font-family: InterVariable;
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/assets/fonts/InterVariable.woff2") format("woff2");
+}
+
+@font-face {
+  /* Keep in sync with GAME_FONT_FAMILY (src/constants/game-settings.ts) —
+     canvas ctx.font and document.fonts.load() both look this family name
+     up directly, by string, with no CSS theme indirection involved. */
+  font-family: Oxanium;
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/assets/fonts/Oxanium-Variable.woff2") format("woff2");
+}

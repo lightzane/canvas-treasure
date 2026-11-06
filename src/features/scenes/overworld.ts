@@ -2284,7 +2284,6 @@ function closingRemarks() {
         GAME_STATE.sceneName = "home";
       },
     });
-    // TODO: Download font game so it can be loaded offline
   };
 }
 
