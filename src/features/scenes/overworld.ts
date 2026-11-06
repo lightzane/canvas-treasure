@@ -1,4 +1,4 @@
-import { COLLISION_OVERWORLD } from "@/constants/collisions/overworld";
+import { COLLISION_OVERWORLD, COLLISION_OVERWORLD_EVENT } from "@/constants/collisions/overworld";
 import { TILE_SIZE } from "@/constants/game-settings";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
 import { GAME_STATE } from "@/features/game-state";
@@ -77,6 +77,7 @@ const IMG_MESSAGE_BOTTLE_H = img("others/message-bottle-h.png");
 const IMG_CHEST_CLOSE = img("others/chest-close.png");
 const IMG_CHEST_OPEN = img("others/chest-open.png");
 const IMG_CHEST_EMPTY = img("others/chest-empty.png");
+const IMG_BALLOON_CRATES = img("others/balloon-crates.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const ICON_SHEARS = img("others/garden-shears.png");
 const ICON_PAPERS = img("others/paper-multi-32x32.png");
@@ -105,6 +106,10 @@ const spMansion1 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
 const spMansion2 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
 const coreMsgBottle = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
 const msgBottle1 = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
+const balloonCrates = Array.from(
+  { length: 6 },
+  () => new Sprite({ src: IMG_BALLOON_CRATES, scale: 2 }),
+);
 
 const chestCfgs: Partial<Sprite> = {
   scale: 2,
@@ -259,6 +264,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   cutscene_mid_aisle_jp: { onEnter: () => cutsceneMidAisleJp() },
   restrict_allow_run: { onEnter: () => restrictRun(false) },
   restrict_disallow_run: { onEnter: () => restrictRun(true) },
+  restrict_mid_aisle_lock: { onEnter: () => restrictMidAisleExit() },
   sand: {
     onEnter: () => sandZoneCount++,
     onLeave: () => sandZoneCount--,
@@ -274,6 +280,7 @@ const questMazeChest = quests.get("maze_chest")!;
 const questDaoMingKeys = quests.get("daoming_keys")!;
 const questSketchUnity = quests.get("sketch_unity")!;
 
+// Static sprites that never relocates
 placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
 placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
 placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
@@ -290,6 +297,12 @@ placeAtTile({ sprite: spMansion1, tile: [85, 30] });
 placeAtTile({ sprite: spMansion2, tile: [88, 30] });
 placeAtTile({ sprite: msgBottle1, tile: [45, 74] });
 placeAtTile({ sprite: chestEmpty, tile: [119.75, 7.75] });
+placeAtTile({ sprite: balloonCrates[0], tile: [99, 74] });
+placeAtTile({ sprite: balloonCrates[1], tile: [99, 75] });
+placeAtTile({ sprite: balloonCrates[2], tile: [100, 75] });
+placeAtTile({ sprite: balloonCrates[3], tile: [108, 74] });
+placeAtTile({ sprite: balloonCrates[4], tile: [107, 75] });
+placeAtTile({ sprite: balloonCrates[5], tile: [108, 75] });
 
 let nLoc = [92.5, 32.4] as [number, number];
 NORTH_GUARDS.forEach((npc, i) => {
@@ -314,6 +327,9 @@ EAST_GUARDS.forEach((npc, i) => {
   placeAtTile({ sprite: npc, tile: [x, (eLoc[1] += 0.5)] });
   npc.face("d");
 });
+
+const BOUNDARIES_MAIN_EVENT = createBoundaries(COLLISION_OVERWORLD_EVENT);
+// TODO: boundaries non-event
 
 export const overworldScene: Scene = {
   fadeIn: 1,
@@ -646,12 +662,20 @@ function interactions(target: Sprite | undefined) {
   }
 
   if (PARK_EVENT_GUARDS.includes(target as PlayerSprite)) {
-    DIALOGUE.show(`Bawal po muna dito ang entrance. Pasensiya na. May private event lang po...`);
+    DIALOGUE.show(
+      `DAO MING STAFF: Bawal po muna dito ang entrance. Pasensiya na. May private event lang po...`,
+    );
     return;
   }
 
   if (AISLE_GUARDS.includes(target as PlayerSprite)) {
-    DIALOGUE.show(`Bawal po muna dito ang entrance. Pasensiya na. May private event lang po...`);
+    if (questDaoMingKeys.status !== "resolved") {
+      DIALOGUE.show(
+        `DAO MING STAFF: Bawal po muna dito ang entrance. Pasensiya na. May private event lang po...`,
+      );
+    } else {
+      DIALOGUE.show(`DAO MING STAFF: Tuloy po kayo at nag simula na ang event.`);
+    }
     return;
   }
 }
@@ -1369,6 +1393,10 @@ function initMarketEvent() {
   respawnNPC(ximen, [105.5, 74]);
   addOnce(INTERACTABLES, { sprite: meizuo });
   addOnce(INTERACTABLES, { sprite: ximen });
+  balloonCrates.forEach((decor) => {
+    addOnce(DECORS, decor);
+    addOnce(GAME_STATE.obstacles, decor);
+  });
 }
 
 function cutsceneMarket() {
@@ -2228,10 +2256,11 @@ function interactXimen() {
 function initMainEventGuards() {
   if (questMazeChest.status !== "resolved") return;
 
-  PARK_EVENT_GUARDS.forEach((npc) => respawnNPC(npc));
   PARK_EVENT_GUARDS.forEach((npc) => {
+    respawnNPC(npc);
     addOnce(INTERACTABLES, { sprite: npc, probeDistance: 8 });
   });
+  AISLE_GUARDS.forEach((npc) => addOnce(INTERACTABLES, { sprite: npc }));
 
   if (questDaoMingKeys.status !== "resolved") {
     placeAtTile({ sprite: AISLE_GUARDS_ROW_A[0], tile: [92.5, 58] });
@@ -2241,17 +2270,21 @@ function initMainEventGuards() {
     AISLE_GUARDS.forEach((npc) => {
       respawnNPC(npc);
       npc.face("s");
-      addOnce(INTERACTABLES, { sprite: npc });
     });
-  } else if (questDaoMingKeys.status === "resolved") {
-    AISLE_GUARDS.forEach((npc) => removeInteractable(INTERACTABLES, npc));
   }
 }
 
 function initMainEvent() {
   if (questDaoMingKeys.status !== "resolved") return;
+  // Cleanup old decors
+  balloonCrates.forEach((decor) => {
+    remove(DECORS, decor);
+    remove(GAME_STATE.obstacles, decor);
+  });
+
   addOnce(DECORS, chestEmpty);
   addOnce(GAME_STATE.obstacles, chestEmpty);
+  BOUNDARIES_MAIN_EVENT.forEach((b) => addOnce(GAME_STATE.boundaries, b));
 
   huazelei.moveSpeed = 50;
   daomingsi.moveSpeed = 50;
@@ -2327,6 +2360,22 @@ function restrictRun(restricted = true) {
   } else {
     GAME_STATE.allowRunning = true;
   }
+}
+
+function restrictMidAisleExit() {
+  if (!GAME_STATE.sequence.mid_aisle_cutscene) return;
+
+  DIALOGUE.effect(disableAccess, 0.00000000000001);
+
+  DIALOGUE.effect(() => {
+    walk(player, [94, 50.25], {
+      onComplete: () => player.face("w"),
+    });
+  }, 1);
+
+  f4Speaker(`daomingsi`, `Diretso ka na sa stage...`);
+
+  DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
 }
 
 function spawnJp() {

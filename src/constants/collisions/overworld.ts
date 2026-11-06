@@ -5,3 +5,9 @@ import { scaleTiledObjects } from "@/lib/tiled";
 export const COLLISION_OVERWORLD = scaleTiledObjects([
   { x: 1597.5, y: 1406.5, width: 258.5, height: 65.5 },
 ]);
+
+// prettier-ignore
+export const COLLISION_OVERWORLD_EVENT = scaleTiledObjects([
+  { x: 2929.69696969697, y: 1409.69696969697, width: 52, height: 415.151515152 },
+  { x: 3069, y: 1409.696969697, width: 52, height: 415.151515152 },
+]);

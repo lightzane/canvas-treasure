@@ -328,7 +328,7 @@ function mamaParcelConversation() {
     }, 1);
     DIALOGUE.effect(() => (journalShine = playShine(journal)));
     DIALOGUE.queue(
-      `Paki tingin naman muna ng parcel. Kunin mo na rin notebook mo sa table bago mo pa malimutan.`,
+      `Paki tingin naman muna ng parcel. Bul-a run mong notebook sa table ag malipat mo paran karon.`,
     );
 
     DIALOGUE.effect(() => {

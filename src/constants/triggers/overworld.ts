@@ -4,6 +4,7 @@ import { scaleTiledObjects } from "@/lib/tiled";
 export type TriggerName =
   | "restrict_allow_run"
   | "restrict_disallow_run"
+  | "restrict_mid_aisle_lock"
   | "enter_flowershop"
   | "enter_mansion"
   | "enter_home"
@@ -18,6 +19,7 @@ export type TriggerName =
 export const TRIGGER_OVERWORLD = scaleTiledObjects([
   { name: "restrict_allow_run", x: 2976.01, y: 1856.37, width: 96, height: 33 },
   { name: "restrict_disallow_run", x: 2976.01, y: 1822.37, width: 96, height: 33 },
+  { name: "restrict_mid_aisle_lock", x: 2975.87, y: 1644.99068323, width: 96, height: 33 },
   { name: "enter_flowershop", x: 1204.81, y: 1315.27, width: 33, height: 40.5487 },
   { name: "enter_mansion", x: 2764.5, y: 474.5, width: 38, height: 47.5 },
   { name: "enter_home", x: 1884, y: 1290.23, width: 33, height: 40.5487 },
