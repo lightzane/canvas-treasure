@@ -149,7 +149,7 @@ export function PuzzleViewer({
         questSetStatus(questSketchUnity, "resolved");
         onSolved?.();
         gsap.delayedCall(1, () => {
-          playQuestCompleteBanner(`Completed!`);
+          playQuestCompleteBanner(`Sketch Unity — Completed!`);
           playQuestToast(questSketchUnity);
         });
       }

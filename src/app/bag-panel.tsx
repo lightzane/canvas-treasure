@@ -4,13 +4,17 @@ import { ParcelViewer } from "@/app/parcel-viewer";
 import { PAPER_BG_COLOR, PuzzleViewer } from "@/app/puzzle-viewer";
 import { GAME_STATE } from "@/features/game-state";
 import { bagHasItem, type ItemName } from "@/lib/bag";
+import { birthdayConfetti } from "@/lib/confetti";
 import { img } from "@/lib/img";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+let confettiHandle: (() => boolean) | undefined;
 
 const ITEM_LABEL: Record<ItemName, string> = {
   journal: "Journal",
   parcel: "Parcel",
   treasure: "Treasure",
+  birthday_postcard: "Birthday Postcard",
   shoes: "Running Shoes",
   sketch: "ZZ's Sketch",
   papers: "ZZ's Tracing Papers Scrambled",
@@ -41,8 +45,9 @@ const ITEM_ICON: Partial<Record<ItemName, ItemIcon>> = {
   journal: { src: img("others/book-and-pencil.png"), scale: 0.8 },
   parcel: { src: img("others/parcel.png"), scale: 1.5 },
   treasure: { src: img("others/chest-close.png"), scale: 1.5 },
+  birthday_postcard: { src: img("others/birthday-postcard.png"), scale: 0.7 },
   shoes: { src: img("others/shoes.png"), scale: 0.6 },
-  sketch: { src: img("others/sketch.png"), scale: 0.8 },
+  sketch: { src: img("others/sketch.png"), scale: 1 },
   papers: { src: img("others/paper-multi.png"), scale: 1.5 },
   paper1: { src: img("others/paper-single.png"), scale: 1.5 },
   paper2: { src: img("others/paper-single.png"), scale: 1.5 },
@@ -87,7 +92,15 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   const viewImage = (name: ItemName, file: string, backgroundColor?: string) => () => {
     GAME_STATE.bagViewedItems.add(name);
     setViewingImage({ src: img(file), alt: ITEM_LABEL[name], backgroundColor });
+    if (name === "birthday_postcard") confettiHandle = birthdayConfetti(5);
   };
+
+  // Stops the confetti the moment the viewer closes (viewingImage goes
+  // falsy) — whether that's the × button, Escape, or switching to another
+  // item, not just the birthday_postcard case specifically.
+  useEffect(() => {
+    if (!viewingImage) confettiHandle?.();
+  }, [viewingImage]);
 
   // Few/specific items are clickable, each with its own distinct effect —
   // not every entry, and not a blanket rule off BagEntry's own `type`. Items
@@ -112,6 +125,7 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
       GAME_STATE.bagViewedItems.add("papers");
       setPuzzleOpen(true);
     },
+    birthday_postcard: viewImage("birthday_postcard", "treasure/cheryl_birthday_postcard.jpg"),
     sketch: viewImage("sketch", "treasure/cheryl_birthday_postcard_sketch.jpg"),
     paper1: viewImage("paper1", "puzzle/tp1.png", PAPER_BG_COLOR),
     paper2: viewImage("paper2", "puzzle/tp2.png", PAPER_BG_COLOR),

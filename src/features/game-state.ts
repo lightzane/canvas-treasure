@@ -182,6 +182,7 @@ export const GAME_STATE = {
     ["journal", { type: "item", quantity: 1 }],
     ["treasure", { type: "item", quantity: 0 }],
     ["parcel", { type: "item", quantity: 1 }],
+    ["birthday_postcard", { type: "item", quantity: 0 }],
     ["sketch", { type: "item", quantity: 0 }],
     ["papers", { type: "item", quantity: 0 }],
     ["paper1", { type: "item", quantity: 1 }],

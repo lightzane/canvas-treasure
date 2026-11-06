@@ -1956,7 +1956,7 @@ function cutsceneMidAisleJp() {
       }
 
       disableAccess();
-      DIALOGUE.effect(() => playExclamation(player), 0.5);
+      DIALOGUE.effect(() => playExclamation(player, { icon: ICON_PAPERS }), 0.5);
       DIALOGUE.show(`Wait lang, hindi ko pa nakikita yung nilalaman ng sketch`);
       DIALOGUE.queue(`Nasa bag ko na lahat ng 3 tracing paper ni ZZ`);
       DIALOGUE.queue(`Kailangan ko lang pagpatungin ng tama lahat ng papers.`);
@@ -2000,6 +2000,7 @@ function cutsceneShowBirthdayPostcard() {
     GAME_STATE.movementLocked = true;
     playImagePreview(PHOTO_BIRTHDAY_POSTCARD, { hold: 10, onComplete: cutsceneMainQuestReminder });
     birthdayConfetti();
+    bagIncItem("birthday_postcard");
   };
 }
 
@@ -2058,7 +2059,7 @@ function cutsceneMainQuestReminder() {
     GAME_STATE.onBagClose = function onParcelBagClose(viewed) {
       if (!viewed.has("parcel")) {
         hudSetBagIconVisible(false);
-        DIALOGUE.effect(() => playExclamation(player));
+        DIALOGUE.effect(() => playExclamation(player, { icon: ICON_PARCEL }));
         DIALOGUE.show("Nalimot ko, kailangan ko muna makita yung parcel sa bag ko...");
         DIALOGUE.onComplete = () => {
           hudSetBagIconVisible(true);
@@ -2363,7 +2364,7 @@ function restrictRun(restricted = true) {
 }
 
 function restrictMidAisleExit() {
-  if (!GAME_STATE.sequence.mid_aisle_cutscene) return;
+  if (!GAME_STATE.sequence.mid_aisle_cutscene || questMain.status === "resolved") return;
 
   DIALOGUE.effect(disableAccess, 0.00000000000001);
 

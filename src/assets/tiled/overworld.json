@@ -2131,7 +2131,7 @@
                  "name":"collisions",
                  "objects":[
                         {
-                         "height":415.151515152,
+                         "height":446.651515152,
                          "id":58,
                          "name":"",
                          "opacity":1,
@@ -2143,7 +2143,7 @@
                          "y":1409.69696969697
                         }, 
                         {
-                         "height":415.151515152,
+                         "height":446.651515152,
                          "id":60,
                          "name":"",
                          "opacity":1,
@@ -2156,7 +2156,7 @@
                         }],
                  "opacity":1,
                  "type":"objectgroup",
-                 "visible":false,
+                 "visible":true,
                  "x":0,
                  "y":0
                 }],

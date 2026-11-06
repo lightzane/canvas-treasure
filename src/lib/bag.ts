@@ -9,6 +9,7 @@ import { GAME_STATE } from "@/features/game-state";
 export type ItemName =
   | "parcel"
   | "treasure"
+  | "birthday_postcard"
   | "shoes"
   | "journal"
   | "sketch"
