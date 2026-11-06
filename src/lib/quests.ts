@@ -49,21 +49,21 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "parcel",
     {
       description: "Get the parcel.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
     "invitation_postcard",
     {
       description: "Find out what's this treasure is about.",
-      status: "active",
+      status: "inactive",
     },
   ],
   [
     "daoming_keys",
     {
       description: "Help DAO MING SI find his missing keys.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
@@ -73,37 +73,37 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 2,
+      qty: 0,
       totalQty: 3,
-      status: "active",
+      status: "inactive",
     },
   ],
   [
     "garden_shears",
     {
       description: "Find a way to remove the wild bush.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
     "running_shoes",
     {
       description: "Find running shoes at home.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
     "message_in_bottle",
     {
       description: "Find the bottle that contains the treasure map.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [

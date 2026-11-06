@@ -44,15 +44,20 @@ import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
 import { walk } from "@/lib/walk";
+import { IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } from "@/sprites/beach-outfit-female-1";
+import { IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } from "@/sprites/beach-outfit-female-2";
 import {
   DIALOGUE_COLOR_DAOMINGSI,
   PORTRAIT_DAOMINGSI,
   PORTRAIT_DAOMINGSI_INTIMIDATE,
 } from "@/sprites/dao-ming-si";
+import { IMGS_ELDER_WOMAN_IDLE } from "@/sprites/elder-woman";
 import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
 import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
 import { DIALOGUE_COLOR_HUAZELEI, PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
 import { DIALOGUE_COLOR_MEIZUO, PORTRAIT_MEIZUO } from "@/sprites/mei-zuo";
+import { IMGS_SCHOOL_GIRL_IDLE } from "@/sprites/school-girl";
+import { IMGS_TEENAGE_GIRL_IDLE } from "@/sprites/teenage-girl";
 import { DIALOGUE_COLOR_XIMEN, PORTRAIT_XIMEN } from "@/sprites/xi-men";
 import gsap from "gsap";
 
@@ -182,6 +187,54 @@ const AISLE_GUARDS_ROW_B: PlayerSprite[] = [
 ];
 
 const AISLE_GUARDS = [...AISLE_GUARDS_ROW_A, ...AISLE_GUARDS_ROW_B];
+
+const MARKET_EVENT_GIRLS_A = [
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_SCHOOL_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE } }),
+];
+const MARKET_EVENT_GIRLS_B = [
+  new PlayerSprite({ sprites: { idle: IMGS_ELDER_WOMAN_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_SCHOOL_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } }),
+];
+const MARKET_EVENT_GIRLS_C = [
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_SCHOOL_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } }),
+];
+const MARKET_EVENT_GIRLS_D = [
+  new PlayerSprite({ sprites: { idle: IMGS_SCHOOL_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_SCHOOL_GIRL_IDLE } }),
+];
+const MARKET_EVENT_GIRLS_E = [
+  new PlayerSprite({ sprites: { idle: IMGS_SCHOOL_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_SCHOOL_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_ELDER_WOMAN_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } }),
+  new PlayerSprite({ sprites: { idle: IMGS_SCHOOL_GIRL_IDLE } }),
+];
+const MARKET_EVENT_GIRLS = [
+  ...MARKET_EVENT_GIRLS_A,
+  ...MARKET_EVENT_GIRLS_B,
+  ...MARKET_EVENT_GIRLS_C,
+  ...MARKET_EVENT_GIRLS_D,
+  ...MARKET_EVENT_GIRLS_E,
+];
 
 const wildBushInteractablesCfgs: Partial<Interactable> = {
   label: "Interact",
@@ -1388,6 +1441,7 @@ function disableAccess() {
 
 function initMarketEvent() {
   if (questMazeChest.status !== "resolved") return;
+
   despawnNPC(huazelei);
   respawnNPC(meizuo, [101.5, 74]);
   respawnNPC(ximen, [105.5, 74]);
@@ -1396,6 +1450,38 @@ function initMarketEvent() {
   balloonCrates.forEach((decor) => {
     addOnce(DECORS, decor);
     addOnce(GAME_STATE.obstacles, decor);
+  });
+
+  let spawn = [102.5, 75] as [number, number];
+  MARKET_EVENT_GIRLS_A.forEach((g, i) => {
+    g.face("w");
+    const x = i % 2 !== 0 ? spawn[0] + 0.25 : spawn[0];
+    respawnNPC(g, [x, (spawn[1] += 0.5)]);
+  });
+
+  MARKET_EVENT_GIRLS_B.forEach((g, i) => {
+    g.face("d");
+    const y = i % 2 !== 0 ? spawn[1] + 0.25 : spawn[1];
+    respawnNPC(g, [(spawn[0] -= 0.5), y]);
+  });
+
+  MARKET_EVENT_GIRLS_C.forEach((g, i) => {
+    g.face("d");
+    const y = i % 2 !== 0 ? spawn[1] + 0.25 : spawn[1];
+    respawnNPC(g, [(spawn[0] -= 0.5), y]);
+  });
+
+  spawn = [104.5, 75];
+  MARKET_EVENT_GIRLS_D.forEach((g, i) => {
+    g.face("w");
+    const x = i % 2 !== 0 ? spawn[0] + 0.25 : spawn[0];
+    respawnNPC(g, [x, (spawn[1] += 0.5)]);
+  });
+
+  MARKET_EVENT_GIRLS_E.forEach((g, i) => {
+    g.face("d");
+    const y = i % 2 !== 0 ? spawn[1] + 0.25 : spawn[1];
+    respawnNPC(g, [(spawn[0] -= 0.5), y]);
   });
 }
 
@@ -2282,6 +2368,7 @@ function initMainEvent() {
     remove(DECORS, decor);
     remove(GAME_STATE.obstacles, decor);
   });
+  MARKET_EVENT_GIRLS.forEach((g) => despawnNPC(g));
 
   addOnce(DECORS, chestEmpty);
   addOnce(GAME_STATE.obstacles, chestEmpty);
