@@ -1,5 +1,6 @@
 import { ImageViewer } from "@/app/image-viewer";
 import { GAME_STATE } from "@/features/game-state";
+import { audioPlayMusic, audioPlaySound } from "@/lib/audio";
 import { bagIncItem } from "@/lib/bag";
 import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { img } from "@/lib/img";
@@ -8,6 +9,7 @@ import gsap from "gsap";
 import { LucideFlipHorizontal2, LucideFlipVertical2, LucideRotateCw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
+export const PAGE_SOUND_VOLUME = 0.3;
 const LAYER_SRCS = [img("puzzle/tp1.png"), img("puzzle/tp2.png"), img("puzzle/tp3.png")];
 const REVEAL_SRC = img("treasure/cheryl_birthday_postcard_sketch.jpg");
 
@@ -148,6 +150,8 @@ export function PuzzleViewer({
         bagIncItem("sketch", 1);
         questSetStatus(questSketchUnity, "resolved");
         onSolved?.();
+        audioPlayMusic("happy_birthday", { volume: 0.85, fade: 2 });
+        audioPlaySound("applause_light", { volume: 0.3 });
         gsap.delayedCall(1, () => {
           playQuestCompleteBanner(`Sketch Unity — Completed!`);
           playQuestToast(questSketchUnity);
@@ -180,10 +184,18 @@ export function PuzzleViewer({
       setPhase("completing");
     }
   }
-  const flipH = (index: number) => updateLayer(index, { flipH: !layers[index].flipH });
-  const flipV = (index: number) => updateLayer(index, { flipV: !layers[index].flipV });
-  const rotate = (index: number) =>
+  const flipH = (index: number) => {
+    audioPlaySound("page_turn_forward", { volume: PAGE_SOUND_VOLUME });
+    updateLayer(index, { flipH: !layers[index].flipH });
+  };
+  const flipV = (index: number) => {
+    audioPlaySound("page_turn_backward", { volume: PAGE_SOUND_VOLUME });
+    updateLayer(index, { flipV: !layers[index].flipV });
+  };
+  const rotate = (index: number) => {
+    audioPlaySound("page_slide", { volume: PAGE_SOUND_VOLUME });
     updateLayer(index, { rotation: layers[index].rotation === 0 ? 180 : 0 });
+  };
 
   return (
     <>

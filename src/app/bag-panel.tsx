@@ -1,7 +1,7 @@
 import { ImageViewer } from "@/app/image-viewer";
 import { JournalPanel } from "@/app/journal-panel";
 import { ParcelViewer } from "@/app/parcel-viewer";
-import { PAPER_BG_COLOR, PuzzleViewer } from "@/app/puzzle-viewer";
+import { PAGE_SOUND_VOLUME, PAPER_BG_COLOR, PuzzleViewer } from "@/app/puzzle-viewer";
 import { GAME_STATE } from "@/features/game-state";
 import { audioPlaySound } from "@/lib/audio";
 import { bagHasItem, type ItemName } from "@/lib/bag";
@@ -114,8 +114,8 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
     GAME_STATE.bagViewedItems.add(name);
     setViewingImage({ src: img(file), alt: ITEM_LABEL[name], backgroundColor, name });
     if (name === "birthday_postcard") confettiHandle = birthdayConfetti(5);
-    if (name === "treasure_map" || name.toLowerCase().includes("paper"))
-      audioPlaySound("page_turn_forward");
+    if (name === "treasure_map" || /paper|sketch.*/i.test(name))
+      audioPlaySound("page_turn_forward", { volume: PAGE_SOUND_VOLUME });
   };
 
   // Runs the moment the viewer closes (viewingImage goes falsy) — whether
@@ -129,10 +129,16 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
     confettiHandle?.();
     if (
       lastViewedNameRef.current === "treasure_map" ||
-      lastViewedNameRef.current?.toLowerCase().includes("paper")
+      /paper.*|sketch/i.test(lastViewedNameRef.current ?? "")
     )
-      audioPlaySound("page_turn_backward");
+      audioPlaySound("page_turn_backward", { volume: PAGE_SOUND_VOLUME });
   }, [viewingImage]);
+
+  useEffect(() => {
+    if (!GAME_STATE.bagViewedItems.has("papers")) return;
+    if (puzzleOpen) audioPlaySound("page_turn_forward", { volume: PAGE_SOUND_VOLUME });
+    else audioPlaySound("page_turn_backward", { volume: PAGE_SOUND_VOLUME });
+  }, [puzzleOpen]);
 
   // Few/specific items are clickable, each with its own distinct effect —
   // not every entry, and not a blanket rule off BagEntry's own `type`. Items

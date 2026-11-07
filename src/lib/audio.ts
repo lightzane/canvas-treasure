@@ -13,8 +13,11 @@ export type SoundKey =
   | "garden_shovel_stab"
   | "page_turn_forward"
   | "page_turn_backward"
+  | "page_slide"
   | "gear_metallic_lock"
-  | "drums_of_preparations";
+  | "drums_of_preparations"
+  | "applause_light"
+  | "applause";
 export type MusicKey =
   | "home"
   | "overworld_event"
@@ -24,11 +27,16 @@ export type MusicKey =
   | "flowershop"
   | "maze"
   | "zz_makeawish"
+  | "f4"
+  | "f4_loop"
+  | "happy_birthday"
   | "a_guitar_rock"
   | "amb_beach"
   | "amb_shopping_crowd"
   | "amb_water_flowing"
-  | "amb_wind_interior";
+  | "amb_wind_interior"
+  | "amb_people_public"
+  | "amb_people_crowd";
 
 /**
  * Physical files split into multiple named clips rather than played whole —
@@ -51,6 +59,35 @@ const SOUND_SHEETS = {
 } as const satisfies Record<string, { src: string; sprite: Record<string, [number, number]> }>;
 
 type SheetKey = keyof typeof SOUND_SHEETS;
+
+/**
+ * Same one-file-many-clips idea as SOUND_SHEETS, for MusicKey instead —
+ * a track that's also useful as a short, separately-loopable region (see
+ * `f4`/`f4_loop` below) declares its file once here rather than twice over
+ * in MUSIC_REGISTRY. The third tuple element is Howler's own per-sprite loop
+ * flag: a sprite built with `loop: true` repeats just that region forever
+ * once played, independently of whatever else (e.g. `full`, played once
+ * start-to-end) shares the same decoded file.
+ */
+const MUSIC_SHEETS = {
+  f4: {
+    src: "絕不能失去你.mp3",
+    sprite: {
+      full: [0, (4 * 60 + 37) * 1000], // 4:37 full duration, played once
+      loop: [21 * 1000, 8.89999 * 1000, true], // 21s–28.89999s region, loops forever
+    },
+  },
+} as const satisfies Record<
+  string,
+  { src: string; sprite: Record<string, [number, number] | [number, number, boolean]> }
+>;
+
+type MusicSheetKey = keyof typeof MUSIC_SHEETS;
+
+/** One named clip of a MUSIC_SHEETS entry — `sprite` narrowed per `sheet`, same idea as SheetSoundEntry. */
+type MusicSheetEntry = {
+  [K in MusicSheetKey]: { sheet: K; sprite: keyof (typeof MUSIC_SHEETS)[K]["sprite"] };
+}[MusicSheetKey];
 
 interface StandaloneSoundEntry {
   /** Filenames under public/audio/ — one is picked at random on each play. */
@@ -82,12 +119,17 @@ const SOUND_REGISTRY: Record<SoundKey, SoundEntry> = {
   garden_shovel_stab:      { src: ["fx/mixkit-garden-shovel-stab-1918.wav"] },
   page_turn_forward:       { sheet: "book_paging", sprite: "forward", },
   page_turn_backward:      { sheet: "book_paging", sprite: "backward" },
+  page_slide:              { src: ["fx/mixkit-paper-slide-1530.wav"] },
   // pop:                  { src: [...Array(5)].map((_, i) => `crack-${i + 1}.mp3`), silenceEnd: true }, // crack-*.mp3 recordings have an audible artifact at the end
   drums_of_preparations:   { src: ["fx/mixkit-drums-of-war-2784.wav"] },
-  gear_metallic_lock:      { src: ["fx/mixkit-gear-metallic-lock-sound-2858.wav"] }
+  gear_metallic_lock:      { src: ["fx/mixkit-gear-metallic-lock-sound-2858.wav"] },
+  applause_light:          { src: ["fx/mixkit-audience-light-applause-354.wav"] },
+  applause:                { src: ["fx/mixkit-ending-show-audience-clapping-478.wav"] },
 };
 
-const MUSIC_REGISTRY: Record<MusicKey, string> = {
+type MusicEntry = string | MusicSheetEntry;
+
+const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   home: "classical-verdanturf.mp3",
   overworld_event: "piano-littleroot-town.mp3",
   overworld: "classical-littleroot-town.mp3",
@@ -96,11 +138,16 @@ const MUSIC_REGISTRY: Record<MusicKey, string> = {
   flowershop: "classical-pallet-town.mp3",
   maze: "pokemon-route1-acoustic.mp3",
   zz_makeawish: "周渝民-make-a-wish.mp3",
+  f4: { sheet: "f4", sprite: "full" },
+  f4_loop: { sheet: "f4", sprite: "loop" },
+  happy_birthday: "happy-birthday-elegant-harp-piano.mp3",
   a_guitar_rock: "mixkit-ko-1068.mp3",
   amb_beach: "ambience/mixkit-small-waves-harbor-rocks-1208.wav",
   amb_shopping_crowd: "ambience/mixkit-shopping-center-crowd-377.wav",
   amb_water_flowing: "ambience/mixkit-water-flowing-ambience-loop-3126.wav",
   amb_wind_interior: "ambience/mixkit-wind-cold-interior-1172.wav",
+  amb_people_public: "ambience/mixkit-people-in-fair-ambience-and-laughter-368.wav",
+  amb_people_crowd: "ambience/mixkit-very-crowded-pub-or-party-loop-360.wav",
 };
 
 // Lazily built on first play, then reused for the rest of the session.
@@ -110,6 +157,10 @@ const musicCache = new Map<MusicKey, Howl>();
 // entry, so every SoundKey referencing it (different `sprite` names) plays
 // off the same decoded file instead of each fetching its own copy.
 const sheetCache = new Map<SheetKey, Howl>();
+// Same idea as sheetCache, for MUSIC_SHEETS — e.g. "f4" and "f4_loop" both
+// resolve here, sharing one decoded Howl instead of each getting its own
+// musicCache entry.
+const musicSheetCache = new Map<MusicSheetKey, Howl>();
 
 /**
  * The one currently-playing *base* track — each scene has exactly one
@@ -269,11 +320,26 @@ export interface PlayMusicOptions {
 // a fade (see audioPlayMusic's alreadyActive branch), not this unconditional
 // silent snap underneath it either way.
 function getMusicHowl(key: MusicKey, options?: PlayMusicOptions): Howl {
+  const entry = MUSIC_REGISTRY[key];
+
+  // Sheet-based keys never go in musicCache — musicSheetCache already dedups
+  // them across every MusicKey sharing the sheet (e.g. "f4" and "f4_loop"),
+  // same reasoning as getSheetHowl()/sheetCache for SoundKey.
+  if (typeof entry !== "string") {
+    let howl = musicSheetCache.get(entry.sheet);
+    if (!howl) {
+      const { src, sprite } = MUSIC_SHEETS[entry.sheet];
+      howl = new Howl({ src: [`${base}${src}`], sprite });
+      musicSheetCache.set(entry.sheet, howl);
+    }
+    return howl;
+  }
+
   let howl = musicCache.get(key);
 
   if (!howl) {
     howl = new Howl({
-      src: [`${base}${MUSIC_REGISTRY[key]}`],
+      src: [`${base}${entry}`],
       loop: options?.loop ?? true,
       volume: options?.volume ?? 1,
     });
@@ -281,6 +347,12 @@ function getMusicHowl(key: MusicKey, options?: PlayMusicOptions): Howl {
   }
 
   return howl;
+}
+
+/** Resolves `key`'s already-built Howl without constructing one — unlike getMusicHowl, a plain cache read. Needed because sheet-based keys live in musicSheetCache, not musicCache (see getMusicHowl). */
+function getCachedMusicHowl(key: MusicKey): Howl | undefined {
+  const entry = MUSIC_REGISTRY[key];
+  return typeof entry === "string" ? musicCache.get(key) : musicSheetCache.get(entry.sheet);
 }
 
 /**
@@ -310,6 +382,7 @@ function getMusicHowl(key: MusicKey, options?: PlayMusicOptions): Howl {
  * audioPlayMusic("overworld", { volume: 0.1, fade: 0 }); // same, but instant
  */
 export function audioPlayMusic(key: MusicKey, options?: PlayMusicOptions): void {
+  const entry = MUSIC_REGISTRY[key];
   const howl = getMusicHowl(key, options);
   const fadeMs = (options?.fade ?? 1) * 1000;
 
@@ -331,7 +404,7 @@ export function audioPlayMusic(key: MusicKey, options?: PlayMusicOptions): void 
   }
 
   const prevKey = activeMusic;
-  const prevHowl = prevKey ? musicCache.get(prevKey) : undefined;
+  const prevHowl = prevKey ? getCachedMusicHowl(prevKey) : undefined;
   activeMusic = key;
 
   if (prevHowl?.playing() && prevKey) {
@@ -368,7 +441,7 @@ export function audioPlayMusic(key: MusicKey, options?: PlayMusicOptions): void 
   // this same key plays again, fading from 0 to 0 — silently, forever.
   const targetVolume = options?.volume ?? musicVolume.get(key) ?? (howl.volume() as number);
   musicVolume.set(key, targetVolume);
-  const id = howl.play();
+  const id = typeof entry === "string" ? howl.play() : howl.play(entry.sprite);
   musicSoundId.set(key, id);
   howl.volume(0, id);
   if (options?.seek !== undefined) howl.seek(options.seek, id);
@@ -388,7 +461,7 @@ export function audioPlayMusic(key: MusicKey, options?: PlayMusicOptions): void 
  */
 export function audioPauseMusic(fade?: number): void {
   if (!activeMusic) return;
-  const howl = musicCache.get(activeMusic);
+  const howl = getCachedMusicHowl(activeMusic);
   if (!howl) return;
 
   const id = musicSoundId.get(activeMusic);
@@ -440,13 +513,13 @@ export function audioPauseMusic(fade?: number): void {
  * }
  */
 export function audioIsMusicActive(key: MusicKey): boolean {
-  return key === activeMusic && (musicCache.get(key)?.playing() ?? false);
+  return key === activeMusic && (getCachedMusicHowl(key)?.playing() ?? false);
 }
 
 export function audioStopMusic(fade?: number): void {
   if (!activeMusic) return;
   const key = activeMusic;
-  const howl = musicCache.get(key);
+  const howl = getCachedMusicHowl(key);
   activeMusic = null;
   if (!howl) return;
 
@@ -497,6 +570,7 @@ export function audioPlayAmbience(keys: MusicKey | MusicKey[], options?: PlayMus
   const fadeMs = (options?.fade ?? 0) * 1000;
 
   for (const key of Array.isArray(keys) ? keys : [keys]) {
+    const entry = MUSIC_REGISTRY[key];
     const howl = getMusicHowl(key, options);
 
     if (activeAmbience.has(key) && howl.playing() && options?.seek === undefined) {
@@ -523,7 +597,7 @@ export function audioPlayAmbience(keys: MusicKey | MusicKey[], options?: PlayMus
     // see its own doc comment for why that distinction matters.
     const targetVolume = options?.volume ?? musicVolume.get(key) ?? (howl.volume() as number);
     musicVolume.set(key, targetVolume);
-    const id = howl.play();
+    const id = typeof entry === "string" ? howl.play() : howl.play(entry.sprite);
     musicSoundId.set(key, id);
     if (options?.seek !== undefined) howl.seek(options.seek, id);
     if (fadeMs > 0) {
@@ -557,7 +631,7 @@ export function audioPauseAmbience(keys?: MusicKey | MusicKey[], fade?: number):
   const fadeMs = (fade ?? 0) * 1000;
 
   for (const key of targets) {
-    const howl = musicCache.get(key);
+    const howl = getCachedMusicHowl(key);
     const id = musicSoundId.get(key);
     activeAmbience.delete(key);
     if (!howl) continue;
@@ -593,7 +667,7 @@ export function audioStopAmbience(keys?: MusicKey | MusicKey[], fade?: number): 
   const fadeMs = (fade ?? 0) * 1000;
 
   for (const key of toKeyArray(keys, activeAmbience)) {
-    const howl = musicCache.get(key);
+    const howl = getCachedMusicHowl(key);
     const id = musicSoundId.get(key);
     activeAmbience.delete(key);
     if (!howl) continue;
