@@ -125,7 +125,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup color="#fffb00" id="4" name="trigger_zones" visible="0">
-  <object id="1" name="exit" x="278" y="327.181" width="117.5" height="57.819"/>
+ <objectgroup color="#fffb00" id="4" name="trigger_zones">
+  <object id="1" name="exit" x="278" y="334.181" width="117.5" height="33"/>
  </objectgroup>
 </map>

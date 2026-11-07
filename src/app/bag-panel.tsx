@@ -3,10 +3,11 @@ import { JournalPanel } from "@/app/journal-panel";
 import { ParcelViewer } from "@/app/parcel-viewer";
 import { PAPER_BG_COLOR, PuzzleViewer } from "@/app/puzzle-viewer";
 import { GAME_STATE } from "@/features/game-state";
+import { audioPlaySound } from "@/lib/audio";
 import { bagHasItem, type ItemName } from "@/lib/bag";
 import { birthdayConfetti } from "@/lib/confetti";
 import { img } from "@/lib/img";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 let confettiHandle: (() => boolean) | undefined;
 
@@ -38,7 +39,6 @@ interface ItemIcon {
    */
   scale?: number;
 }
-// TODO: Do not auto open journal if no active quests
 // Only items with their own art get a real icon — anything else falls back
 // to a plain text label in its slot.
 const ITEM_ICON: Partial<Record<ItemName, ItemIcon>> = {
@@ -61,16 +61,22 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   // popups are open, unlike bagOpen/bagIconVisible (which exist specifically
   // so scene code can trigger a React re-render). No GAME_STATE field needed
   // for either.
-  // Starts true: BagPanel is only ever mounted via {bagOpen && <BagPanel/>}
-  // in layout.tsx, so it fully remounts fresh every time the bag opens —
-  // this makes the journal open automatically alongside it, every time.
-  const [journalOpen, setJournalOpen] = useState(true);
-  // It auto-opens alongside the bag (see journalOpen above), so it counts
-  // as viewed from that moment too — no click needed. Safe to call every
-  // render (Set.add of an already-present value is a no-op); BagPanel only
-  // ever mounts fresh while the bag is open, same reasoning as journalOpen
-  // itself always starting true.
-  GAME_STATE.bagViewedItems.add("journal");
+  // Starts true (only when there's at least one "active" quest to show):
+  // BagPanel is only ever mounted via {bagOpen && <BagPanel/>} in
+  // layout.tsx, so it fully remounts fresh every time the bag opens — this
+  // makes the journal open automatically alongside it, every time, EXCEPT
+  // when it would just show an empty checklist (no discovered quests yet).
+  const [journalOpen, setJournalOpen] = useState(() =>
+    Array.from(GAME_STATE.quests.values()).some((quest) => quest.status === "active"),
+  );
+  // Only counts as viewed when it actually auto-opened (see journalOpen
+  // above) — no click needed in that case. When there's nothing active to
+  // show, it doesn't open, so it isn't "viewed" either; the player only
+  // gets credit for it once they open it themselves (onItemClick below).
+  // Safe to call every render otherwise (Set.add of an already-present
+  // value is a no-op); BagPanel only ever mounts fresh while the bag is
+  // open, same reasoning as journalOpen itself.
+  if (journalOpen) GAME_STATE.bagViewedItems.add("journal");
   const [parcelOpen, setParcelOpen] = useState(false);
   const [puzzleOpen, setPuzzleOpen] = useState(false);
   // Bumped whenever something mutates GAME_STATE.quests while JournalPanel is
@@ -80,26 +86,52 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   const [journalRefreshKey, setJournalRefreshKey] = useState(0);
   // One slot, not three booleans — only ever one image previewed at a time,
   // and each paper needs its own src/alt, not just an open/closed flag.
+  // `name` rides along purely so the close effect below can tell which item
+  // is closing — it's not used for rendering the viewer itself.
   const [viewingImage, setViewingImage] = useState<{
     src: string;
     alt: string;
     backgroundColor?: string;
+    name: ItemName;
   } | null>(null);
+
+  // Which item's viewer was open — `viewingImage` itself goes back to
+  // `null` on close, so by the time the effect below runs there's nothing
+  // left on state to say which item this close is even for. Written from
+  // an effect (not from viewImage's click handler directly) so this is
+  // always a plain render-triggered ref update, not a ref write buried
+  // inside a closure-returning-a-closure the linter can't see is
+  // click-only.
+  const lastViewedNameRef = useRef<ItemName | null>(null);
+  useEffect(() => {
+    if (viewingImage) lastViewedNameRef.current = viewingImage.name;
+  }, [viewingImage]);
 
   // `backgroundColor` is optional — only items whose art is a transparent
   // PNG (the tracing papers) need one, to replace ImageViewer's default
   // cream gradient with something that doesn't fight the art.
   const viewImage = (name: ItemName, file: string, backgroundColor?: string) => () => {
     GAME_STATE.bagViewedItems.add(name);
-    setViewingImage({ src: img(file), alt: ITEM_LABEL[name], backgroundColor });
+    setViewingImage({ src: img(file), alt: ITEM_LABEL[name], backgroundColor, name });
     if (name === "birthday_postcard") confettiHandle = birthdayConfetti(5);
+    if (name === "treasure_map" || name.toLowerCase().includes("paper"))
+      audioPlaySound("page_turn_forward");
   };
 
-  // Stops the confetti the moment the viewer closes (viewingImage goes
-  // falsy) — whether that's the × button, Escape, or switching to another
-  // item, not just the birthday_postcard case specifically.
+  // Runs the moment the viewer closes (viewingImage goes falsy) — whether
+  // that's the × button, Escape, or switching to another item. Confetti
+  // stop stays unconditional (birthday_postcard is the only case that ever
+  // set confettiHandle, so it's a no-op otherwise); the close sound is
+  // conditioned on lastViewedNameRef the same way its open sound was
+  // conditioned on `name` above.
   useEffect(() => {
-    if (!viewingImage) confettiHandle?.();
+    if (viewingImage) return;
+    confettiHandle?.();
+    if (
+      lastViewedNameRef.current === "treasure_map" ||
+      lastViewedNameRef.current?.toLowerCase().includes("paper")
+    )
+      audioPlaySound("page_turn_backward");
   }, [viewingImage]);
 
   // Few/specific items are clickable, each with its own distinct effect —

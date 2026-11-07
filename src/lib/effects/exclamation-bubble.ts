@@ -1,4 +1,5 @@
 import type { Sprite } from "@/features/sprite";
+import { audioPlaySound } from "@/lib/audio";
 import { toScreen } from "@/lib/canvas/screen";
 import gsap from "gsap";
 
@@ -141,4 +142,6 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
       { opacity: 0, duration: 0.15, ease: "power1.in", onUpdate: applyTransform },
       `+=${hold}`,
     ); // hold, then fade
+
+  audioPlaySound("pop");
 }

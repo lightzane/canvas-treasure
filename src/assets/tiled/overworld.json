@@ -14275,18 +14275,6 @@
                         {
                          "height":33,
                          "id":70,
-                         "name":"market_exit",
-                         "opacity":1,
-                         "rotation":0,
-                         "type":"",
-                         "visible":true,
-                         "width":96,
-                         "x":2944.92489342873,
-                         "y":2187.33806862341
-                        }, 
-                        {
-                         "height":33,
-                         "id":80,
                          "name":"main",
                          "opacity":1,
                          "rotation":0,
@@ -14311,26 +14299,14 @@
                         {
                          "height":33,
                          "id":69,
-                         "name":"market_exit",
-                         "opacity":1,
-                         "rotation":0,
-                         "type":"",
-                         "visible":true,
-                         "width":96,
-                         "x":2944.63025832259,
-                         "y":2763.98315383385
-                        }, 
-                        {
-                         "height":33,
-                         "id":78,
                          "name":"main",
                          "opacity":1,
                          "rotation":0,
                          "type":"",
                          "visible":true,
                          "width":96,
-                         "x":2944.63025832259,
-                         "y":2763.98315383385
+                         "x":2944.143237429,
+                         "y":2763.983153834
                         }, 
                         {
                          "height":96,
@@ -14359,18 +14335,6 @@
                         {
                          "height":96,
                          "id":67,
-                         "name":"market_exit",
-                         "opacity":1,
-                         "rotation":0,
-                         "type":"",
-                         "visible":true,
-                         "width":33,
-                         "x":3529.50945160478,
-                         "y":2437.8206408671
-                        }, 
-                        {
-                         "height":96,
-                         "id":81,
                          "name":"main",
                          "opacity":1,
                          "rotation":0,
@@ -14383,18 +14347,6 @@
                         {
                          "height":96,
                          "id":68,
-                         "name":"market_exit",
-                         "opacity":1,
-                         "rotation":0,
-                         "type":"",
-                         "visible":true,
-                         "width":33,
-                         "x":2429.80594652511,
-                         "y":2432.39740904885
-                        }, 
-                        {
-                         "height":96,
-                         "id":79,
                          "name":"main",
                          "opacity":1,
                          "rotation":0,
@@ -14402,7 +14354,7 @@
                          "visible":true,
                          "width":33,
                          "x":2429.80594652511,
-                         "y":2432.39740904885
+                         "y":2431.39740904885
                         }, 
                         {
                          "height":130.502793296089,
@@ -14419,7 +14371,7 @@
                         {
                          "height":33,
                          "id":77,
-                         "name":"beach_exit",
+                         "name":"main",
                          "opacity":1,
                          "rotation":0,
                          "type":"",
@@ -14443,7 +14395,7 @@
                         {
                          "height":33,
                          "id":76,
-                         "name":"beach_exit",
+                         "name":"main",
                          "opacity":1,
                          "rotation":0,
                          "type":"",
@@ -14451,6 +14403,30 @@
                          "width":143.516875116,
                          "x":602.658125679694,
                          "y":1645.43990861976
+                        }, 
+                        {
+                         "height":128,
+                         "id":84,
+                         "name":"garden_maze",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":64,
+                         "x":3167.42325261995,
+                         "y":575.836951004688
+                        }, 
+                        {
+                         "height":128,
+                         "id":85,
+                         "name":"main",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":33,
+                         "x":3133.371988177,
+                         "y":575.836951005
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -14550,7 +14526,7 @@
          "y":0
         }],
  "nextlayerid":170,
- "nextobjectid":84,
+ "nextobjectid":86,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

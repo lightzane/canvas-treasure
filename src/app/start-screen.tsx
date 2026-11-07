@@ -119,7 +119,7 @@ export function StartScreen({
           }}
         />
 
-        <p className="max-w-sm text-center font-game text-base text-amber-50/95 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+        <p className="max-w-md text-center font-game text-base text-amber-50/95 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
           Everyone in town is busy today — chasing rumors of a hidden treasure. Whoever finds it
           first wins big. Talk to people along the way — a few of them can help you.
         </p>

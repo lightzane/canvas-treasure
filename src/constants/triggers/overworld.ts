@@ -11,10 +11,9 @@ export type TriggerName =
   | "sand"
   | "sound_fountain"
   | "sound_market"
-  | "sound_market_exit"
   | "sound_main"
   | "sound_beach"
-  | "sound_beach_exit"
+  | "sound_garden_maze"
   | "cutscene_running_shoes"
   | "cutscene_mid_aisle"
   | "cutscene_mid_aisle_lei"
@@ -58,21 +57,19 @@ export const TRIGGER_OVERWORLD = scaleTiledObjects([
   { name: "sound_fountain", x: 3248.51255018548, y: 1538.76811985629, width: 351.894916621347, height: 321.228800425423 },
   { name: "sound_fountain", x: 2446.83518798565, y: 1535.77235073585, width: 351.894916621347, height: 321.228800425423 },
   { name: "sound_market", x: 2944.43787253553, y: 2221.91655204035, width: 96, height: 33 },
-  { name: "sound_market_exit", x: 2944.92489342873, y: 2187.33806862341, width: 96, height: 33 },
   { name: "sound_main", x: 2944.92489342873, y: 2187.33806862341, width: 96, height: 33 },
   { name: "sound_market", x: 2944.14323742939, y: 2729.89169131011, width: 96, height: 33 },
-  { name: "sound_market_exit", x: 2944.63025832259, y: 2763.98315383385, width: 96, height: 33 },
-  { name: "sound_main", x: 2944.63025832259, y: 2763.98315383385, width: 96, height: 33 },
+  { name: "sound_main", x: 2944.143237429, y: 2763.983153834, width: 96, height: 33 },
   { name: "sound_market", x: 2464.08001343787, y: 2431.51668679281, width: 33, height: 96 },
   { name: "sound_market", x: 3495.34824765316, y: 2437.8206408671, width: 33, height: 96 },
-  { name: "sound_market_exit", x: 3529.50945160478, y: 2437.8206408671, width: 33, height: 96 },
   { name: "sound_main", x: 3529.50945160478, y: 2437.8206408671, width: 33, height: 96 },
-  { name: "sound_market_exit", x: 2429.80594652511, y: 2432.39740904885, width: 33, height: 96 },
-  { name: "sound_main", x: 2429.80594652511, y: 2432.39740904885, width: 33, height: 96 },
+  { name: "sound_main", x: 2429.80594652511, y: 2431.39740904885, width: 33, height: 96 },
   { name: "sound_beach", x: 1088.26815642458, y: 2334.30167597765, width: 255.885641520016, height: 130.502793296089 },
-  { name: "sound_beach_exit", x: 1086.69613834637, y: 2297.35925113977, width: 255.88564152, height: 33 },
+  { name: "sound_main", x: 1086.69613834637, y: 2297.35925113977, width: 255.88564152, height: 33 },
   { name: "sound_beach", x: 602.176453313238, y: 1682.04700847044, width: 143.516875115817, height: 130.502793296089 },
-  { name: "sound_beach_exit", x: 602.658125679694, y: 1645.43990861976, width: 143.516875116, height: 33 },
+  { name: "sound_main", x: 602.658125679694, y: 1645.43990861976, width: 143.516875116, height: 33 },
+  { name: "sound_garden_maze", x: 3167.42325261995, y: 575.836951004688, width: 64, height: 128 },
+  { name: "sound_main", x: 3133.371988177, y: 575.836951005, width: 33, height: 128 },
   { name: "cutscene_running_shoes", x: 1825, y: 1389.5, width: 126.5, height: 41.5 },
   { name: "cutscene_mid_aisle", x: 2975.87, y: 1611.21, width: 96, height: 33 },
   { name: "cutscene_mid_aisle_lei", x: 2975.87, y: 1529.21, width: 96, height: 33 },

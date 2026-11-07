@@ -195,7 +195,7 @@ function interactions(target: Sprite | undefined) {
 function nearMissConversation() {
   if (GAME_STATE.sequence.meet_daomingsi) return; // already met him (and he's gone) — don't replay this
   hudSetBagIconVisible(false);
-
+  playExclamation(BUTLER);
   DIALOGUE.show({
     text: `BUTLER LIU: Young Master, saan po natin ilalagay ang ke#&@—k!`,
     portrait: PORTRAIT_BUTLER,

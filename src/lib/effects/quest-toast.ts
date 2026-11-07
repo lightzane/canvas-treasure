@@ -1,4 +1,5 @@
 import { GAME_FONT_FAMILY } from "@/constants/game-settings";
+import { audioPlaySound } from "@/lib/audio";
 import type { QuestEntry } from "@/lib/quests";
 import gsap from "gsap";
 
@@ -318,6 +319,7 @@ export function playQuestCompleteBanner(
   let stopInner: (() => void) | null = null;
 
   const start = () => {
+    audioPlaySound("level_complete");
     stopInner = runBanner(options);
   };
 

@@ -5,5 +5,5 @@ export type TriggerName = "exit";
 
 // prettier-ignore
 export const TRIGGER_FLOWERSHOP = scaleTiledObjects([
-  { name: "exit", x: 278, y: 327.181002118723, width: 117.5, height: 57.8189978812772 },
+  { name: "exit", x: 278, y: 334.181002118723, width: 117.5, height: 33 },
 ]);

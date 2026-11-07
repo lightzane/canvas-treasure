@@ -274,6 +274,7 @@ function revealParcel() {
     text: "YOU: Ma, yung parcel meron maliit na chest tapos invitation lang rin ang laman.",
     color: "teal",
   });
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.mama));
   DIALOGUE.queue({
     text: "MAMA: Mga marites sa labas— sabi treasure-hunting, meron daw prize yung makahanap ng missing gold treasure hidden sa isang lugar.",
     color: "red",
@@ -370,19 +371,21 @@ function interactShoes() {
 }
 
 function exitZone() {
-  audioStopMusic(homeScene.fadeOut);
   hudSetBagIconVisible(false);
 
   if (!GAME_STATE.sequence.mama_parcel) {
+    playExclamation(GAME_STATE.player);
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Nasan ka?", color: "red" });
     return; // no parcel yet — stay home
   }
 
   if (!bagHasItem("parcel") && questMain.status !== "resolved") {
+    playExclamation(GAME_STATE.player);
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Paki kuha nitong parcel.", color: "red" });
     return; // no parcel yet — stay home
   }
 
+  audioStopMusic(homeScene.fadeOut);
   GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
   GAME_STATE.sceneName = "overworld";
 }

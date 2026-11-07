@@ -18,7 +18,14 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { addOnce, remove } from "@/lib/array";
-import { audioPlayAmbience, audioPlayMusic, audioStopAmbience, audioStopMusic } from "@/lib/audio";
+import {
+  audioIsMusicActive,
+  audioPlayAmbience,
+  audioPlayMusic,
+  audioPlaySound,
+  audioStopAmbience,
+  audioStopMusic,
+} from "@/lib/audio";
 import { bagHasItem, bagIncItem, bagRemoveItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
@@ -30,6 +37,7 @@ import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playImagePreview } from "@/lib/effects/image-preview";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
+import { playLeafBurst } from "@/lib/effects/leaf-burst";
 import {
   playQuestCompleteBanner,
   playQuestToast,
@@ -62,9 +70,12 @@ import { IMGS_TEENAGE_GIRL_IDLE } from "@/sprites/teenage-girl";
 import { DIALOGUE_COLOR_XIMEN, PORTRAIT_XIMEN } from "@/sprites/xi-men";
 import gsap from "gsap";
 
+const VOLUME_MAIN_BG = 0.5;
+
 const PHOTO_BIRTHDAY_POSTCARD = img("treasure/cheryl_birthday_postcard.jpg");
 const PHOTO_TREASURE = img("treasure/treasure-full.png");
 const PHOTO_TREASURE_CLOSEUP = img("treasure/treasure-full-closeup.png");
+const PHOTO_TREASURE_MAP = img("others/treasure-map.jpg");
 
 const IMG_MAP_BG = img("maps/overworld.png");
 const IMG_MAP_FG = img("maps/overworld-fg.png");
@@ -288,6 +299,7 @@ function schedulePapaFaceMama() {
 
 function exitMap() {
   audioStopMusic(overworldScene.fadeOut);
+  audioStopAmbience(undefined, 2);
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true;
   tracingPaper2ShineHandle?.stop();
@@ -322,10 +334,9 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   restrict_mid_aisle_lock: { onEnter: () => restrictMidAisleExit() },
   sound_main: { onEnter: soundMain },
   sound_market: { onEnter: () => soundMarket() },
-  sound_market_exit: { onEnter: () => soundMarket(false) },
   sound_fountain: { onEnter: () => soundFountain(), onLeave: () => soundFountain(false) },
   sound_beach: { onEnter: () => soundBeach() },
-  sound_beach_exit: { onEnter: () => soundBeach(false) },
+  sound_garden_maze: { onEnter: soundGardenMaze },
   sand: {
     onEnter: () => sandZoneCount++,
     onLeave: () => sandZoneCount--,
@@ -408,7 +419,7 @@ export const overworldScene: Scene = {
     let bgMusicDelay = 0.5;
     if (!GAME_STATE.sequence.intro) bgMusicDelay = 1;
     gsap.delayedCall(overworldScene.fadeIn! + bgMusicDelay, () =>
-      audioPlayMusic("overworld", { seek: 0, fade: 2, volume: 0.6 }),
+      audioPlayMusic("overworld", { seek: 0, fade: 2, volume: VOLUME_MAIN_BG }),
     );
 
     sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
@@ -655,7 +666,7 @@ function cutsceneStartMessageBottle() {
 
   cancelScheduledFace(GAME_STATE.mama);
 
-  exitMap();
+  disableAccess(); // stays within overworld — unlike exitMap(), this doesn't stop the music/ambience meant for an actual scene transition
 
   player.face("w");
   const mama = GAME_STATE.mama;
@@ -840,19 +851,25 @@ function meetLeiConversation() {
   hudSetBagIconVisible(false);
   let shineHandle: ShineHandle | null = null;
 
-  DIALOGUE.show({
+  audioPlayMusic("zz_makeawish", { seek: 5.5, fade: 1, volume: VOLUME_MAIN_BG });
+
+  DIALOGUE.effect(disableAccess, 0.00001);
+  DIALOGUE.effect(() => {
+    DIALOGUE.lock();
+    const quest = GAME_STATE.quests.get("meet_huazelei")!;
+    gsap.delayedCall(6.5, () => {
+      questSetStatus(quest, "resolved");
+      playQuestToast(quest);
+      playQuestCompleteBanner(`Meet Hua Ze Lei Completed!`);
+    });
+    gsap.delayedCall(10, () => DIALOGUE.unlock());
+  });
+
+  DIALOGUE.queue({
     text: "F4 HUA ZE LEI: Hello CHERYL...",
     color: DIALOGUE_COLOR_HUAZELEI,
     portrait: PORTRAIT_HUAZELEI,
   });
-
-  DIALOGUE.effect(() => {
-    disableAccess();
-    const quest = GAME_STATE.quests.get("meet_huazelei")!;
-    questSetStatus(quest, "resolved");
-    playQuestToast(quest);
-    playQuestCompleteBanner(`Meet Hua Ze Lei Completed!`);
-  }, 5);
 
   f4Speaker("huazelei", `F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?`);
 
@@ -867,6 +884,7 @@ function meetLeiConversation() {
   DIALOGUE.queue(`Ahh, hinahanap niya ang "keys" o susi niya...`);
   DIALOGUE.queue(`Paumanhin ngunit wala naman sa akin ang mga keys niya.`);
   DIALOGUE.effect(() => {
+    audioPlayAmbience("amb_wind_interior");
     DIALOGUE.clearPortrait();
     DIALOGUE.hideBox();
     playExclamation(huazelei);
@@ -879,6 +897,7 @@ function meetLeiConversation() {
         huazelei.face("s");
         player.face("s");
       });
+      gsap.delayedCall(0.5, () => audioPlaySound("quick_air_woosh"));
       drift(paperWind1, {
         to: [82, 45],
         waypoints: 8,
@@ -887,6 +906,7 @@ function meetLeiConversation() {
         duration: 5,
         onComplete: () => {
           paperWindAnimating = false;
+          audioStopAmbience("amb_wind_interior", 2);
         },
       });
     }
@@ -920,6 +940,7 @@ function meetLeiConversation() {
   DIALOGUE.onComplete = () => {
     GAME_STATE.sequence.meet_huazelei = true;
     hudSetBagIconVisible(true);
+    soundMain();
   };
 }
 
@@ -939,6 +960,7 @@ function interactPaperMulti() {
   addOnce(DECORS, paperWind1);
   addOnce(DECORS, paperWind2);
 
+  audioPlayAmbience("amb_wind_interior");
   paperWindAnimating = true;
 
   gsap.delayedCall(1, () =>
@@ -964,6 +986,7 @@ function interactPaperMulti() {
 
   walk(player, [82, 43]);
 
+  audioPlaySound("quick_air_woosh");
   drift(paperWind1, {
     to: { direction: "a", distance: 11 * TILE_SIZE },
     waypoints: 8,
@@ -978,6 +1001,7 @@ function interactPaperMulti() {
     duration: 3,
     onComplete: () => {
       paperWindAnimating = false;
+      gsap.delayedCall(5, () => audioStopAmbience("amb_wind_interior", 5));
     },
   });
 
@@ -1040,9 +1064,12 @@ function spawnPaperMulti() {
 
 function interactPaper2Part1() {
   if (questCatchSheets.qty !== 1) return;
+
+  audioPlayAmbience("amb_wind_interior");
   tracingPaper2ShineHandle?.stop();
   GAME_STATE.sequence.chasing_sheet_2 = true;
   remove(DECORS, paperSingle);
+  removeInteractable(INTERACTABLES, paperSingle);
 
   gsap.delayedCall(0.5, () => {
     player.face("s");
@@ -1053,6 +1080,7 @@ function interactPaper2Part1() {
   DIALOGUE.effect(() => {
     paperWindAnimating = true;
     hudSetBagIconVisible(false);
+    gsap.delayedCall(0.3, () => audioPlaySound("quick_air_woosh"));
     drift(paperWind1, {
       to: { direction: "s", distance: 11 * TILE_SIZE },
       waypoints: 6,
@@ -1064,6 +1092,7 @@ function interactPaper2Part1() {
         initTracingPaper2();
         hudSetBagIconVisible(true);
         playQuestToast(questCatchSheets);
+        gsap.delayedCall(5, () => audioStopAmbience("amb_wind_interior", 5));
       },
     });
   }, 2.5);
@@ -1077,7 +1106,7 @@ function interactPaper2Part2() {
   tracingPaper2ShineHandle?.stop();
   GAME_STATE.sequence.retrieving_sheet_2 = true;
   remove(DECORS, paperSingle);
-  gsap.delayedCall(1, () => removeInteractable(INTERACTABLES, paperSingle));
+  removeInteractable(INTERACTABLES, paperSingle);
 
   hudSetBagIconVisible(false);
   GAME_STATE.movementLocked = true;
@@ -1159,10 +1188,29 @@ function interactWildBush(bushSprite: Sprite) {
 
   playExclamation(player, { icon: ICON_SHEARS, hold: 3 });
   DIALOGUE.show(`Using garden shears to trim the wild bush...`);
+  DIALOGUE.effect(() => {
+    audioPlaySound("garden_shovel_stab");
+    playLeafBurst(bushSprite);
+
+    gsap.delayedCall(0.5, () => audioPlaySound("garden_shovel_stab"));
+    playLeafBurst(bushSprite, { delay: 0.5 });
+  }, 0.00001);
   DIALOGUE.onComplete = () => {
-    removeInteractable(INTERACTABLES, bushSprite);
-    remove(DECORS, bushSprite);
-    remove(GAME_STATE.obstacles, bushSprite);
+    removeInteractable(INTERACTABLES, bushSprite); // dropped from here immediately — only the visual removal below is deferred
+
+    // A few quick blinks (cut down, not just vanishing), then a final fade
+    // to fully transparent — the actual removal from DECORS/obstacles
+    // happens right as that last fade completes, so nothing lingers
+    // invisible-but-still-there in between.
+    gsap
+      .timeline({
+        onComplete: () => {
+          remove(DECORS, bushSprite);
+          remove(GAME_STATE.obstacles, bushSprite);
+        },
+      })
+      .to(bushSprite, { opacity: 0.25, duration: 0.07, repeat: 5, yoyo: true })
+      .to(bushSprite, { opacity: 0, duration: 0.15 });
   };
 }
 
@@ -1199,7 +1247,7 @@ function initCoreMessageBottle() {
     gsap.delayedCall(overworldScene.fadeIn! + 0.5, cutsceneStartMessageBottle);
   }
 
-  if (questCatchSheets.status === "active") spawnCoreMessageBottle();
+  if (questMessageBottle.status === "active") spawnCoreMessageBottle();
 }
 
 function spawnCoreMessageBottle() {
@@ -1238,11 +1286,20 @@ function completeCoreMsgBottle() {
     despawnNPC(huazelei);
   }, 3);
 
+  DIALOGUE.effect(() => {
+    audioPlaySound("page_turn_forward");
+    playImagePreview(PHOTO_TREASURE_MAP, {
+      hold: 4.5,
+      onComplete: () => audioPlaySound("page_turn_backward"),
+    });
+  }, 5);
   DIALOGUE.queue(`Mahahanap ko na rin ang teasure para sa event!`);
+  DIALOGUE.queue(`Ilagay ko lang sa bag ito treasure map para maalala ko...`);
+
   DIALOGUE.effect(() => {
     questSetStatus(questMazeChest, "active");
     playQuestToast(questMazeChest);
-  });
+  }, 0.00001);
 
   DIALOGUE.onComplete = () => {
     GAME_STATE.movementLocked = false;
@@ -2493,16 +2550,13 @@ function spawnJp() {
 }
 
 function soundMain() {
-  audioPlayMusic("overworld", { fade: 2 });
+  audioPlayMusic("overworld", { fade: 2, volume: VOLUME_MAIN_BG });
+  audioStopAmbience(undefined, 5);
 }
 
-function soundMarket(enable = true) {
-  if (!enable) {
-    audioStopAmbience("amb_shopping_crowd", 2);
-    return;
-  }
-  audioPlayMusic("market", { fade: 2, volume: 0.2 });
-  audioPlayAmbience("amb_shopping_crowd", { fade: 2, volume: 0.4 });
+function soundMarket() {
+  audioPlayMusic("market", { fade: 2, volume: 0.3 });
+  audioPlayAmbience("amb_shopping_crowd", { fade: 2, volume: 0.2 });
 }
 
 function soundFountain(enable = true) {
@@ -2510,10 +2564,15 @@ function soundFountain(enable = true) {
   else audioStopAmbience("amb_water_flowing", 2);
 }
 
-function soundBeach(enable = true) {
-  if (!enable) {
-    audioStopAmbience("amb_beach", 2);
-    return;
-  }
+function soundBeach() {
   audioPlayAmbience("amb_beach", { fade: 2, volume: 0.4 });
+}
+
+function soundGardenMaze() {
+  // Guards against the zone's onEnter firing again on a re-entry while
+  // "maze" is still the playing track — seek forces a restart regardless of
+  // what's already active (see audioIsMusicActive's own doc comment), which
+  // would otherwise crossfade in a second overlapping instance of itself.
+  if (audioIsMusicActive("maze")) return;
+  audioPlayMusic("maze", { seek: 8, fade: 2, volume: 0.3 });
 }

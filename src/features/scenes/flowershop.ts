@@ -12,6 +12,7 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
+import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
 import { bagHasItem, bagIncItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
@@ -93,6 +94,8 @@ export const flowershopScene: Scene = {
   ),
 
   enter() {
+    audioPlayMusic("flowershop", { fade: 1, volume: 0.3 });
+
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(flowershopScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
@@ -138,6 +141,7 @@ export const flowershopScene: Scene = {
 
 function exitZone() {
   hudSetBagIconVisible(false);
+  audioStopMusic(flowershopScene.fadeOut);
   GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
   GAME_STATE.spawnLocation = [37.65, 42]; // rough placeholder, just south of enter_mansion's own tile — adjust to taste
   GAME_STATE.sceneName = "overworld";

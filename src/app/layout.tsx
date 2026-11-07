@@ -4,9 +4,12 @@ import { TitleScreen } from "@/app/title-screen";
 import { GameEngine } from "@/features/game-engine";
 import { GAME_STATE } from "@/features/game-state";
 import { audioPlayMusic } from "@/lib/audio";
-import { playIrisReveal } from "@/lib/effects/iris-reveal";
+import { FADE } from "@/lib/canvas/fade-transition";
 import { PRELOAD_PROGRESS } from "@/lib/preload";
 import { useCallback, useEffect, useRef, useState } from "react";
+
+/** Seconds the boot cover takes to fade away once Start is clicked — independent of any scene's own fadeIn/fadeOut. */
+const START_FADE_IN_DURATION = 3;
 
 export default function Layout() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -180,13 +183,15 @@ export default function Layout() {
               setShowStartScreen(false);
               GAME_STATE.gameStarted = true;
               audioPlayMusic("home", { fade: 1, volume: 0.6 });
-              playIrisReveal({
-                duration: 3,
-                softness: 20,
-                onComplete() {
-                  GAME_STATE.movementLocked = false;
-                },
-              }); // same values as overworld's own intro reveal; direction defaults to "in"
+              // Same mechanism scene-to-scene transitions already use
+              // (FADE, driven every frame by GameEngine.tick()) — a `0`
+              // show duration snaps straight to fully black for one frame,
+              // then the hide duration fades that away over
+              // START_FADE_IN_DURATION seconds. The very first scene's own
+              // `enter()` never goes through `enterScene()`, so nothing
+              // else ever starts this fade at boot — this click is it.
+              FADE.start(0, START_FADE_IN_DURATION);
+              setTimeout(() => (GAME_STATE.movementLocked = false), START_FADE_IN_DURATION * 1000);
             }}
           />
         )}
