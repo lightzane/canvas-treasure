@@ -39,7 +39,7 @@ export const GAME_STATE = {
     sprites: { walk: IMGS_PLAYER_WALK, run: IMGS_PLAYER_RUN, idle: IMGS_PLAYER_IDLE },
     initialSprite: "idle",
     shadowOffset,
-    moveSpeed: 500,
+    moveSpeed: import.meta.env.DEV ? 500 : undefined,
   }),
   jp: new PlayerSprite({
     sprites: { idle: IMGS_JP_IDLE, walk: IMGS_JP_WALK },
@@ -120,7 +120,7 @@ export const GAME_STATE = {
     retrieving_sheet_2: true,
     mama_running_shoes: true,
     mama_starts_bottle: true,
-    market_cutscene: false,
+    market_cutscene: true,
     mid_aisle_cutscene: false,
     mid_aisle_lei_cutscene: false,
     mid_aisle_jp_cutscene: false,

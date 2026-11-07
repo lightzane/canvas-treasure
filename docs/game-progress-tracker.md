@@ -103,3 +103,25 @@
 ## Bag
 
 - treasure_map (x1)
+
+## Chapter 7: Music Box from Chest
+
+> Scene name: `overworld`
+
+### Quests
+
+- maze_chest (resolved)
+
+## Chapter 8: Dao Ming Keys Found
+
+> Scene name: `mansion`
+
+### Quests
+
+- meet_meizuo (resolved)
+- meet_ximen (resolved)
+- daoming_keys (resolved)
+
+### Sequence
+
+- market_cutscene

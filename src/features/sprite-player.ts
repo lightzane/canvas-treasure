@@ -32,7 +32,7 @@ function loadClips(sprites: Record<string, Record<Direction, AnimationSource>>) 
   return clips;
 }
 
-interface PlayerProps {
+export interface PlayerProps {
   position?: { x: number; y: number };
   /**
    * Only declare the states this entity actually has — an idle-only NPC

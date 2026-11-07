@@ -12,15 +12,19 @@ export type SoundKey =
   | "quick_air_woosh"
   | "garden_shovel_stab"
   | "page_turn_forward"
-  | "page_turn_backward";
+  | "page_turn_backward"
+  | "gear_metallic_lock"
+  | "drums_of_preparations";
 export type MusicKey =
   | "home"
+  | "overworld_event"
   | "overworld"
   | "mansion"
   | "market"
   | "flowershop"
   | "maze"
   | "zz_makeawish"
+  | "a_guitar_rock"
   | "amb_beach"
   | "amb_shopping_crowd"
   | "amb_water_flowing"
@@ -71,25 +75,28 @@ type SoundEntry = StandaloneSoundEntry | SheetSoundEntry;
 
 // prettier-ignore
 const SOUND_REGISTRY: Record<SoundKey, SoundEntry> = {
-  click:               { src: ["interface/mixkit-modern-technology-select-3124.wav"] },
-  pop:                 { src: ["interface/mixkit-hard-pop-click-2364.wav"], seek: 0.01 },
-  level_complete:      { src: ["fx/mixkit-completion-of-a-level-2063.wav"] },
-  quick_air_woosh:     { src: ["fx/mixkit-quick-air-woosh-2605.wav"] },
-  garden_shovel_stab:  { src: ["fx/mixkit-garden-shovel-stab-1918.wav"] },
-  page_turn_forward:   { sheet: "book_paging", sprite: "forward" },
-  page_turn_backward:  { sheet: "book_paging", sprite: "backward" },
-  // pop:              { src: [...Array(5)].map((_, i) => `crack-${i + 1}.mp3`), silenceEnd: true }, // crack-*.mp3 recordings have an audible artifact at the end
-  // 'battle-start':   { src: ["mixkit-drums-of-war-2784.wav"] }
+  click:                   { src: ["interface/mixkit-modern-technology-select-3124.wav"] },
+  pop:                     { src: ["interface/mixkit-hard-pop-click-2364.wav"], seek: 0.01 },
+  level_complete:          { src: ["fx/mixkit-completion-of-a-level-2063.wav"] },
+  quick_air_woosh:         { src: ["fx/mixkit-quick-air-woosh-2605.wav"] },
+  garden_shovel_stab:      { src: ["fx/mixkit-garden-shovel-stab-1918.wav"] },
+  page_turn_forward:       { sheet: "book_paging", sprite: "forward", },
+  page_turn_backward:      { sheet: "book_paging", sprite: "backward" },
+  // pop:                  { src: [...Array(5)].map((_, i) => `crack-${i + 1}.mp3`), silenceEnd: true }, // crack-*.mp3 recordings have an audible artifact at the end
+  drums_of_preparations:   { src: ["fx/mixkit-drums-of-war-2784.wav"] },
+  gear_metallic_lock:      { src: ["fx/mixkit-gear-metallic-lock-sound-2858.wav"] }
 };
 
 const MUSIC_REGISTRY: Record<MusicKey, string> = {
   home: "classical-verdanturf.mp3",
+  overworld_event: "piano-littleroot-town.mp3",
   overworld: "classical-littleroot-town.mp3",
   mansion: "我是真的真的很爱你.mp3",
   market: "sm.mp3",
   flowershop: "classical-pallet-town.mp3",
   maze: "pokemon-route1-acoustic.mp3",
   zz_makeawish: "周渝民-make-a-wish.mp3",
+  a_guitar_rock: "mixkit-ko-1068.mp3",
   amb_beach: "ambience/mixkit-small-waves-harbor-rocks-1208.wav",
   amb_shopping_crowd: "ambience/mixkit-shopping-center-crowd-377.wav",
   amb_water_flowing: "ambience/mixkit-water-flowing-ambience-loop-3126.wav",

@@ -143,5 +143,5 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
       `+=${hold}`,
     ); // hold, then fade
 
-  audioPlaySound("pop");
+  audioPlaySound("pop", { seek: 0.03 });
 }

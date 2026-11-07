@@ -10,7 +10,7 @@ import {
 } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
-import { PlayerSprite } from "@/features/sprite-player";
+import { PlayerSprite, type PlayerProps } from "@/features/sprite-player";
 import {
   checkTriggerZones,
   createBoundaries,
@@ -20,6 +20,7 @@ import {
 import { addOnce, remove } from "@/lib/array";
 import {
   audioIsMusicActive,
+  audioPauseMusic,
   audioPlayAmbience,
   audioPlayMusic,
   audioPlaySound,
@@ -53,21 +54,38 @@ import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
 import { walk } from "@/lib/walk";
-import { IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } from "@/sprites/beach-outfit-female-1";
-import { IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } from "@/sprites/beach-outfit-female-2";
+import { IMGS_AANG_MOMO_IDLE } from "@/sprites/aang-momo";
+import { IMGS_ADULT_FEMALE_1_IDLE } from "@/sprites/adult-female-1";
+import { IMGS_ADULT_FEMALE_2_IDLE } from "@/sprites/adult-female-2";
+import { IMGS_ADULT_MALE_1_IDLE } from "@/sprites/adult-male-1";
+import { IMGS_ADULT_MALE_2_IDLE } from "@/sprites/adult-male-2";
+import { IMGS_APPA_IDLE } from "@/sprites/appa";
+import { IMGS_BEACH_OUTFIT_FEMALE_1_IDLE } from "@/sprites/beach-outfit-female-1";
+import { IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } from "@/sprites/beach-outfit-female-2";
+import { IMGS_BEACH_OUTFIT_MALE_1_IDLE } from "@/sprites/beach-outfit-male-1";
+import { IMGS_BEACH_OUTFIT_MALE_2_IDLE } from "@/sprites/beach-outfit-male-2";
 import {
   DIALOGUE_COLOR_DAOMINGSI,
   PORTRAIT_DAOMINGSI,
   PORTRAIT_DAOMINGSI_INTIMIDATE,
 } from "@/sprites/dao-ming-si";
+import { IMGS_ELDER_MAN_IDLE } from "@/sprites/elder-man";
 import { IMGS_ELDER_WOMAN_IDLE } from "@/sprites/elder-woman";
+import { IMGS_FLORIST_FEMALE_IDLE } from "@/sprites/florist-female";
+import { IMGS_FLORIST_MALE_IDLE } from "@/sprites/florist-male";
 import { IMGS_HH_STAFF_FEMALE_1_IDLE } from "@/sprites/hh-staff-female-1";
 import { IMGS_HH_STAFF_MALE_1_IDLE } from "@/sprites/hh-staff-male-1";
 import { DIALOGUE_COLOR_HUAZELEI, PORTRAIT_HUAZELEI } from "@/sprites/hua-ze-lei";
+import { IMGS_IROH_EARTH_IDLE } from "@/sprites/iroh-earth";
+import { IMGS_KATARA_IDLE } from "@/sprites/katara";
 import { DIALOGUE_COLOR_MEIZUO, PORTRAIT_MEIZUO } from "@/sprites/mei-zuo";
 import { IMGS_SCHOOL_GIRL_IDLE } from "@/sprites/school-girl";
+import { IMGS_SOKKA_IDLE } from "@/sprites/sokka";
+import { IMGS_TEENAGE_BOY_IDLE } from "@/sprites/teenage-boy";
 import { IMGS_TEENAGE_GIRL_IDLE } from "@/sprites/teenage-girl";
+import { IMGS_TOPH_IDLE } from "@/sprites/toph";
 import { DIALOGUE_COLOR_XIMEN, PORTRAIT_XIMEN } from "@/sprites/xi-men";
+import { IMGS_ZUKO_IDLE } from "@/sprites/zuko";
 import gsap from "gsap";
 
 const VOLUME_MAIN_BG = 0.5;
@@ -336,7 +354,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   sound_market: { onEnter: () => soundMarket() },
   sound_fountain: { onEnter: () => soundFountain(), onLeave: () => soundFountain(false) },
   sound_beach: { onEnter: () => soundBeach() },
-  sound_garden_maze: { onEnter: soundGardenMaze },
+  sound_garden_maze: { onEnter: () => soundGardenMaze() },
   sand: {
     onEnter: () => sandZoneCount++,
     onLeave: () => sandZoneCount--,
@@ -399,6 +417,104 @@ EAST_GUARDS.forEach((npc, i) => {
   placeAtTile({ sprite: npc, tile: [x, (eLoc[1] += 0.5)] });
   npc.face("d");
 });
+
+// Other NPCs scattered around
+const npcCfg: Partial<PlayerProps> = {
+  boxSize: { width: 64 },
+  shadowOffset: { y: -3 },
+};
+
+// TODO: place these in the overworld randomly scattered
+const npcAang = new PlayerSprite({ sprites: { idle: IMGS_AANG_MOMO_IDLE }, ...npcCfg });
+const npcAppa = new PlayerSprite({
+  sprites: { idle: IMGS_APPA_IDLE },
+  scale: 2.5,
+  shadowOffset: { y: -80 },
+});
+const npcKatara = new PlayerSprite({ sprites: { idle: IMGS_KATARA_IDLE }, ...npcCfg });
+const npcSokka = new PlayerSprite({ sprites: { idle: IMGS_SOKKA_IDLE }, ...npcCfg });
+const npcToph = new PlayerSprite({ sprites: { idle: IMGS_TOPH_IDLE }, ...npcCfg });
+
+// TODO: place them in the teashop
+const npcZuko = new PlayerSprite({ sprites: { idle: IMGS_ZUKO_IDLE }, ...npcCfg });
+const npcIroh = new PlayerSprite({ sprites: { idle: IMGS_IROH_EARTH_IDLE }, ...npcCfg });
+
+// TODO: place these in the overworld randomly scattered
+const npcAdultMale1 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg });
+const npcAdultMale2 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg });
+const npcAdultMale3 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg });
+const npcAdultMale4 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg });
+const npcAdultMale5 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg });
+const npcAdultFemale1 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE}, ...npcCfg}) // prettier-ignore
+const npcAdultFemale2 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_2_IDLE}, ...npcCfg}) // prettier-ignore
+const npcAdultFemale3 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE}, ...npcCfg}) // prettier-ignore
+const npcAdultFemale4 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_2_IDLE}, ...npcCfg}) // prettier-ignore
+const npcAdultFemale5 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE}, ...npcCfg}) // prettier-ignore
+const npcTeenBoy1 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg });
+const npcTeenGirl1 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE }, ...npcCfg });
+const npcTeenBoy2 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg });
+const npcTeenGirl2 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE }, ...npcCfg });
+const npcTeenBoy3 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg });
+const npcTeenGirl3 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE }, ...npcCfg });
+const npcElderMan = new PlayerSprite({ sprites: {idle: IMGS_ELDER_MAN_IDLE}, ...npcCfg}) // prettier-ignore
+const npcElderWoman = new PlayerSprite({ sprites: {idle: IMGS_ELDER_WOMAN_IDLE}, ...npcCfg}) // prettier-ignore
+const npcBeachMale1 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_1_IDLE }, ...npcCfg }); // prettier-ignore
+const npcBeachMale2 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_2_IDLE }, ...npcCfg }); // prettier-ignore
+const npcBeachFemale1 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE }, ...npcCfg }); // prettier-ignore
+const npcBeachFemale2 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE }, ...npcCfg }); // prettier-ignore
+const npcFloristMale1 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_MALE_IDLE }, ...npcCfg }); // prettier-ignore
+const npcFloristFemale1 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMALE_IDLE }, ...npcCfg }); // prettier-ignore
+
+// TODO: Add a single function to spawn all overworld npcs (that participate in main event)
+// Then call that function once in module-level and at the end of the event (never in scene.enter)
+
+const MAIN_EVENT_GUESTS_LEFT_SIDE = [
+  npcAdultMale2,
+  npcAdultFemale1,
+  npcAdultFemale2,
+  npcTeenBoy1,
+  npcBeachMale2,
+  npcAdultFemale4,
+  npcBeachFemale1,
+];
+
+const MAIN_EVENT_GUESTS_RIGHT_SIDE = [
+  npcTeenGirl1,
+  npcElderMan,
+  npcElderWoman,
+  npcBeachFemale2,
+  npcAdultFemale3,
+  npcBeachMale1,
+];
+
+const MAIN_EVENT_GUESTS = [
+  GAME_STATE.mama,
+  GAME_STATE.papa,
+  npcAang,
+  npcKatara,
+  npcSokka,
+  npcToph,
+  npcIroh,
+  npcZuko,
+
+  ...MAIN_EVENT_GUESTS_LEFT_SIDE,
+  ...MAIN_EVENT_GUESTS_RIGHT_SIDE,
+
+  // Not seated (Left side)
+  npcFloristMale1,
+  npcFloristFemale1,
+  npcTeenGirl2,
+  npcTeenBoy2,
+
+  // Not seated (Right side)
+  npcAdultMale1,
+  npcAdultMale3,
+  npcAdultMale4,
+  npcAdultMale5,
+  npcAdultFemale5,
+  npcTeenGirl3,
+  npcTeenBoy3,
+];
 
 const BOUNDARIES_MAIN_EVENT = createBoundaries(COLLISION_OVERWORLD_EVENT);
 // TODO: boundaries non-event
@@ -1325,6 +1441,8 @@ function openMazeChest() {
     placeAtTile({ sprite: chestOpen, tile: [119.75, 7.75] });
     addOnce(DECORS, chestOpen);
     addOnce(GAME_STATE.obstacles, chestOpen);
+    audioPlaySound("gear_metallic_lock");
+    audioPauseMusic();
     removeInteractable(INTERACTABLES, chestClose);
     playExclamation(player);
   });
@@ -1337,6 +1455,11 @@ function openMazeChest() {
     addOnce(GAME_STATE.obstacles, chestEmpty);
     respawnNPC(daomingsi, [108, 7]);
     respawnNPC(huazelei, [107.5, 7.25]);
+    gsap.delayedCall(0.5, () => {
+      // audioPauseMusic();
+      audioPlaySound("drums_of_preparations");
+    });
+    // gsap.delayedCall(2, () => audioPlayMusic("a_guitar_rock", { seek: 0, fade: 0, volume: 0.7 }));
     walk(daomingsi, [111.5, 7], {
       onComplete: () => daomingsi.face("s"),
     });
@@ -1370,6 +1493,7 @@ function openMazeChest() {
     playExclamation(daomingsi, { delay: 2 });
     playExclamation(player, { delay: 2 });
     playAttentionBounce(daomingsi, { hops: 5, duration: 0.05, delay: 4 });
+    gsap.delayedCall(4, () => audioPlayMusic("a_guitar_rock", { seek: 0, volume: 0.7, fade: 0 }));
     playExclamation(daomingsi, { glyph: "🔥", delay: 4 });
     playExclamation(player, { delay: 4 });
     gsap.delayedCall(0.8, () =>
@@ -1410,6 +1534,10 @@ function openMazeChest() {
     portrait: PORTRAIT_DAOMINGSI_INTIMIDATE,
     color: DIALOGUE_COLOR_DAOMINGSI,
   });
+  DIALOGUE.effect(() => {
+    audioStopMusic(5);
+    gsap.delayedCall(5.5, () => soundGardenMaze(20));
+  }, 0.00001);
   DIALOGUE.queue({
     text: `HUA ZE LEI: Pasensiya na AH SI...`,
     portrait: PORTRAIT_HUAZELEI,
@@ -1596,6 +1724,8 @@ function cutsceneMarket() {
   f4Speaker("meizuo", `MEI ZUO: Whoaooooooh yeah alright!`);
 
   DIALOGUE.effect(() => {
+    audioPlayMusic("market", { volume: 0.01, fade: 0.5 });
+    audioPlayAmbience("amb_shopping_crowd", { fade: 0.5, volume: 0.01 });
     disableAccess();
     const q1 = quests.get("meet_meizuo")!;
     const q2 = quests.get("meet_ximen")!;
@@ -1605,6 +1735,10 @@ function cutsceneMarket() {
     // playQuestToast({ ...q2, delay: 0.2, hold: 8 }); // TODO: why delay didn't worked?!
     gsap.delayedCall(0.2, () => playQuestToast({ ...q2, hold: 8 }));
     playQuestCompleteBanner(`Meet Mei Zuo & Xi Men Complete!`);
+    gsap.delayedCall(4, () => {
+      audioPlayMusic("market", { volume: 0.3, fade: 0.5 });
+      audioPlayAmbience("amb_shopping_crowd", { fade: 0.5, volume: 0.2 });
+    });
   }, 5);
 
   DIALOGUE.effect(() => playExclamation(meizuo), 0.5);
@@ -1766,7 +1900,15 @@ function cutsceneMidAisle() {
   }, 3);
 
   f4Speaker("daomingsi", `DAO MING SI: Okay, okay! Tahimik muna ang lahat!`);
-  DIALOGUE.effect(disableAccess, 1.5);
+  DIALOGUE.effect(() => {
+    disableAccess();
+    MAIN_EVENT_GUESTS_LEFT_SIDE.forEach((guest) => {
+      gsap.delayedCall(Math.random(), () => guest.face("d"));
+    });
+    MAIN_EVENT_GUESTS_RIGHT_SIDE.forEach((guest) => {
+      gsap.delayedCall(Math.random(), () => guest.face("a"));
+    });
+  }, 1.5);
   DIALOGUE.queue(`
       Alam kong napagod kayo kakahanap ng mga pahiwatig,
       pero hindi naman basta-bastang kayamanan ang hinahanap
@@ -1805,6 +1947,10 @@ function cutsceneMidAisle() {
     Sa katunayan nga ay muntik na madulas si LIU mabanggit
     ang "keyk".
   `);
+  DIALOGUE.effect(() => {
+    disableAccess();
+    mainEventGuestExpressions();
+  }, 0.00001);
   DIALOGUE.queue(`
     OO Tama! Cake talaga iyun. Hindi keys. At hindi rin ito keys
     sa isang treasure chest.
@@ -1849,12 +1995,22 @@ function cutsceneMidAisleLei() {
   DIALOGUE.effect(() => {
     disableAccess();
     playExclamation(huazelei);
+    gsap.delayedCall(1, () => {
+      [...MAIN_EVENT_GUESTS_LEFT_SIDE, ...MAIN_EVENT_GUESTS_RIGHT_SIDE].forEach((guest) => {
+        gsap.delayedCall(Math.random(), () => guest.face("w"));
+      });
+    });
   }, 0.5);
   f4Speaker("huazelei", "HUA ZE LEI: CHERYL...");
   DIALOGUE.effect(() => {
     gsap.delayedCall(2, () => {
-      GAME_STATE.papa.face("d");
-      GAME_STATE.mama.face("d");
+      [npcSokka, npcAang, npcKatara, GAME_STATE.mama, GAME_STATE.papa].forEach((npc) => {
+        gsap.delayedCall(Math.random(), () => npc.face("d"));
+      });
+
+      [npcToph, npcIroh, npcZuko].forEach((npc) => {
+        gsap.delayedCall(Math.random(), () => npc.face("a"));
+      });
     });
   });
   DIALOGUE.queue("Yung last page ng sketch ko na hinahabol mo ay nahanap na.");
@@ -1922,8 +2078,18 @@ function cutsceneMidAisleJp() {
 
   DIALOGUE.effect(() => {
     gsap.delayedCall(1, () => {
-      GAME_STATE.mama.face("w");
-      GAME_STATE.papa.face("w");
+      GAME_STATE.mama.face("d");
+      GAME_STATE.papa.face("a");
+      [
+        npcSokka,
+        npcAang,
+        npcKatara,
+        npcToph,
+        npcIroh,
+        npcZuko,
+        GAME_STATE.mama,
+        GAME_STATE.papa,
+      ].forEach((npc) => gsap.delayedCall(Math.random(), () => npc.face("w")));
     });
 
     gsap.delayedCall(0.2, () => playExclamation(jp, { glyph: "🤗" }));
@@ -2012,7 +2178,11 @@ function cutsceneMidAisleJp() {
   // here, the walks run on their own independent gsap timers, so they can
   // call unlock() whenever they actually finish regardless of what the
   // dialogue queue is doing.
-  DIALOGUE.effect(() => DIALOGUE.lock());
+  DIALOGUE.effect(() => {
+    disableAccess();
+    DIALOGUE.lock();
+    mainEventGuestExpressions();
+  }, 0.00001);
   DIALOGUE.queue(`JP: 🎂 HAPPY BIRTHDAY LOVE LOVE!`);
   DIALOGUE.effect(() => {
     gsap.delayedCall(0.3, () =>
@@ -2492,6 +2662,62 @@ function initMainEvent() {
     if (i % 2 === 0) npc.face("d");
     else npc.face("a");
   });
+
+  // Other NPC guests (no cleanup needed)
+  respawnNPC(npcAang, [90.1, 45.75]);
+  respawnNPC(npcAppa, [82, 38.5]);
+  npcAppa.face("d");
+  respawnNPC(npcKatara, [89.3, 45.75]);
+  respawnNPC(npcSokka, [87, 45]);
+  npcSokka.face("w");
+  respawnNPC(npcToph, [96.25, 45.75]);
+
+  // Seated (left side)
+  respawnNPC(npcAdultMale2, [89.3, 47.75]);
+  respawnNPC(npcAdultFemale1, [90.1, 47.75]);
+  respawnNPC(npcAdultFemale2, [91.35, 47.75]);
+  respawnNPC(npcTeenBoy1, [92.15, 47.75]);
+  respawnNPC(npcBeachMale2, [89.3, 49.75]);
+  respawnNPC(npcAdultFemale4, [90.1, 49.75]);
+  respawnNPC(npcBeachFemale1, [92.15, 49.75]);
+
+  // Seated (Right side)
+  respawnNPC(npcTeenGirl1, [96.25, 47.75]);
+  respawnNPC(npcElderMan, [98.25, 47.75]);
+  respawnNPC(npcElderWoman, [99.25, 47.75]);
+  respawnNPC(npcBeachFemale2, [96.15, 49.75]);
+  respawnNPC(npcAdultFemale3, [97.15, 49.75]);
+  respawnNPC(npcBeachMale1, [98.15, 49.75]);
+
+  // Not seated (Left side)
+  respawnNPC(npcFloristMale1, [85, 45]);
+  respawnNPC(npcFloristFemale1, [85.5, 44.75]);
+  respawnNPC(npcTeenGirl2, [88.5, 47.25]);
+  respawnNPC(npcTeenBoy2, [88, 49.5]);
+  npcFloristFemale1.face("d");
+  npcFloristMale1.face("d");
+  npcTeenGirl2.face("w");
+  npcTeenBoy2.face("w");
+
+  // Not seated (Right side)
+  respawnNPC(npcAdultMale1, [100, 45.25]);
+  respawnNPC(npcAdultMale3, [102.5, 44]);
+  respawnNPC(npcAdultMale4, [103, 45]);
+  respawnNPC(npcAdultMale5, [100, 48.65]);
+  respawnNPC(npcAdultFemale5, [100.75, 48.65]);
+  npcAdultMale1.face("w");
+  npcAdultMale3.face("a");
+  npcAdultMale4.face("a");
+  npcAdultMale5.face("w");
+  npcAdultFemale5.face("w");
+  respawnNPC(npcTeenGirl3, [103.25, 40.75]);
+  respawnNPC(npcTeenBoy3, [103.75, 41.5]);
+  npcTeenGirl3.face("a");
+  npcTeenBoy3.face("a");
+
+  // Other NPC guests (needs cleanup after event)
+  respawnNPC(npcIroh, [97.25, 45.75]);
+  respawnNPC(npcZuko, [98.25, 45.75]);
 }
 
 function f4Speaker(speaker: "daomingsi" | "huazelei" | "meizuo" | "ximen", message: string) {
@@ -2524,8 +2750,10 @@ function restrictRun(restricted = true) {
 
   if (restricted) {
     GAME_STATE.allowRunning = false;
+    audioPlayMusic("overworld_event", { seek: 0, volume: 0.8 });
   } else {
     GAME_STATE.allowRunning = true;
+    soundMain();
   }
 }
 
@@ -2568,11 +2796,28 @@ function soundBeach() {
   audioPlayAmbience("amb_beach", { fade: 2, volume: 0.4 });
 }
 
-function soundGardenMaze() {
+function soundGardenMaze(fade = 2) {
   // Guards against the zone's onEnter firing again on a re-entry while
   // "maze" is still the playing track — seek forces a restart regardless of
   // what's already active (see audioIsMusicActive's own doc comment), which
   // would otherwise crossfade in a second overlapping instance of itself.
   if (audioIsMusicActive("maze")) return;
-  audioPlayMusic("maze", { seek: 8, fade: 2, volume: 0.3 });
+  audioPlayMusic("maze", { seek: 12, fade, volume: 0.25 });
+}
+
+function mainEventGuestExpressions() {
+  const glyphemojis = ["💖", "🔥", "🎂", "♥️", "🎁"];
+  MAIN_EVENT_GUESTS.filter(isInViewport).forEach((guest) => {
+    gsap.delayedCall(Math.random(), () => {
+      const random = Math.floor(Math.random() * glyphemojis.length);
+      const glyph = Math.random() < 0.6; // 60% to glyph instead of default "!"
+      const chance = Math.random() < 0.35; // 35% chance to exclamation bubble
+      if (chance)
+        playExclamation(guest, {
+          glyph: glyph ? glyphemojis[random] : undefined,
+          hold: glyph ? 3 : 1,
+        });
+      playAttentionBounce(guest);
+    });
+  });
 }

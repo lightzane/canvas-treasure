@@ -12,7 +12,7 @@ export interface LeafBurstOptions {
   delay?: number;
 }
 
-const DEFAULT_LEAF_COLORS = ["#4f8a3d", "#6fa84f", "#8bc34a", "#a3703c", "#7a5230"];
+const DEFAULT_LEAF_COLORS = ["#4f8a3d", "#6fa84f", "#8bc34a", "#a3703c", "#7a5230", "#fff"];
 
 /**
  * A small burst of leaf-colored confetti centered on `target`'s current
