@@ -33,6 +33,7 @@ import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { birthdayConfetti } from "@/lib/confetti";
+import { beginCutscene } from "@/lib/cutscene";
 import { drift } from "@/lib/drift";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
@@ -50,7 +51,9 @@ import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer, panCameraToTile, setCameraToTile } from "@/lib/map-movement";
 import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
+import { createNpcSpawner } from "@/lib/npc-spawn";
 import { placeAtTile } from "@/lib/positioning";
+import { BIRTHDAY_POSTCARD_SRC } from "@/lib/postcard-sticker";
 import { preload } from "@/lib/preload";
 import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
 import { walk } from "@/lib/walk";
@@ -90,7 +93,6 @@ import gsap from "gsap";
 
 const VOLUME_MAIN_BG = 0.5;
 
-const PHOTO_BIRTHDAY_POSTCARD = img("treasure/cheryl_birthday_postcard.jpg");
 const PHOTO_TREASURE = img("treasure/treasure-full.png");
 const PHOTO_TREASURE_CLOSEUP = img("treasure/treasure-full-closeup.png");
 const PHOTO_TREASURE_MAP = img("others/treasure-map.jpg");
@@ -295,6 +297,7 @@ const INTERACTABLES: Interactable[] = [
   { sprite: msgBottle1, ...msgBottleInteractablesCfgs },
 ];
 const HUAZELEI_INTERACTABLE: Interactable = { sprite: huazelei, label: "Talk" };
+const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 let paperWindAnimating = false;
 
 // Incremented/decremented by the "sand" trigger below, not a plain boolean —
@@ -355,6 +358,8 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   sound_fountain: { onEnter: () => soundFountain(), onLeave: () => soundFountain(false) },
   sound_beach: { onEnter: () => soundBeach() },
   sound_garden_maze: { onEnter: () => soundGardenMaze() },
+  sound_park: { onEnter: () => soundPark() },
+  sound_park_exit: { onEnter: () => soundPark(false) },
   sand: {
     onEnter: () => sandZoneCount++,
     onLeave: () => sandZoneCount--,
@@ -490,12 +495,19 @@ function spawnOverworldNpcs() {
   respawnNPC(npcTeenBoy2, [98, 67.25]);
   // 1 people near the 2 elder couple at the shore of beach
   respawnNPC(npcTeenGirl2, [61.75, 91]);
+  // 4 people on the beach blocking path to the avatar
+  respawnNPC(npcBeachFemale1, [11.25, 55.5]);
+  respawnNPC(npcBeachMale2, [9.25, 57.5]);
+  respawnNPC(npcBeachFemale2, [10.25, 57.5]);
 
   npcAdultFemale4.face("s");
   npcAdultMale3.face("s");
   npcAdultMale4.face("s");
   npcTeenBoy2.face("s");
   npcTeenGirl2.face("s");
+  npcBeachFemale1.face("s");
+  npcBeachMale2.face("s");
+  npcBeachFemale2.face("s");
   npcAdultMale5.face("d");
   npcAdultFemale1.face("a");
   npcAdultFemale2.face("d");
@@ -519,6 +531,9 @@ function spawnOverworldNpcs() {
   npcKatara.face("a");
   npcSokka.face("d");
   npcToph.face("a");
+
+  respawnNPC(npcBeachMale1, [6.5, 55]);
+  npcBeachMale1.face("a");
 
   respawnNPC(npcTeenBoy1, [123, 27.5]);
   npcTeenBoy1.face("s");
@@ -824,7 +839,7 @@ function cutsceneRunningShoes() {
 
   hudSetBagIconVisible(false);
 
-  DIALOGUE.effect(disableAccess, 0.00001);
+  DIALOGUE.effect(beginCutscene, 0.00001);
   DIALOGUE.effect(() => walk(player, [58.9, 42], { onComplete: convo }), 0.5);
 
   function convo() {
@@ -860,7 +875,7 @@ function cutsceneStartMessageBottle() {
 
   cancelScheduledFace(GAME_STATE.mama);
 
-  disableAccess(); // stays within overworld — unlike exitMap(), this doesn't stop the music/ambience meant for an actual scene transition
+  beginCutscene(); // stays within overworld — unlike exitMap(), this doesn't stop the music/ambience meant for an actual scene transition
 
   player.face("w");
   const mama = GAME_STATE.mama;
@@ -1047,7 +1062,7 @@ function meetLeiConversation() {
 
   audioPlayMusic("zz_makeawish", { seek: 5.5, fade: 1, volume: VOLUME_MAIN_BG });
 
-  DIALOGUE.effect(disableAccess, 0.00001);
+  DIALOGUE.effect(beginCutscene, 0.00001);
   DIALOGUE.effect(() => {
     DIALOGUE.lock();
     const quest = GAME_STATE.quests.get("meet_huazelei")!;
@@ -1134,7 +1149,7 @@ function meetLeiConversation() {
   DIALOGUE.onComplete = () => {
     GAME_STATE.sequence.meet_huazelei = true;
     hudSetBagIconVisible(true);
-    soundMain();
+    audioPlayMusic("overworld", { fade: 2, volume: 0.2 });
   };
 }
 
@@ -1515,7 +1530,7 @@ function openMazeChest() {
 
   DIALOGUE.show("A chest— open ko na ito...");
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     placeAtTile({ sprite: chestOpen, tile: [119.75, 7.75] });
     addOnce(DECORS, chestOpen);
     addOnce(GAME_STATE.obstacles, chestOpen);
@@ -1524,11 +1539,11 @@ function openMazeChest() {
     removeInteractable(INTERACTABLES, chestClose);
     playExclamation(player);
   });
-  DIALOGUE.effect(disableAccess, 1.5);
+  DIALOGUE.effect(beginCutscene, 1.5);
   DIALOGUE.queue(`A music box...!`);
   DIALOGUE.queue(`Kunin ko na...`);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     addOnce(DECORS, chestEmpty);
     addOnce(GAME_STATE.obstacles, chestEmpty);
     respawnNPC(daomingsi, [108, 7]);
@@ -1558,11 +1573,11 @@ function openMazeChest() {
     portrait: PORTRAIT_DAOMINGSI,
   });
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     daomingsi.face("d");
   }, 2);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     huazelei.face("d");
     playExclamation(daomingsi, {
       onComplete: () => walk(daomingsi, { direction: "d", steps: 2 }),
@@ -1587,7 +1602,7 @@ function openMazeChest() {
     portrait: PORTRAIT_DAOMINGSI_INTIMIDATE,
   });
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     walk(huazelei, { direction: "w", steps: 2.5 });
     playAttentionBounce(player, { hops: 2, duration: 0.09 });
     playExclamation(player, { hold: 5 });
@@ -1671,7 +1686,7 @@ function openMazeChest() {
   DIALOGUE.queue(`Sa market ginagawa ni XI MEN at MEI ZUO ang bahagi nila para sa event.`);
   DIALOGUE.queue(`Mauna na ako...`);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     walk(
       huazelei,
       [
@@ -1692,7 +1707,7 @@ function openMazeChest() {
   });
   DIALOGUE.queue({ text: `Pero iyung teasure ko...`, portrait: null, color: "black" });
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     questSetStatus(questMazeChest, "resolved");
     playQuestToast(questMazeChest);
     playQuestCompleteBanner(`Completed!`);
@@ -1703,26 +1718,6 @@ function openMazeChest() {
   DIALOGUE.onComplete = () => {
     hudSetBagIconVisible(true);
   };
-}
-
-function respawnNPC(npc: PlayerSprite, tile?: [number, number]) {
-  if (tile) placeAtTile({ sprite: npc, tile });
-  addOnce(NPCS, npc);
-  addOnce(GAME_STATE.obstacles, npc);
-}
-
-function despawnNPC(npc: PlayerSprite) {
-  remove(NPCS, npc);
-  remove(GAME_STATE.obstacles, npc);
-  removeInteractable(INTERACTABLES, npc);
-}
-
-/** Locks movement, hides bag icon, dialogue box and portrait. */
-function disableAccess() {
-  hudSetBagIconVisible(false);
-  GAME_STATE.movementLocked = true;
-  DIALOGUE.hideBox();
-  DIALOGUE.clearPortrait();
 }
 
 function initMarketEvent() {
@@ -1778,7 +1773,7 @@ function cutsceneMarket() {
   // ! This pattern is IMPORTANT before a "Walk effect"
   // ! If this is missing, the walk effect will have a bug during animation
   // ! that it would move the player but stays in "idle" frame instead of "walk"
-  DIALOGUE.effect(disableAccess, 0.00000000000001);
+  DIALOGUE.effect(beginCutscene, 0.00000000000001);
 
   DIALOGUE.effect(() => {
     walk(player, [101.5, 75], {
@@ -1793,7 +1788,7 @@ function cutsceneMarket() {
   f4Speaker("meizuo", `F4 MEI ZUO: Oh pumila lang kayo ng maayos diyan!`);
 
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playExclamation(ximen);
   }, 0.5);
 
@@ -1804,7 +1799,7 @@ function cutsceneMarket() {
   DIALOGUE.effect(() => {
     audioPlayMusic("market", { volume: 0.01, fade: 0.5 });
     audioPlayAmbience("amb_shopping_crowd", { fade: 0.5, volume: 0.01 });
-    disableAccess();
+    beginCutscene();
     const q1 = quests.get("meet_meizuo")!;
     const q2 = quests.get("meet_ximen")!;
     questSetStatus(q1, "resolved");
@@ -1865,7 +1860,7 @@ function cutsceneMarket() {
   f4Speaker("meizuo", `MEI ZUO: Hindi kaya keys ng treasure chest iyun?`);
 
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     ximen.face("a");
     gsap.delayedCall(0.5, () => playAttentionBounce(meizuo));
     gsap.delayedCall(0.7, () => playAttentionBounce(ximen));
@@ -1884,7 +1879,7 @@ function cutsceneMarket() {
   `,
   );
 
-  DIALOGUE.effect(disableAccess, 1);
+  DIALOGUE.effect(beginCutscene, 1);
   DIALOGUE.effect(() => {
     meizuo.face("d");
     playAttentionBounce(meizuo);
@@ -1897,12 +1892,12 @@ function cutsceneMarket() {
   );
 
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     ximen.face("a");
   }, 1.5);
 
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     gsap.delayedCall(0.5, () => playAttentionBounce(meizuo));
     gsap.delayedCall(0.7, () => playAttentionBounce(ximen));
     gsap.delayedCall(1, () => playExclamation(meizuo));
@@ -1914,7 +1909,7 @@ function cutsceneMarket() {
   DIALOGUE.queue({ text: `... ... ...`, portrait: null, color: "black" });
 
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     gsap.delayedCall(0.5, () => playAttentionBounce(meizuo));
     gsap.delayedCall(0.7, () => playAttentionBounce(ximen));
     gsap.delayedCall(1, () => playExclamation(meizuo));
@@ -1924,7 +1919,7 @@ function cutsceneMarket() {
   }, 3);
 
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playAttentionBounce(meizuo, {
       hops: 5,
       onComplete() {
@@ -1958,7 +1953,7 @@ function cutsceneMidAisle() {
   // ! This pattern is IMPORTANT before a "Walk effect"
   // ! If this is missing, the walk effect will have a bug during animation
   // ! that it would move the player but stays in "idle" frame instead of "walk"
-  DIALOGUE.effect(disableAccess, 0.00000000000001);
+  DIALOGUE.effect(beginCutscene, 0.00000000000001);
 
   DIALOGUE.effect(() => {
     walk(player, [94, 50.25], {
@@ -1979,7 +1974,7 @@ function cutsceneMidAisle() {
 
   f4Speaker("daomingsi", `DAO MING SI: Okay, okay! Tahimik muna ang lahat!`);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     audioStopAmbience(["amb_people_crowd", "amb_people_public"], 2);
     MAIN_EVENT_GUESTS_LEFT_SIDE.forEach((guest) => {
       gsap.delayedCall(Math.random(), () => guest.face("d"));
@@ -1993,7 +1988,7 @@ function cutsceneMidAisle() {
       pero hindi naman basta-bastang kayamanan ang hinahanap
       natin dito. Hindi lahat ng kayamanan ay ginto o alahas...
   `);
-  DIALOGUE.effect(disableAccess, 1.5);
+  DIALOGUE.effect(beginCutscene, 1.5);
   DIALOGUE.effect(() => {
     walk(huazelei, [
       //
@@ -2011,7 +2006,7 @@ function cutsceneMidAisle() {
     ...ang pinakamahalagang kayamanan ay isang taong
     hindi kayang tumbasan ng kahit anong yaman.
   `);
-  DIALOGUE.effect(disableAccess, 1.5);
+  DIALOGUE.effect(beginCutscene, 1.5);
   DIALOGUE.effect(() => {
     playExclamation(daomingsi);
     playAttentionBounce(daomingsi);
@@ -2021,13 +2016,13 @@ function cutsceneMidAisle() {
     bawat kilos, galaw at oras niya na ibinigay sa paghanap ng
     keys.
   `);
-  DIALOGUE.effect(disableAccess, 1.5);
+  DIALOGUE.effect(beginCutscene, 1.5);
   DIALOGUE.queue(`
     Sa katunayan nga ay muntik na madulas si LIU mabanggit
     ang "keyk".
   `);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     mainEventGuestExpressions();
   }, 0.00001);
   DIALOGUE.queue(`
@@ -2042,7 +2037,7 @@ function cutsceneMidAisle() {
   DIALOGUE.effect(() => {
     audioPlaySound("applause_light", { volume: 0.3 });
     gsap.delayedCall(1, () => audioPlaySound("applause_light", { volume: 0.3 }));
-    disableAccess();
+    beginCutscene();
     player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
     walk(daomingsi, [
       //
@@ -2052,7 +2047,7 @@ function cutsceneMidAisle() {
   }, 5);
   DIALOGUE.queue(`Sige na CHE, diretso ka lang pumunta sa stage.`);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     spawnJp();
     daomingsi.face("d");
     huazelei.face("a");
@@ -2074,7 +2069,7 @@ function cutsceneMidAisleLei() {
 
   hudSetBagIconVisible(false);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playExclamation(huazelei);
     gsap.delayedCall(1, () => {
       [...MAIN_EVENT_GUESTS_LEFT_SIDE, ...MAIN_EVENT_GUESTS_RIGHT_SIDE].forEach((guest) => {
@@ -2096,15 +2091,15 @@ function cutsceneMidAisleLei() {
   });
   DIALOGUE.queue("Yung last page ng sketch ko na hinahabol mo ay nahanap na.");
   DIALOGUE.queue("...iaabot niya na lang sa iyo kasama ang music box.");
-  DIALOGUE.effect(disableAccess, 0.5);
+  DIALOGUE.effect(beginCutscene, 0.5);
   DIALOGUE.queue({ text: "... ... ...", portrait: null, color: "black" });
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playExclamation(player, { glyph: "?", color: "darkviolet", hold: 5 });
   }, 2.5);
   DIALOGUE.queue(`...niya?`);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playQuestToast(questCatchSheets);
   }, 1.5);
   DIALOGUE.onComplete = () => {
@@ -2123,7 +2118,7 @@ function cutsceneMidAisleJp() {
 
   hudSetBagIconVisible(false);
 
-  DIALOGUE.effect(disableAccess, 0.00001);
+  DIALOGUE.effect(beginCutscene, 0.00001);
 
   DIALOGUE.effect(() => {
     GAME_STATE.cameraFollow = false;
@@ -2182,7 +2177,7 @@ function cutsceneMidAisleJp() {
   });
 
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playExclamation(player, { icon: ICON_RED_HEART, hold: 1.5 });
     playAttentionBounce(player, { hops: 2 });
   }, 2);
@@ -2260,9 +2255,11 @@ function cutsceneMidAisleJp() {
   // call unlock() whenever they actually finish regardless of what the
   // dialogue queue is doing.
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     DIALOGUE.lock();
     mainEventGuestExpressions();
+    audioPlayMusic("happy_birthday", { fade: 2 });
+    audioPlaySound("applause_light", { volume: 0.3 });
   }, 0.00001);
   DIALOGUE.queue(`JP: 🎂 HAPPY BIRTHDAY LOVE LOVE!`);
   DIALOGUE.effect(() => {
@@ -2333,7 +2330,7 @@ function cutsceneMidAisleJp() {
   }, 0.1);
   DIALOGUE.queue(`Ito nga pala yung last page na sketch paper na hinahabol mo...`);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playExclamation(player, { icon: ICON_PAPERS, hold: 3 });
     playAttentionBounce(player, { hops: 3 });
   }, 1.5);
@@ -2353,7 +2350,7 @@ function cutsceneMidAisleJp() {
   DIALOGUE.queue(`Saka mo lang makikita yung buong sketch.`);
   DIALOGUE.queue(`Tingnan mo ngayon sa bag kung anu nilalaman ng sketch.`);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     questSetStatus("sketch_unity", "active");
     playQuestToast(questSketchUnity);
     mainEventGuestExpressions("?", "darkviolet");
@@ -2373,7 +2370,7 @@ function cutsceneMidAisleJp() {
         return;
       }
 
-      disableAccess();
+      beginCutscene();
       DIALOGUE.effect(() => playExclamation(player, { icon: ICON_PAPERS }), 0.5);
       DIALOGUE.show(`Wait lang, hindi ko pa nakikita yung nilalaman ng sketch`);
       DIALOGUE.queue(`Nasa bag ko na lahat ng 3 tracing paper ni ZZ`);
@@ -2393,7 +2390,7 @@ function cutsceneMidAisleJp() {
 
 function cutsceneShowBirthdayPostcard() {
   if (questSketchUnity.status !== "resolved") return;
-  DIALOGUE.effect(disableAccess, 0.00001);
+  DIALOGUE.effect(beginCutscene, 0.00001);
 
   DIALOGUE.effect(() => {
     DIALOGUE.lock();
@@ -2424,11 +2421,11 @@ function cutsceneShowBirthdayPostcard() {
   DIALOGUE.queue({ text: "... ... ...", portrait: null, color: "black" });
   DIALOGUE.onComplete = () => {
     GAME_STATE.movementLocked = true;
-    playImagePreview(PHOTO_BIRTHDAY_POSTCARD, { hold: 20, onComplete: cutsceneMainQuestReminder });
+    playImagePreview(BIRTHDAY_POSTCARD_SRC, { hold: 20, onComplete: cutsceneMainQuestReminder });
     birthdayConfetti();
     bagIncItem("birthday_postcard");
     audioPlayMusic("happy_birthday", { fade: 1, volume: 0.3 });
-    audioPlayAmbience("zz_makeawish", { seek: 14, volume: 0.7 });
+    audioPlayAmbience("zz_makeawish", { seek: 14, volume: 0.9 });
     audioPlaySound("applause_light", { volume: 0.3 });
     gsap.delayedCall(2, () => audioPlaySound("applause_light", { volume: 0.3 }));
     gsap.delayedCall(4, () => audioPlaySound("applause_light", { volume: 0.3 }));
@@ -2440,9 +2437,9 @@ function cutsceneShowBirthdayPostcard() {
 let questToast: QuestToastHandle | undefined;
 
 function cutsceneMainQuestReminder() {
-  DIALOGUE.effect(disableAccess, 0.00001);
+  DIALOGUE.effect(beginCutscene, 0.00001);
   DIALOGUE.effect(() => {
-    audioStopAmbience(undefined, 5);
+    audioStopAmbience("zz_makeawish", 5);
     audioPlayMusic("f4_loop", { fade: 5, volume: 0.3 });
     // audioPlayAmbience("f4_loop", { fade: 1, volume: 0.3 });
     playExclamation(daomingsi);
@@ -2453,7 +2450,7 @@ function cutsceneMainQuestReminder() {
   });
   f4Speaker("daomingsi", "DAO MING SI: Teka nga muna, meron pa isang last quest!");
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playQuestToast({ ...questMain, hold: 8 });
     gsap.delayedCall(0.5, () => {
       player.face("s");
@@ -2462,7 +2459,7 @@ function cutsceneMainQuestReminder() {
     mainEventGuestExpressions("?", "darkviolet");
   }, 3);
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playExclamation(meizuo);
     playAttentionBounce(meizuo);
     meizuo.face("s");
@@ -2471,14 +2468,14 @@ function cutsceneMainQuestReminder() {
   f4Speaker("meizuo", "Kaya nandito tayo lahat para ipadiwang sa kaganapang ito...");
   f4Speaker("daomingsi", "DAO MING SI: Kaya sino sa inyo ang nakahanap ng treasure?");
   DIALOGUE.effect(() => {
-    disableAccess();
+    beginCutscene();
     playExclamation(ximen);
     playAttentionBounce(ximen);
     ximen.face("s");
   });
   f4Speaker("ximen", "XI MEN: Kasama ito sa mga invitation at parcel sa simula pa lamang.");
   DIALOGUE.queue({ text: "... ... ...", portrait: null, color: "black" });
-  DIALOGUE.effect(disableAccess, 1.5);
+  DIALOGUE.effect(beginCutscene, 1.5);
   DIALOGUE.effect(() => {
     playExclamation(player, { icon: ICON_PARCEL, hold: 5 });
     playAttentionBounce(player);
@@ -2513,8 +2510,7 @@ function cutsceneMainQuestReminder() {
 }
 
 function cutsceneMainQuestReveal() {
-  disableAccess();
-  hudSetBagIconVisible(false);
+  beginCutscene();
   DIALOGUE.effect(() => playExclamation(daomingsi), 0.5);
   DIALOGUE.effect(() => {
     playExclamation(daomingsi);
@@ -2628,11 +2624,15 @@ function closingRemarks() {
       duration: 3,
       softness: 20,
       onComplete: () => {
+        audioStopAmbience(undefined, 5);
         gsap.delayedCall(overworldScene.fadeOut! + 0.5, () => iris.stop());
         GAME_STATE.player.moveSpeed = 200; // restore
         GAME_STATE.allowRunning = true; // restore
         GAME_STATE.sceneName = "home";
+        // reset npcs
         spawnOverworldNpcs();
+        despawnNPC(npcIroh);
+        despawnNPC(npcZuko);
       },
     });
   };
@@ -2875,7 +2875,7 @@ function restrictRun(restricted = true) {
 function restrictMidAisleExit() {
   if (!GAME_STATE.sequence.mid_aisle_cutscene || questMain.status === "resolved") return;
 
-  DIALOGUE.effect(disableAccess, 0.00000000000001);
+  DIALOGUE.effect(beginCutscene, 0.00000000000001);
 
   DIALOGUE.effect(() => {
     audioStopAmbience(["amb_people_public", "amb_people_crowd"], 5);
@@ -2906,6 +2906,18 @@ function soundMarket() {
 function soundFountain(enable = true) {
   if (enable) audioPlayAmbience("amb_water_flowing", { fade: 2, volume: 0.2 });
   else audioStopAmbience("amb_water_flowing", 2);
+}
+
+function soundPark(enable = true) {
+  if (enable) {
+    const isOngoingEvent =
+      questDaoMingKeys.status === "resolved" && !GAME_STATE.sequence.closing_remarks;
+    if (!isOngoingEvent) audioPlayMusic("overworld", { fade: 2, volume: 0.15 });
+    audioPlayAmbience("amb_birds_forest", { seek: 22, fade: 2, volume: 0.5 });
+  } else {
+    audioStopAmbience("amb_birds_forest", 2);
+    audioPlayMusic("overworld", { fade: 2, volume: VOLUME_MAIN_BG });
+  }
 }
 
 function soundBeach() {

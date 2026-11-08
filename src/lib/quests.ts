@@ -53,17 +53,17 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     },
   ],
   [
-    "invitation_postcard",
+    "invitation_postcard", // main quest OR last quest
     {
       description: "Find out what's this treasure is about.",
-      status: "resolved",
+      status: "active",
     },
   ],
   [
     "daoming_keys",
     {
       description: "Help DAO MING SI find his missing keys.",
-      status: "resolved",
+      status: "active",
     },
   ],
   ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
@@ -73,9 +73,9 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 3,
+      qty: 2,
       totalQty: 3,
-      status: "resolved",
+      status: "active",
     },
   ],
   [
@@ -110,7 +110,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "sketch_unity",
     {
       description: "Find out what is Hua Ze Lei's sketch is about.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
 ]);

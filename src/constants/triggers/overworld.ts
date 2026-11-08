@@ -14,6 +14,8 @@ export type TriggerName =
   | "sound_main"
   | "sound_beach"
   | "sound_garden_maze"
+  | "sound_park"
+  | "sound_park_exit"
   | "cutscene_running_shoes"
   | "cutscene_mid_aisle"
   | "cutscene_mid_aisle_lei"
@@ -70,6 +72,14 @@ export const TRIGGER_OVERWORLD = scaleTiledObjects([
   { name: "sound_main", x: 602.658, y: 1645.44, width: 143.517, height: 33 },
   { name: "sound_garden_maze", x: 3167.42, y: 575.837, width: 64, height: 128 },
   { name: "sound_main", x: 3133.37, y: 575.837, width: 33, height: 128 },
+  { name: "sound_park", x: 2464.11400504998, y: 1408.67956833039, width: 33, height: 160 },
+  { name: "sound_park", x: 3542, y: 1408.67956833, width: 33, height: 160 },
+  { name: "sound_main", x: 3576, y: 1408.67956833, width: 33, height: 160 },
+  { name: "sound_main", x: 2430.11400504998, y: 1408.67956833039, width: 33, height: 160 },
+  { name: "sound_park", x: 2944.03835380306, y: 1087.26567550097, width: 160, height: 33 },
+  { name: "sound_park", x: 2944.038353803, y: 1823, width: 160, height: 33 },
+  { name: "sound_park_exit", x: 2944.038353803, y: 1857, width: 160, height: 33 },
+  { name: "sound_main", x: 2944.03835380306, y: 1053.26567550097, width: 160, height: 33 },
   { name: "cutscene_running_shoes", x: 1825, y: 1389.5, width: 126.5, height: 41.5 },
   { name: "cutscene_mid_aisle", x: 2975.87, y: 1611.21, width: 96, height: 33 },
   { name: "cutscene_mid_aisle_lei", x: 2975.87, y: 1529.21, width: 96, height: 33 },

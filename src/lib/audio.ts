@@ -29,14 +29,17 @@ export type MusicKey =
   | "zz_makeawish"
   | "f4"
   | "f4_loop"
+  | "forever"
   | "happy_birthday"
+  | "sky_manta"
   | "a_guitar_rock"
   | "amb_beach"
   | "amb_shopping_crowd"
   | "amb_water_flowing"
   | "amb_wind_interior"
   | "amb_people_public"
-  | "amb_people_crowd";
+  | "amb_people_crowd"
+  | "amb_birds_forest";
 
 /**
  * Physical files split into multiple named clips rather than played whole —
@@ -140,7 +143,9 @@ const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   zz_makeawish: "周渝民-make-a-wish.mp3",
   f4: { sheet: "f4", sprite: "full" },
   f4_loop: { sheet: "f4", sprite: "loop" },
+  forever: "恆星不忘.mp3",
   happy_birthday: "happy-birthday-elegant-harp-piano.mp3",
+  sky_manta: "sky-manta.mp3",
   a_guitar_rock: "mixkit-ko-1068.mp3",
   amb_beach: "ambience/mixkit-small-waves-harbor-rocks-1208.wav",
   amb_shopping_crowd: "ambience/mixkit-shopping-center-crowd-377.wav",
@@ -148,6 +153,7 @@ const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   amb_wind_interior: "ambience/mixkit-wind-cold-interior-1172.wav",
   amb_people_public: "ambience/mixkit-people-in-fair-ambience-and-laughter-368.wav",
   amb_people_crowd: "ambience/mixkit-very-crowded-pub-or-party-loop-360.wav",
+  amb_birds_forest: "ambience/mixkit-forest-birds-chirp-ambiance-69.wav",
 };
 
 // Lazily built on first play, then reused for the rest of the session.

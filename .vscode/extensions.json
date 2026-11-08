@@ -1,0 +1,6 @@
+{
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "oxc.oxc-vscode" // oxfmt extension for formatting with oxfmt
+  ]
+}

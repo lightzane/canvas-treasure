@@ -9,7 +9,7 @@ import { birthdayConfetti } from "@/lib/confetti";
 import { img } from "@/lib/img";
 import { useEffect, useRef, useState } from "react";
 
-let confettiHandle: (() => boolean) | undefined;
+export let confettiHandle: (() => boolean) | undefined;
 
 const ITEM_LABEL: Record<ItemName, string> = {
   journal: "Journal",
@@ -215,7 +215,17 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
                 key={name}
                 type="button"
                 disabled={!onClick}
-                onClick={onClick}
+                onClick={(e) => {
+                  // A focused <button> natively re-activates on Enter too —
+                  // without this, clicking an entry (e.g. opening the
+                  // postcard viewer) leaves it focused, so the same Enter
+                  // press used to close the bag also re-fires this button's
+                  // own onClick (e.g. spawning a brand-new confetti burst
+                  // right as the old one's meant to stop) — same mechanism
+                  // as the bag-icon toggle button in layout.tsx.
+                  e.currentTarget.blur();
+                  onClick?.();
+                }}
                 className={`flex items-center gap-3 rounded-lg p-1 shadow-[0_0_2px_rgba(0,0,0,0.3)_inset] transition-colors ${
                   onClick
                     ? "bg-linear-to-br from-amber-100/90 to-amber-100/60 cursor-pointer hover:from-amber-200/90 hover:shadow-amber-800 hover:to-amber-100"

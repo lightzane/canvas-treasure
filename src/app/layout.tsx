@@ -1,4 +1,4 @@
-import { BagPanel } from "@/app/bag-panel";
+import { BagPanel, confettiHandle } from "@/app/bag-panel";
 import { StartScreen } from "@/app/start-screen";
 import { TitleScreen } from "@/app/title-screen";
 import { GameEngine } from "@/features/game-engine";
@@ -66,6 +66,7 @@ export default function Layout() {
     GAME_STATE.bagOpen = open;
     setBagOpenState(open);
     if (!open) {
+      confettiHandle?.(); // bag can close while an image (e.g. the birthday postcard) is still open underneath it (e.g. via Enter, or the bag-icon toggle) without the image viewer's own close path ever running — every close path funnels through here, so this is the one place that reliably catches all of them
       const onClose = GAME_STATE.onBagClose;
       GAME_STATE.onBagClose = null; // cleared BEFORE calling — a callback that itself hides the bag icon (e.g. disableAccess) re-enters this same branch synchronously (hudSetBagIconVisible -> setBagIconVisible -> setBagOpen(false) again); leaving the old value in place here would re-fire it, forever. A callback whose own condition isn't met yet re-arms itself explicitly (see overworld.ts's checkSketchCompletion/onParcelBagClose) instead of this auto-persisting it.
       onClose?.(GAME_STATE.bagViewedItems);

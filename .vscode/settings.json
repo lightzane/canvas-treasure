@@ -1,0 +1,7 @@
+{
+  "files.associations": {
+    "**/tiled/**/*.tsx": "xml",
+    "**/assets/**/*.tsx": "xml"
+  },
+  "tailwindCSS.classFunctions": ["cn", "twMerge", "tv"]
+}

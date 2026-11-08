@@ -505,14 +505,14 @@
 </data>
   </layer>
  </group>
- <objectgroup color="#ff2600" id="19" name="collisions" visible="0">
+ <objectgroup color="#ff2600" id="19" name="collisions">
   <object id="2" x="191.524" y="478.34" width="14.8898" height="386.526"/>
   <object id="5" x="22.1756" y="512.414" width="170.079" height="7.52386"/>
   <object id="6" x="11.9798" y="345.703" width="19.6811" height="173.707"/>
   <object id="8" x="43.3555" y="401.894" width="40.5032" height="76.7278"/>
   <object id="9" x="22.8187" y="350.552" width="169.143" height="64.4628"/>
-  <object id="10" x="98.6908" y="385.636" width="57.3319" height="61.8957"/>
-  <object id="11" x="162.298" y="255.772" width="43.9524" height="191.189"/>
+  <object id="10" x="98.6908" y="385.636" width="57.3319" height="60.0226"/>
+  <object id="11" x="162.298" y="255.772" width="43.9524" height="189.998"/>
   <object id="12" x="20.4565" y="252.149" width="204.154" height="37.8096"/>
   <object id="13" x="288.887" y="251.75" width="160.334" height="36.0657"/>
   <object id="14" x="311.527" y="262.105" width="81.1318" height="54.9921"/>

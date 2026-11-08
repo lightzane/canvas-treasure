@@ -1,4 +1,11 @@
 import { GAME_FONT_FAMILY } from "@/constants/game-settings";
+import {
+  BIRTHDAY_POSTCARD_SRC,
+  BIRTHDAY_STICKER_CLASSNAME,
+  BIRTHDAY_STICKER_SRC,
+  POSTCARD_MAX_HEIGHT,
+  POSTCARD_MAX_WIDTH,
+} from "@/lib/postcard-sticker";
 import gsap from "gsap";
 
 export interface ImagePreviewOptions {
@@ -111,11 +118,25 @@ function runPreview(src: string, options: ImagePreviewOptions): () => void {
   backdrop.style.opacity = "0";
   backdrop.style.userSelect = "none";
 
+  // Shrink-wraps to the image's own rendered box (not the backdrop's) —
+  // that's what lets the sticker below anchor to the photo's actual corner
+  // regardless of its size/aspect ratio. Fixed px (POSTCARD_MAX_WIDTH/
+  // HEIGHT), not percentages: a percentage max-height only resolves
+  // against a parent with an explicit height, which this shrink-wrap
+  // wrapper doesn't have. Same technique as ImageViewer's own popup
+  // (src/app/image-viewer.tsx) — see postcard-sticker.ts.
+  const imageBox = document.createElement("div");
+  imageBox.style.position = "relative";
+  imageBox.style.display = "inline-block";
+  imageBox.style.lineHeight = "0";
+  backdrop.appendChild(imageBox);
+
   const image = document.createElement("img");
   image.src = src;
   image.alt = alt;
-  image.style.maxWidth = "100%";
-  image.style.maxHeight = "100%";
+  image.style.display = "block";
+  image.style.maxWidth = `${POSTCARD_MAX_WIDTH}px`;
+  image.style.maxHeight = `${POSTCARD_MAX_HEIGHT}px`;
   image.style.objectFit = "contain";
   image.style.borderRadius = "12px";
   image.style.border = "2px solid #92400e"; // amber-800
@@ -125,7 +146,14 @@ function runPreview(src: string, options: ImagePreviewOptions): () => void {
   image.style.userSelect = "none";
   if (pixelated) image.style.imageRendering = "pixelated";
   image.addEventListener("click", (e) => e.stopPropagation()); // clicking the image itself shouldn't dismiss, only the backdrop/× should
-  backdrop.appendChild(image);
+  imageBox.appendChild(image);
+
+  if (src === BIRTHDAY_POSTCARD_SRC) {
+    const sticker = document.createElement("img");
+    sticker.src = BIRTHDAY_STICKER_SRC;
+    sticker.className = BIRTHDAY_STICKER_CLASSNAME;
+    imageBox.appendChild(sticker);
+  }
 
   // A timed `hold` means the player shouldn't be able to force it away or
   // touch anything behind it early — no × button, no click-to-dismiss. The

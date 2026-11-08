@@ -17,7 +17,7 @@ import {
   type TriggerHandlers,
 } from "@/features/zone";
 import { addOnce } from "@/lib/array";
-import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
+import { audioPlayAmbience, audioPlayMusic, audioStopAmbience, audioStopMusic } from "@/lib/audio";
 import { bagAddItem, bagHasItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
@@ -25,6 +25,7 @@ import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewpo
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
+import { playImagePreview } from "@/lib/effects/image-preview";
 import {
   playQuestCompleteBanner,
   playQuestToast,
@@ -40,13 +41,19 @@ import { preload } from "@/lib/preload";
 import { QUESTS, questSetStatus } from "@/lib/quests";
 import gsap from "gsap";
 
+const BG_MUSIC_VOLUME = 0.6;
+
 const IMG_MAP_BG = img("maps/home.png");
 const IMG_MAP_FG = img("maps/home-fg.png");
 const IMG_PARCEL = img("others/parcel.png");
 const IMG_JOURNAL = img("others/book-and-pencil.png");
 const IMG_RUNNING_SHOES = img("others/shoes.png");
 const IMG_FLOWERS_BOUQUET = img("others/flowers-bouquet.png");
+const IMG_FRAME_PHOTO_SKY = img("others/frame-photo-sky.png");
+const IMG_FRAME_PHOTO = img("treasure/frame-photo.png");
 const ICON_RED_HEART = img("others/red-heart.png");
+const PHOTO_SKY = img("others/photo-sky.png");
+const PHOTO_COUPLE = img("treasure/couple-photo.jpg");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
@@ -54,8 +61,19 @@ const parcel = new Sprite({ src: IMG_PARCEL, scale: 2, boxSize: { height: 64, wi
 const journal = new Sprite({ src: IMG_JOURNAL, scale: 2 });
 const runningShoes = new Sprite({ src: IMG_RUNNING_SHOES, scale: 1.5 });
 const flowersBouquet = new Sprite({ src: IMG_FLOWERS_BOUQUET, scale: 2 });
+const framePhotoSky = new Sprite({ src: IMG_FRAME_PHOTO_SKY, scale: 2 });
+const framePhoto = new Sprite({ src: IMG_FRAME_PHOTO, scale: 2 });
 
+const frameIntCfgs: Partial<Interactable> = {
+  label: "View",
+  facePlayer: false,
+  labelOffset: { y: 36 },
+};
 placeAtTile({ sprite: flowersBouquet, tile: [4.75, 12.2] });
+placeAtTile({ sprite: framePhotoSky, tile: [1.2, 11.2] });
+placeAtTile({ sprite: framePhoto, tile: [3, 11.2] });
+
+const DECORS: Sprite[] = [];
 
 const MAMA_INTERACTABLE: Interactable = { sprite: GAME_STATE.mama, label: "Talk" };
 // Sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway.
@@ -97,7 +115,7 @@ export const homeScene: Scene = {
   ),
 
   enter() {
-    if (GAME_STATE.sequence.intro) audioPlayMusic("home", { seek: 0, volume: 0.6 });
+    if (GAME_STATE.sequence.intro) audioPlayMusic("home", { seek: 0, volume: BG_MUSIC_VOLUME });
 
     if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible && !GAME_STATE.sequence.closing_remarks)
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
@@ -178,7 +196,12 @@ export const homeScene: Scene = {
     // The parcel is gone at this point, so rely on diff condition to display bag
     if (questMain.status === "resolved") {
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
+      addOnce(DECORS, flowersBouquet);
+      addOnce(DECORS, framePhotoSky);
+      addOnce(DECORS, framePhoto);
       addOnce(interactables, { sprite: flowersBouquet, label: "Interact", facePlayer: false });
+      addOnce(interactables, { sprite: framePhotoSky, ...frameIntCfgs });
+      addOnce(interactables, { sprite: framePhoto, ...frameIntCfgs });
     }
 
     if (GAME_STATE.sequence.intro) GAME_STATE.movementLocked = false;
@@ -188,7 +211,6 @@ export const homeScene: Scene = {
     // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
     if (!isMamaOutside) GAME_STATE.mama.update(dt);
     if (questMain.status === "resolved") GAME_STATE.jp.update(dt); // drives its clip/frames — face()/play() alone only set intent, this is what applies it (see PlayerSprite.update)
-    // if (isInViewport(flowersBouquet) && questMain.status === "resolved") flowersBouquet.update(dt);
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
@@ -198,7 +220,9 @@ export const homeScene: Scene = {
 
   draw(ctx) {
     drawViewportClamped(ctx, background);
-    if (isInViewport(flowersBouquet) && questMain.status === "resolved") flowersBouquet.draw(ctx);
+    if (questMain.status === "resolved") {
+      DECORS.filter(isInViewport).forEach((decor) => decor.draw(ctx));
+    }
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
@@ -273,20 +297,63 @@ function interactions(target: Sprite | undefined) {
     };
   }
 
-  if (target === GAME_STATE.jp) {
+  const focus = () => {
     hudSetBagIconVisible(false);
     GAME_STATE.movementLocked = true;
+  };
+
+  const blur = () => {
+    hudSetBagIconVisible(true);
+    GAME_STATE.movementLocked = false;
+    audioPlayMusic("home", { fade: 3, volume: BG_MUSIC_VOLUME });
+  };
+
+  if (target === GAME_STATE.jp) {
+    focus();
     playExclamation(GAME_STATE.jp, { glyph: "☺️" });
     DIALOGUE.queue({ text: `JP: Yes Love Love...`, color: "blue" });
     DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
   }
 
   if (target === flowersBouquet) {
-    hudSetBagIconVisible(false);
-    GAME_STATE.movementLocked = true;
+    focus();
     playExclamation(GAME_STATE.player, { icon: ICON_RED_HEART, hold: 1.5 });
     DIALOGUE.show(`Flowers from my JP Love Love...`);
     DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
+  }
+
+  if (target === framePhotoSky) {
+    focus();
+    playExclamation(GAME_STATE.player, { glyph: "🥰" });
+    DIALOGUE.show(`Awe! Sky — daily bonding namin ni Love Love...`);
+    DIALOGUE.onComplete = () => {
+      focus();
+      audioPlayMusic("home", { fade: 1, volume: 0.1 });
+      audioPlayAmbience("sky_manta", { seek: 35, volume: 0.5, fade: 1 });
+      playImagePreview(PHOTO_SKY, {
+        onComplete: () => {
+          blur();
+          audioStopAmbience("sky_manta", 3);
+        },
+      });
+    };
+  }
+
+  if (target === framePhoto) {
+    focus();
+    playExclamation(GAME_STATE.player, { glyph: "😍" });
+    DIALOGUE.show(`Kami ni JP LOVE LOVE KO!!! AYiiieeeeeeeee...`);
+    DIALOGUE.onComplete = () => {
+      focus();
+      audioPlayMusic("home", { fade: 1, volume: 0.1 });
+      audioPlayAmbience("forever", { seek: 15.5, volume: 0.5 });
+      playImagePreview(PHOTO_COUPLE, {
+        onComplete: () => {
+          blur();
+          audioStopAmbience("forever", 3);
+        },
+      });
+    };
   }
 }
 

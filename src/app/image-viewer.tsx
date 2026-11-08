@@ -1,3 +1,11 @@
+import {
+  BIRTHDAY_POSTCARD_SRC,
+  BIRTHDAY_STICKER_CLASSNAME,
+  BIRTHDAY_STICKER_SRC,
+  POSTCARD_MAX_HEIGHT,
+  POSTCARD_MAX_WIDTH,
+} from "@/lib/postcard-sticker";
+
 /**
  * A simple full-image preview popup for any bag item — tracing papers now,
  * postcard/treasure photos later. Unlike `ParcelViewer` (which toggles
@@ -31,22 +39,31 @@ export function ImageViewer({
       className="absolute inset-0 z-10 flex items-center justify-center bg-black/60 p-8"
       onClick={onClose}
     >
-      {/* `max-w-full max-h-full` here resolves against THIS flex container's
-          own content box, which is a genuinely definite size (inset-0 minus
-          fixed padding) — not against an intermediate `auto`-height wrapper
-          capped by its own `max-height`, which doesn't give percentage
-          children anything definite to resolve against and silently lets
-          them overflow. The background (default gradient, or `backgroundColor`
-          if given) shows through these images' transparent regions (the
-          tracing papers are scattered, transparent PNGs) instead of the game
-          scene behind the popup. */}
-      <img
-        src={src}
-        alt={alt}
-        onClick={(e) => e.stopPropagation()}
-        style={backgroundColor ? { background: backgroundColor } : undefined}
-        className={`max-w-full max-h-full object-contain rounded-xl border-2 border-amber-800 shadow-[0_0_24px_rgba(0,0,0,0.6)] ${backgroundColor ? "" : "bg-linear-to-b from-white to-amber-50"}`}
-      />
+      {/* `inline-block` shrink-wraps this to the photo's own rendered box
+          (not the popup's) — that's what lets the sticker below anchor to
+          the photo's actual corner regardless of its size/aspect ratio.
+          POSTCARD_MAX_WIDTH/HEIGHT are fixed px (not `max-w-full`'s
+          percentage), deliberately: a percentage max-height only resolves
+          against a parent with an explicit height, which this shrink-wrap
+          wrapper doesn't have. The background (default gradient, or
+          `backgroundColor` if given) shows through these images'
+          transparent regions (the tracing papers are scattered, transparent
+          PNGs) instead of the game scene behind the popup. */}
+      <div className="relative inline-block leading-none" onClick={(e) => e.stopPropagation()}>
+        <img
+          src={src}
+          alt={alt}
+          style={{
+            maxWidth: POSTCARD_MAX_WIDTH,
+            maxHeight: POSTCARD_MAX_HEIGHT,
+            background: backgroundColor,
+          }}
+          className={`block object-contain rounded-xl border-2 border-amber-800 shadow-[0_0_24px_rgba(0,0,0,0.6)] ${backgroundColor ? "" : "bg-linear-to-b from-white to-amber-50"}`}
+        />
+        {src === BIRTHDAY_POSTCARD_SRC && (
+          <img src={BIRTHDAY_STICKER_SRC} alt="" className={BIRTHDAY_STICKER_CLASSNAME} />
+        )}
+      </div>
       <button
         type="button"
         onClick={onClose}
