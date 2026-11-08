@@ -5,11 +5,9 @@ import { PAGE_SOUND_VOLUME, PAPER_BG_COLOR, PuzzleViewer } from "@/app/puzzle-vi
 import { GAME_STATE } from "@/features/game-state";
 import { audioPlaySound } from "@/lib/audio";
 import { bagHasItem, type ItemName } from "@/lib/bag";
-import { birthdayConfetti } from "@/lib/confetti";
 import { img } from "@/lib/img";
+import { startPostcardConfetti, stopPostcardConfetti } from "@/lib/postcard-confetti";
 import { useEffect, useRef, useState } from "react";
-
-export let confettiHandle: (() => boolean) | undefined;
 
 const ITEM_LABEL: Record<ItemName, string> = {
   journal: "Journal",
@@ -113,7 +111,7 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   const viewImage = (name: ItemName, file: string, backgroundColor?: string) => () => {
     GAME_STATE.bagViewedItems.add(name);
     setViewingImage({ src: img(file), alt: ITEM_LABEL[name], backgroundColor, name });
-    if (name === "birthday_postcard") confettiHandle = birthdayConfetti(5);
+    if (name === "birthday_postcard") startPostcardConfetti(5);
     if (name === "treasure_map" || /paper|sketch.*/i.test(name))
       audioPlaySound("page_turn_forward", { volume: PAGE_SOUND_VOLUME });
   };
@@ -126,7 +124,7 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
   // conditioned on `name` above.
   useEffect(() => {
     if (viewingImage) return;
-    confettiHandle?.();
+    stopPostcardConfetti();
     if (
       lastViewedNameRef.current === "treasure_map" ||
       /paper.*|sketch/i.test(lastViewedNameRef.current ?? "")
