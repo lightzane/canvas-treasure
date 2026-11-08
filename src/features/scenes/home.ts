@@ -110,7 +110,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
 export const homeScene: Scene = {
   fadeIn: 1,
   fadeOut: 0.5,
-  ready: preload([background.image, foreground.image, parcel.image]).then(() =>
+  ready: preload([background.image, foreground.image]).then(() =>
     prepareViewportClamped([background, foreground]),
   ),
 
@@ -231,7 +231,7 @@ export const homeScene: Scene = {
     else GAME_STATE.player.draw(ctx);
     drawViewportClamped(ctx, foreground);
 
-    if (!bagHasItem("parcel")) parcel.draw(ctx);
+    if (!bagHasItem("parcel") && questMain.status !== "resolved") parcel.draw(ctx);
     if (!bagHasItem("journal")) journal.draw(ctx);
     if (!bagHasItem("shoes") && questRunningShoes.status === "active") runningShoes.draw(ctx);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, interactables);

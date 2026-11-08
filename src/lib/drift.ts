@@ -1,7 +1,7 @@
 import type { Direction } from "@/features/controller";
 import type { Position, Sprite } from "@/features/sprite";
-import { getMoveDelta } from "@/lib/map-movement";
 import { getPosSpawnTile } from "@/lib/positioning";
+import { getMoveDelta } from "@/lib/walk-math";
 import gsap from "gsap";
 
 /**

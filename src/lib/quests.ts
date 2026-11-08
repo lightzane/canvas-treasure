@@ -1,3 +1,14 @@
+// Circular import: game-state.ts imports QUESTS (below) from this file, and
+// this file imports GAME_STATE back. Safe ONLY because every use of
+// GAME_STATE here stays inside a function body (never module-top-level) —
+// by the time any of these functions actually run, both modules have long
+// since finished loading and GAME_STATE is fully built. game-state.ts's own
+// `quests: QUESTS` assignment is what closes the loop on its side; QUESTS
+// itself never needs GAME_STATE's value to construct, which is the other
+// half of why this works. Moving a GAME_STATE read up to this file's own
+// module scope (a top-level `const`, not inside a function) would break:
+// at the point this file evaluates (mid-way through game-state.ts's own
+// import list), GAME_STATE hasn't been assigned yet.
 import { GAME_STATE } from "@/features/game-state";
 
 /**
@@ -49,61 +60,61 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "parcel",
     {
       description: "Get the parcel.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
     "invitation_postcard", // main quest OR last quest
     {
       description: "Find out what's this treasure is about.",
-      status: "active",
+      status: "inactive",
     },
   ],
   [
     "daoming_keys",
     {
       description: "Help DAO MING SI find his missing keys.",
-      status: "active",
+      status: "inactive",
     },
   ],
-  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
-  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "active" }],
-  ["meet_ximen", { description: "Find and meet XI MEN", status: "active" }],
+  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "inactive" }],
+  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "inactive" }],
+  ["meet_ximen", { description: "Find and meet XI MEN", status: "inactive" }],
   [
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 2,
+      qty: 0,
       totalQty: 3,
-      status: "active",
+      status: "inactive",
     },
   ],
   [
     "garden_shears",
     {
       description: "Find a way to remove the wild bush.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
     "running_shoes",
     {
       description: "Find running shoes at home.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
     "message_in_bottle",
     {
       description: "Find the bottle that contains the treasure map.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [

@@ -1,3 +1,4 @@
+import { PAGE_SOUND_VOLUME } from "@/app/puzzle-viewer";
 import { COLLISION_OVERWORLD, COLLISION_OVERWORLD_EVENT } from "@/constants/collisions/overworld";
 import { TILE_SIZE } from "@/constants/game-settings";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
@@ -449,7 +450,11 @@ const npcToph = new PlayerSprite({ sprites: { idle: IMGS_TOPH_IDLE }, ...npcCfg 
 
 // TODO: place them in the teashop
 const npcZuko = new PlayerSprite({ sprites: { idle: IMGS_ZUKO_IDLE }, ...npcCfg });
-const npcIroh = new PlayerSprite({ sprites: { idle: IMGS_IROH_EARTH_IDLE }, ...npcCfg });
+const npcIroh = new PlayerSprite({
+  sprites: { idle: IMGS_IROH_EARTH_IDLE },
+  ...npcCfg,
+  scale: 1.1,
+});
 
 // TODO: place these in the overworld randomly scattered
 const npcAdultMale1 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg, scale: 1.1 }); // prettier-ignore
@@ -625,8 +630,6 @@ export const overworldScene: Scene = {
   ready: preload([
     background.image,
     foreground.image,
-    smallFountainA.image,
-    bigFountainA.image,
     backgroundEvent.image,
     // TODO: is this the right place for the backgroundEvent, where we want to lazy load it once in a specific time?
   ]).then(() => prepareViewportClamped([background, foreground, backgroundEvent])),
@@ -1514,10 +1517,10 @@ function completeCoreMsgBottle() {
   }, 3);
 
   DIALOGUE.effect(() => {
-    audioPlaySound("page_turn_forward");
+    audioPlaySound("page_turn_forward", { volume: PAGE_SOUND_VOLUME });
     playImagePreview(PHOTO_TREASURE_MAP, {
       hold: 4.5,
-      onComplete: () => audioPlaySound("page_turn_backward"),
+      onComplete: () => audioPlaySound("page_turn_backward", { volume: PAGE_SOUND_VOLUME }),
     });
   }, 5);
   DIALOGUE.queue(`Mahahanap ko na rin ang teasure para sa event!`);

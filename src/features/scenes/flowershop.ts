@@ -184,7 +184,11 @@ function interactions(target: Sprite | undefined) {
 }
 
 function mainQuestGardenShears() {
-  if (!bagHasItem("shears")) DIALOGUE.show(`FLORIST: Ma'am? Anu po hanap nila...`);
+  if (!bagHasItem("shears"))
+    DIALOGUE.show({
+      text: `FLORIST: Ma'am? Anu po hanap nila...`,
+      color: "red",
+    });
   else
     DIALOGUE.show({
       text: `FLORIST: Keep the garden shears po. I hope nakatulong po ito.`,

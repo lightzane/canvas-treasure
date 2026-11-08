@@ -5,7 +5,7 @@ import { GAME_STATE } from "@/features/game-state";
 import type { Position } from "@/features/sprite";
 import { bagHasItem } from "@/lib/bag";
 import { getPosSpawnTile } from "@/lib/positioning";
-import { isSingleLeg, legTarget, type WalkLeg } from "@/lib/walk";
+import { getMoveDelta, isSingleLeg, legTarget, type WalkLeg } from "@/lib/walk-math";
 import gsap from "gsap";
 
 /** Edge-detects `GAME_STATE.movementLocked` turning on, so `movePlayer` only forces idle once per lock, not every frame — see the comment where it's read. */
@@ -88,14 +88,6 @@ function updateAnimation({ direction, running = false }: UpdateAnimationOptions 
   } else {
     player.play("idle");
   }
-}
-
-/** How far to move on each axis for `distance` px in `direction` — exported for `walk`'s relative-steps legs, same direction semantics as the player's own per-frame movement. */
-export function getMoveDelta(direction: Direction, distance: number): { dx: number; dy: number } {
-  if (direction === "w") return { dx: 0, dy: -distance };
-  if (direction === "a") return { dx: -distance, dy: 0 };
-  if (direction === "s") return { dx: 0, dy: distance };
-  return { dx: distance, dy: 0 }; // "d"
 }
 
 /**

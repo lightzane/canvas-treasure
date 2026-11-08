@@ -104,6 +104,24 @@ const TRIGGER_HANDLERS: TriggerHandlers = {
 export const templateScene: Scene = {
   fadeIn: 0.5,
   fadeOut: 0.5,
+  // Goes in `ready` below (same list in BOTH preload([...]) AND
+  // prepareViewportClamped([...]) — never just one):
+  //   - background, foreground
+  //   - any other map-scale layer this scene also draws via
+  //     drawViewportClamped() in its own draw() (e.g. overworld.ts's
+  //     backgroundEvent)
+  // Never goes here: NPCs, items, decor — anything drawn via plain
+  // sprite.draw()/drawYSorted instead. Not even a lot of them (see
+  // overworld.ts, which never lists any of its many NPCs here).
+  //
+  // Why: every image in the game already loads before gameplay starts,
+  // via GameEngine.start()'s preload(getAllLoadedImages()) — a complete
+  // inventory by construction (@/lib/load-image). This list's actual job is
+  // narrower: it's what lets prepareViewportClamped createImageBitmap the
+  // big map layers up front, avoiding a measured ~400ms decode stall
+  // (@/lib/canvas/viewport-clamp) — only relevant at that size, and never
+  // read back out for a regular sprite (those never draw via
+  // drawViewportClamped, so decoding one here would be dead work).
   ready: preload([background.image, foreground.image]).then(() =>
     prepareViewportClamped([background, foreground]),
   ),
