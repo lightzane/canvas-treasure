@@ -126,9 +126,27 @@ interface PlaceAtTileParams {
  * Only moves the sprite — it doesn't add it to a scene's `decor`/entity
  * list, so the sprite still needs to be in that list to actually draw/update.
  *
- * `sprite.size` is 0x0 until its image finishes loading, so only call this
- * once that's guaranteed — e.g. from a scene's `enter()`, which `GameEngine`
- * runs after the scene's `ready` promise resolves.
+ * `sprite.size` (the default `spriteSize`) is `0x0` until `sprite.image`
+ * finishes loading — and the overwhelming majority of call sites across
+ * every scene run at MODULE SCOPE (a baseline NPC/decor item, placed once
+ * when the scene file first imports, not inside `enter()`), which executes
+ * synchronously, before any image's network fetch could possibly have
+ * resolved (image loads are always asynchronous, even from cache — a
+ * browser guarantee, not a timing coincidence). Without the self-correction
+ * below, that would silently place every such sprite centered on the raw
+ * tile's own center point instead of offset to center the sprite ON the
+ * tile — permanently, since nothing else ever re-runs this. Worse in a
+ * production build than in dev: dev serves each module as its own network
+ * request, so the gaps between them occasionally let an already-cached
+ * image's `load` fire before its own placement code runs by luck; a
+ * bundled production build executes as one unbroken synchronous script
+ * with no such gaps, so every module-scope call loses that race every
+ * time. So: places immediately with whatever size is available right now
+ * (correct outright for an already-loaded image, or an explicit
+ * `spriteSize` override, which is exactly why the player's own placement
+ * call passes `GAME_STATE.player.boxSize` instead of relying on this) —
+ * and if the image wasn't loaded yet, re-places once it actually finishes,
+ * self-correcting the one-frame-ish-or-less flash at the wrong spot.
  *
  * @example
  * placeAtTile(teaset1, [2, 7]);
@@ -146,5 +164,11 @@ export function placeAtTile(spriteOrParams: Sprite | PlaceAtTileParams, tile?: [
     ? { sprite: spriteOrParams as Sprite, tile }
     : (spriteOrParams as PlaceAtTileParams);
 
-  sprite.position = getPosSpawnTile({ tile: at, spriteSize: spriteSize ?? sprite.size, origin });
+  const place = () => {
+    sprite.position = getPosSpawnTile({ tile: at, spriteSize: spriteSize ?? sprite.size, origin });
+  };
+
+  if (!spriteSize && !sprite.image.complete)
+    sprite.image.addEventListener("load", place, { once: true });
+  place();
 }

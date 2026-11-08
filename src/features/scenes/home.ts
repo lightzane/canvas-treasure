@@ -69,9 +69,9 @@ const frameIntCfgs: Partial<Interactable> = {
   facePlayer: false,
   labelOffset: { y: 36 },
 };
-placeAtTile({ sprite: flowersBouquet, tile: [4.75, 12.2] });
-placeAtTile({ sprite: framePhotoSky, tile: [1.2, 11.2] });
-placeAtTile({ sprite: framePhoto, tile: [3, 11.2] });
+placeAtTile(flowersBouquet, [4.75, 12.2]);
+placeAtTile(framePhotoSky, [1.2, 11.2]);
+placeAtTile(framePhoto, [3, 11.2]);
 
 const DECORS: Sprite[] = [];
 
@@ -166,7 +166,7 @@ export const homeScene: Scene = {
       if (!bagHasItem("journal")) placeAtTile({ sprite: journal, tile: [7, 4] });
     }
 
-    placeAtTile({ sprite: GAME_STATE.mama, tile: [3.5, 3] });
+    placeAtTile({ sprite: GAME_STATE.mama, tile: [3.75, 3] });
     if (questMain.status === "resolved") {
       placeAtTile({ sprite: GAME_STATE.jp, tile: jpSpawnLocation });
       GAME_STATE.obstacles = [GAME_STATE.jp];
