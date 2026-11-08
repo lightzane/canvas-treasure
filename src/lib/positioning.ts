@@ -119,7 +119,9 @@ interface PlaceAtTileParams {
  * Sets `sprite.position` to a Tiled `[col, row]`, centered on the tile — a
  * thin wrapper over `getPosSpawnTile` that infers `spriteSize` from the
  * sprite itself by default, so most call sites only ever need to supply the
- * tile.
+ * tile. Two forms: `placeAtTile(sprite, tile)` when there's nothing to
+ * customize, or `placeAtTile({ sprite, tile, origin, spriteSize })` once
+ * `origin`/`spriteSize` actually need overriding.
  *
  * Only moves the sprite — it doesn't add it to a scene's `decor`/entity
  * list, so the sprite still needs to be in that list to actually draw/update.
@@ -127,12 +129,22 @@ interface PlaceAtTileParams {
  * `sprite.size` is 0x0 until its image finishes loading, so only call this
  * once that's guaranteed — e.g. from a scene's `enter()`, which `GameEngine`
  * runs after the scene's `ready` promise resolves.
+ *
+ * @example
+ * placeAtTile(teaset1, [2, 7]);
+ * placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation, spriteSize: GAME_STATE.player.boxSize });
  */
-export function placeAtTile({
-  sprite,
-  tile,
-  origin = { x: 0, y: 0 },
-  spriteSize,
-}: PlaceAtTileParams) {
-  sprite.position = getPosSpawnTile({ tile, spriteSize: spriteSize ?? sprite.size, origin });
+export function placeAtTile(sprite: Sprite, tile: [number, number]): void;
+export function placeAtTile(params: PlaceAtTileParams): void;
+export function placeAtTile(spriteOrParams: Sprite | PlaceAtTileParams, tile?: [number, number]) {
+  const {
+    sprite,
+    tile: at,
+    origin = { x: 0, y: 0 },
+    spriteSize,
+  }: PlaceAtTileParams = tile !== undefined
+    ? { sprite: spriteOrParams as Sprite, tile }
+    : (spriteOrParams as PlaceAtTileParams);
+
+  sprite.position = getPosSpawnTile({ tile: at, spriteSize: spriteSize ?? sprite.size, origin });
 }

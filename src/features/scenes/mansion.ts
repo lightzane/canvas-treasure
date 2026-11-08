@@ -74,7 +74,7 @@ COL_B.forEach((npc) => npc.face("a"));
 
 // Fixed for the whole scene — nobody else ever becomes interactable here, so
 // this never needs rebuilding on re-entry.
-const INTERACTABLES: Interactable[] = [{ sprite: BUTLER, label: "Talk" }];
+const INTERACTABLES: Interactable[] = [BUTLER];
 
 const IMG_MAP_BG = img("maps/mansion.png");
 // const IMG_MAP_FG = img("maps/home-fg.png");
@@ -143,7 +143,7 @@ export const mansionScene: Scene = {
     NPCS.filter(isInViewport).forEach((n) => n.update(dt));
 
     const playerBox = movePlayer(dt);
-    if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+    checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
     updateInteraction(INTERACTABLES, interactions);
   },

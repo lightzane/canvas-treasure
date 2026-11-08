@@ -105,7 +105,7 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "overworld" as SceneName,
+  sceneName: "teashop" as SceneName,
   /**
    * One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events").
    * `true` = complete.
@@ -120,7 +120,7 @@ export const GAME_STATE = {
     retrieving_sheet_2: true,
     mama_running_shoes: true,
     mama_starts_bottle: true,
-    market_cutscene: true,
+    market_cutscene: false,
     mid_aisle_cutscene: false,
     mid_aisle_lei_cutscene: false,
     mid_aisle_jp_cutscene: false,

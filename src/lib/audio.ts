@@ -33,13 +33,15 @@ export type MusicKey =
   | "happy_birthday"
   | "sky_manta"
   | "a_guitar_rock"
+  | "jazz"
   | "amb_beach"
   | "amb_shopping_crowd"
   | "amb_water_flowing"
   | "amb_wind_interior"
   | "amb_people_public"
   | "amb_people_crowd"
-  | "amb_birds_forest";
+  | "amb_birds_forest"
+  | "amb_birds_singing";
 
 /**
  * Physical files split into multiple named clips rather than played whole —
@@ -147,6 +149,7 @@ const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   happy_birthday: "happy-birthday-elegant-harp-piano.mp3",
   sky_manta: "sky-manta.mp3",
   a_guitar_rock: "mixkit-ko-1068.mp3",
+  jazz: "jazz.mp3",
   amb_beach: "ambience/mixkit-small-waves-harbor-rocks-1208.wav",
   amb_shopping_crowd: "ambience/mixkit-shopping-center-crowd-377.wav",
   amb_water_flowing: "ambience/mixkit-water-flowing-ambience-loop-3126.wav",
@@ -154,6 +157,7 @@ const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   amb_people_public: "ambience/mixkit-people-in-fair-ambience-and-laughter-368.wav",
   amb_people_crowd: "ambience/mixkit-very-crowded-pub-or-party-loop-360.wav",
   amb_birds_forest: "ambience/mixkit-forest-birds-chirp-ambiance-69.wav",
+  amb_birds_singing: "ambience/mixkit-forest-with-birds-singing-1235.wav",
 };
 
 // Lazily built on first play, then reused for the rest of the session.

@@ -9,8 +9,12 @@
  * overworld.ts, which is the one large hub scene with story-specific
  * extras) — background/foreground map, player spawn, boundaries + trigger
  * zones, NPCs + interactables via `createNpcSpawner` (both the permanent
- * and the spawn-later-on-a-story-beat case), dialogue dispatch, and a
- * `beginCutscene` example for anything more involved than one line.
+ * and the spawn-later-on-a-story-beat case), and both dialogue-dispatch
+ * shapes: `createTalkDispatch(target)` + `talkCommonM`/`talkCommonF`
+ * (@/lib/npc-talk) for a flat one-off line with no state (see teashop.ts
+ * for a whole scene that's only ever this), and a `switch` + named
+ * function + `beginCutscene` for anything stateful (first-meet vs.
+ * already-met, multi-line, spawning another NPC afterward, ...).
  */
 import { GAME_STATE } from "@/features/game-state";
 import { drawInteractPrompt, updateInteraction, type Interactable } from "@/features/interact";
@@ -33,6 +37,7 @@ import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { createNpcSpawner } from "@/lib/npc-spawn";
+import { createTalkDispatch } from "@/lib/npc-talk";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 import { IMGS_ADULT_MALE_1_IDLE } from "@/sprites/adult-male-1";
@@ -58,6 +63,12 @@ const npcExample = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE } 
 // after some story beat" half of the pattern below (like overworld.ts's
 // huazelei). Delete this one if every NPC here is permanent from the start.
 const npcLater = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE } });
+// A third NPC with nothing stateful to say — demonstrates the OTHER half
+// of interactions() below: a flat one-off line needs neither a switch
+// case nor its own named function, just a direct talkCommonM/
+// talkCommonF call. See teashop.ts for a whole scene built only out
+// of this NPC's kind.
+const npcSimple = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE } });
 
 // Starts blank — respawnNPC (below) is what actually populates this, so it
 // doubles as both "who's currently in this scene" and the GAME_STATE.obstacles
@@ -66,10 +77,13 @@ const NPCS: PlayerSprite[] = [];
 
 // respawnNPC never touches this on its own (an Interactable can carry its
 // own config — label, probeDistance, ... — so making something interactable
-// again is always a deliberate, separate call). Fixed here for npcExample
-// since it's permanent; npcLater's entry gets added dynamically when it
-// actually spawns, see npcExampleIntro() below.
-const INTERACTABLES: Interactable[] = [{ sprite: npcExample, label: "Talk" }];
+// again is always a deliberate, separate call). Fixed here for npcExample/
+// npcSimple since both are permanent; npcLater's entry gets added
+// dynamically when it actually spawns, see npcExampleIntro() below. Bare
+// sprites, not `{ sprite: ... }` — neither has a label/probeDistance/... to
+// customize, so the shorthand form applies (see Interactable's own doc in
+// @/features/interact).
+const INTERACTABLES: Interactable[] = [npcExample, npcSimple];
 
 const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 
@@ -80,6 +94,8 @@ const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 // respawnNPC/despawnNPC from wherever that story beat actually happens (a
 // dialogue's onComplete, a trigger zone, ...) — see npcLater below.
 respawnNPC(npcExample, [5, 5]);
+respawnNPC(npcSimple, [7, 5]);
+npcSimple.face("s");
 
 const TRIGGER_HANDLERS: TriggerHandlers = {
   exit: { onEnter: exitZone },
@@ -94,7 +110,7 @@ export const templateScene: Scene = {
 
   enter() {
     // TODO: this scene's own key, once one exists in audio.ts's MUSIC_REGISTRY:
-    // audioPlayMusic("template", { fade: 1, volume: 0.5 });
+    // audioPlayMusic("template", { seek: 0, fade: 1, volume: 0.5 });
 
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(templateScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
@@ -126,7 +142,7 @@ export const templateScene: Scene = {
     NPCS.filter(isInViewport).forEach((n) => n.update(dt));
 
     const playerBox = movePlayer(dt);
-    if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+    checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
     updateInteraction(INTERACTABLES, interactions);
   },
@@ -151,10 +167,21 @@ function exitZone() {
   GAME_STATE.sceneName = "overworld"; // TODO: change if this scene should return somewhere else
 }
 
-// Mirrors overworld.ts's own `interactions()` — one case per
-// sprite/PlayerSprite, delegating to a named function for anything beyond a
-// one-line DIALOGUE.show().
+// createTalkDispatch binds once to this call's own target, so talkCommonM
+// below needs neither an `if`/case nor to repeat `target` itself — it's a
+// no-op unless npcSimple is actually the one faced. Already does the
+// beginCutscene + DIALOGUE.show + re-face + bag-icon dance in one call, so
+// a flat one-off line like this one doesn't need a case/break of its own.
+// See teashop.ts's own interactions() for a scene where every NPC is this
+// simple (no switch at all).
 function interactions(target: Sprite | undefined) {
+  const { talkCommonM } = createTalkDispatch(target);
+  talkCommonM(npcSimple, "s", `NPC: Just passing through, nothing much to say.`);
+
+  // Mirrors overworld.ts's own `interactions()` — one case per
+  // sprite/PlayerSprite, delegating to a named function for anything
+  // stateful (first-meet vs. already-met, multi-line, spawning another NPC
+  // afterward, ...) beyond a one-line DIALOGUE.show().
   switch (target) {
     case npcExample:
       if (!hasMetNpcExample) npcExampleIntro();
@@ -188,6 +215,6 @@ function npcExampleIntro() {
     hudSetBagIconVisible(true);
     GAME_STATE.movementLocked = false;
     respawnNPC(npcLater, [8, 8]); // the dynamic half of the pattern — appears only now
-    addOnce(INTERACTABLES, { sprite: npcLater, label: "Talk" }); // respawnNPC never does this part, see the comment on INTERACTABLES above
+    addOnce(INTERACTABLES, npcLater); // respawnNPC never does this part, see the comment on INTERACTABLES above — "Talk" is already the default label, so the bare-sprite shorthand applies here too
   };
 }

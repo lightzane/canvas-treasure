@@ -13887,6 +13887,18 @@
                          "width":33,
                          "x":1884,
                          "y":1290.23
+                        }, 
+                        {
+                         "height":40.5487,
+                         "id":96,
+                         "name":"teashop",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":33,
+                         "x":4015.83718209946,
+                         "y":1895.43012513395
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -14523,6 +14535,42 @@
                          "width":160,
                          "x":2944.03835380306,
                          "y":1053.26567550097
+                        }, 
+                        {
+                         "height":160,
+                         "id":97,
+                         "name":"teashop",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":33,
+                         "x":3871.89292543021,
+                         "y":2303.1839720675
+                        }, 
+                        {
+                         "height":160,
+                         "id":98,
+                         "name":"main",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":33,
+                         "x":3837.89292543,
+                         "y":2303.183972068
+                        }, 
+                        {
+                         "height":33,
+                         "id":99,
+                         "name":"teashop",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":192,
+                         "x":3936.69924253296,
+                         "y":1951.39009896899
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -14622,7 +14670,7 @@
          "y":0
         }],
  "nextlayerid":170,
- "nextobjectid":95,
+ "nextobjectid":100,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

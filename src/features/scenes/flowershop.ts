@@ -61,11 +61,11 @@ const INTERACTABLES: Interactable[] = [
     sprite: npcCashier,
     probeDistance: TILE_SIZE + 16,
   },
-  { sprite: npcStaffM1 },
-  { sprite: npcStaffF1 },
-  { sprite: npcStaffM2 },
-  { sprite: npcStaffF2 },
-  { sprite: npcStaffF3 },
+  npcStaffM1,
+  npcStaffF1,
+  npcStaffM2,
+  npcStaffF2,
+  npcStaffF3,
 ];
 
 const questGardenShears = GAME_STATE.quests.get("garden_shears")!;
@@ -122,7 +122,7 @@ export const flowershopScene: Scene = {
     NPCS.filter(isInViewport).forEach((n) => n.update(dt));
 
     const playerBox = movePlayer(dt);
-    if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+    checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
     updateInteraction(INTERACTABLES, interactions);
   },

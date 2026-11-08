@@ -75,7 +75,7 @@ placeAtTile({ sprite: framePhoto, tile: [3, 11.2] });
 
 const DECORS: Sprite[] = [];
 
-const MAMA_INTERACTABLE: Interactable = { sprite: GAME_STATE.mama, label: "Talk" };
+const MAMA_INTERACTABLE: Interactable = GAME_STATE.mama;
 // Sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway.
 const PARCEL_INTERACTABLE: Interactable = {
   sprite: parcel,
@@ -170,7 +170,7 @@ export const homeScene: Scene = {
     if (questMain.status === "resolved") {
       placeAtTile({ sprite: GAME_STATE.jp, tile: jpSpawnLocation });
       GAME_STATE.obstacles = [GAME_STATE.jp];
-      interactables = [{ sprite: GAME_STATE.jp }];
+      interactables = [GAME_STATE.jp];
     }
 
     // Mama at home
@@ -213,7 +213,7 @@ export const homeScene: Scene = {
     if (questMain.status === "resolved") GAME_STATE.jp.update(dt); // drives its clip/frames — face()/play() alone only set intent, this is what applies it (see PlayerSprite.update)
 
     const playerBox = movePlayer(dt);
-    if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+    checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
     updateInteraction(interactables, interactions);
   },
@@ -277,7 +277,7 @@ function interactions(target: Sprite | undefined) {
         type: "item",
         quantity: 1,
       });
-      interactables = interactables.filter((i) => i.sprite !== parcel);
+      removeInteractable(interactables, parcel);
       parcelShine?.stop();
       parcelShine = null;
       parcelBounce?.stop(); // it's picked up now — stop the infinite tween, don't leave it running forever on a sprite nothing draws anymore

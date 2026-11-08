@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="170" nextobjectid="95">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="170" nextobjectid="100">
  <editorsettings>
   <export target="overworld.json" format="json"/>
  </editorsettings>
@@ -12836,6 +12836,7 @@
    <object id="1" name="flowershop" x="1204.81" y="1315.27" width="33" height="40.5487"/>
    <object id="4" name="mansion" x="2764.5" y="474.5" width="38" height="47.5"/>
    <object id="49" name="home" x="1884" y="1290.23" width="33" height="40.5487"/>
+   <object id="96" name="teashop" x="4015.84" y="1895.43" width="33" height="40.5487"/>
   </objectgroup>
   <objectgroup color="#ffffff" id="163" name="sand">
    <object id="9" name="sand" x="331.451" y="2351.79" width="450.325" height="453.89"/>
@@ -12891,6 +12892,9 @@
    <object id="93" name="park" x="2944.04" y="1823" width="160" height="33"/>
    <object id="94" name="park_exit" x="2944.04" y="1857" width="160" height="33"/>
    <object id="90" name="main" x="2944.04" y="1053.27" width="160" height="33"/>
+   <object id="97" name="teashop" x="3871.89" y="2303.18" width="33" height="160"/>
+   <object id="98" name="main" x="3837.89" y="2303.18" width="33" height="160"/>
+   <object id="99" name="teashop" x="3936.7" y="1951.39" width="192" height="33"/>
   </objectgroup>
   <objectgroup color="#00f900" id="165" name="cutscene">
    <object id="48" name="running_shoes" x="1825" y="1389.5" width="126.5" height="41.5"/>

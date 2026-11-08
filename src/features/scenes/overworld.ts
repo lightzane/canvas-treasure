@@ -285,7 +285,7 @@ const msgBottleInteractablesCfgs: Partial<Interactable> = {
 };
 
 const INTERACTABLES: Interactable[] = [
-  { sprite: GAME_STATE.papa, label: "Talk" },
+  GAME_STATE.papa,
   { sprite: wildBushPaper, ...wildBushInteractablesCfgs },
   { sprite: wildBushMazeEntrance, ...wildBushInteractablesCfgs },
   { sprite: wildBushMazeChest, ...wildBushInteractablesCfgs },
@@ -296,7 +296,7 @@ const INTERACTABLES: Interactable[] = [
   { sprite: spMansion2, ...signpostInteractablesCfgs },
   { sprite: msgBottle1, ...msgBottleInteractablesCfgs },
 ];
-const HUAZELEI_INTERACTABLE: Interactable = { sprite: huazelei, label: "Talk" };
+const HUAZELEI_INTERACTABLE: Interactable = huazelei;
 const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 let paperWindAnimating = false;
 
@@ -346,6 +346,12 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
       exitMap();
     },
   },
+  enter_teashop: {
+    onEnter: () => {
+      GAME_STATE.sceneName = "teashop";
+      exitMap();
+    },
+  },
   cutscene_running_shoes: { onEnter: cutsceneRunningShoes },
   cutscene_mid_aisle: { onEnter: () => cutsceneMidAisle() },
   cutscene_mid_aisle_lei: { onEnter: () => cutsceneMidAisleLei() },
@@ -360,6 +366,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   sound_garden_maze: { onEnter: () => soundGardenMaze() },
   sound_park: { onEnter: () => soundPark() },
   sound_park_exit: { onEnter: () => soundPark(false) },
+  sound_teashop: { onEnter: () => soundTeashop() },
   sand: {
     onEnter: () => sandZoneCount++,
     onLeave: () => sandZoneCount--,
@@ -627,9 +634,23 @@ export const overworldScene: Scene = {
   enter() {
     let bgMusicDelay = 0.5;
     if (!GAME_STATE.sequence.intro) bgMusicDelay = 1;
-    gsap.delayedCall(overworldScene.fadeIn! + bgMusicDelay, () =>
-      audioPlayMusic("overworld", { seek: 0, fade: 2, volume: VOLUME_MAIN_BG }),
-    );
+    gsap.delayedCall(overworldScene.fadeIn! + bgMusicDelay, () => {
+      // This timer runs independently of the trigger-zone system, so check
+      // fresh whether the player's still standing in sound_teashop (e.g.
+      // spawned right at the door on exit, see soundTeashop) before blindly
+      // starting the default theme over whatever that zone's onEnter
+      // already set up — sound_teashop has no onLeave of its own to redo
+      // this once the player walks away, so this check runs at fire time,
+      // not spawn time, and correctly finds them already gone by then too.
+      // "sound_teashop" names TWO separate zone rects (two separate
+      // TriggerZone instances, each tracking its own `entered`) — `some`,
+      // not `find`+`?.`, since checking only the first instance missed the
+      // player standing in the other one.
+      const nearTeashop = GAME_STATE.triggerZones.some(
+        (z) => z.name === "sound_teashop" && z.entered,
+      );
+      if (!nearTeashop) audioPlayMusic("overworld", { seek: 0, fade: 2, volume: VOLUME_MAIN_BG });
+    });
 
     sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
     if (!GAME_STATE.bagIconVisible)
@@ -700,7 +721,7 @@ export const overworldScene: Scene = {
     // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
 
     const playerBox = movePlayer(dt);
-    if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+    checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
     updateFootprints(dt);
     trackFootstep(player, sandZoneCount > 0);
@@ -821,10 +842,7 @@ function spawnMamaAtOverworld() {
   respawnNPC(GAME_STATE.mama, [62, 39]);
   GAME_STATE.mama.face("d");
   GAME_STATE.papa.face("a");
-  addOnce(INTERACTABLES, {
-    sprite: GAME_STATE.mama,
-    label: "Talk",
-  });
+  addOnce(INTERACTABLES, GAME_STATE.mama);
 }
 
 function cutsceneRunningShoes() {
@@ -1726,8 +1744,8 @@ function initMarketEvent() {
   despawnNPC(huazelei);
   respawnNPC(meizuo, [101.5, 74]);
   respawnNPC(ximen, [105.5, 74]);
-  addOnce(INTERACTABLES, { sprite: meizuo });
-  addOnce(INTERACTABLES, { sprite: ximen });
+  addOnce(INTERACTABLES, meizuo);
+  addOnce(INTERACTABLES, ximen);
   balloonCrates.forEach((decor) => {
     addOnce(DECORS, decor);
     addOnce(GAME_STATE.obstacles, decor);
@@ -2706,7 +2724,7 @@ function initMainEventGuards() {
     respawnNPC(npc);
     addOnce(INTERACTABLES, { sprite: npc, probeDistance: 8 });
   });
-  AISLE_GUARDS.forEach((npc) => addOnce(INTERACTABLES, { sprite: npc }));
+  AISLE_GUARDS.forEach((npc) => addOnce(INTERACTABLES, npc));
 
   if (questDaoMingKeys.status !== "resolved") {
     placeAtTile({ sprite: AISLE_GUARDS_ROW_A[0], tile: [92.5, 58] });
@@ -2931,6 +2949,11 @@ function soundGardenMaze(fade = 2) {
   // would otherwise crossfade in a second overlapping instance of itself.
   if (audioIsMusicActive("maze")) return;
   audioPlayMusic("maze", { seek: 12, fade, volume: 0.25 });
+}
+
+function soundTeashop() {
+  audioStopMusic(1);
+  audioPlayAmbience("amb_birds_singing", { fade: 2, volume: 0.3 });
 }
 
 function mainEventGuestExpressions(glyphInput?: string, color?: string) {

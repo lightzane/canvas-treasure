@@ -2,7 +2,7 @@ import { GAME_FONT_FAMILY } from "@/constants/game-settings";
 import { isColliding, type Rect } from "@/features/collisions";
 import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
-import type { Sprite } from "@/features/sprite";
+import { Sprite } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
 import { audioPlaySound } from "@/lib/audio";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
@@ -13,7 +13,7 @@ const DEFAULT_PROBE_DISTANCE = 64; // px — how far ahead of the player to reac
 // prettier-ignore
 const OPPOSITE_DIRECTION: Record<Direction, Direction> = { w: "s", s: "w", a: "d", d: "a" };
 
-export interface Interactable {
+export interface InteractableConfig {
   sprite: Sprite;
   /** How far ahead of the player this one can be reached from, in px — e.g. wider for something sitting across a table. @default 64 */
   probeDistance?: number;
@@ -26,17 +26,40 @@ export interface Interactable {
 }
 
 /**
+ * One entry in a scene's interactables list — either the bare `Sprite`
+ * itself (shorthand for `{ sprite }`, every option left at its default), or
+ * the full config object once something needs customizing.
+ *
+ * @example
+ * const INTERACTABLES: Interactable[] = [
+ *   npcSimple, // shorthand — nothing to customize
+ *   { sprite: chest, label: "Open", probeDistance: 48 },
+ * ];
+ */
+export type Interactable = Sprite | InteractableConfig;
+
+/**
+ * Normalizes one `Interactable` entry to its full config shape — the one
+ * place that knows about the bare-`Sprite` shorthand, so every lookup below
+ * just reads `.sprite`/`.label`/etc. without re-checking which shape it got.
+ */
+function toConfig(entry: Interactable): InteractableConfig {
+  return entry instanceof Sprite ? { sprite: entry } : entry;
+}
+
+/**
  * Drops whichever `Interactable` entry wraps `sprite` out of `list`, in
  * place — the `Interactable[]` counterpart to `remove()` (`lib/array.ts`).
  * Plain `remove()` can't do this itself: a scene's interactables list holds
- * wrapper objects (`{ sprite, label }`), not the sprites themselves, so
- * `remove(list, sprite)` can never find a match — it'd need the *exact*
- * wrapper object reference, which usually isn't kept around anywhere (e.g.
- * one built inline at `addOnce(INTERACTABLES, { sprite, label: "..." })`).
- * A no-op if no entry wraps `sprite`.
+ * wrapper objects (`{ sprite, label }`) for anything customized, not just
+ * the sprites themselves, so `remove(list, sprite)` can never find those —
+ * it'd need the *exact* wrapper object reference, which usually isn't kept
+ * around anywhere (e.g. one built inline at
+ * `addOnce(INTERACTABLES, { sprite, label: "..." })`). A no-op if no entry
+ * wraps `sprite`.
  */
 export function removeInteractable(list: Interactable[], sprite: Sprite) {
-  const i = list.findIndex((entry) => entry.sprite === sprite);
+  const i = list.findIndex((entry) => toConfig(entry).sprite === sprite);
   if (i !== -1) list.splice(i, 1);
 }
 
@@ -63,11 +86,11 @@ function getFacingProbe({ box, facing, distance }: FacingProbeOptions): Rect {
 function resolveFacedInteractable(
   player: { collisionBox: Rect; facing: Direction },
   interactables: Interactable[],
-): Interactable | undefined {
-  return interactables.find((interactable) => {
-    const distance = interactable.probeDistance ?? DEFAULT_PROBE_DISTANCE;
+): InteractableConfig | undefined {
+  return interactables.map(toConfig).find((config) => {
+    const distance = config.probeDistance ?? DEFAULT_PROBE_DISTANCE;
     const probe = getFacingProbe({ box: player.collisionBox, facing: player.facing, distance });
-    return isColliding(probe, interactable.sprite.collisionBox);
+    return isColliding(probe, config.sprite.collisionBox);
   });
 }
 
@@ -176,7 +199,7 @@ export function drawInteractPrompt(
   sprite: Sprite,
   interactables: Interactable[],
 ) {
-  const entry = interactables.find((i) => i.sprite === sprite);
+  const entry = interactables.map(toConfig).find((config) => config.sprite === sprite);
   const label = entry?.label ?? "Talk";
   const offsetX = entry?.labelOffset?.x ?? 0;
   const offsetY = entry?.labelOffset?.y ?? 0;

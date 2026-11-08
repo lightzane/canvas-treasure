@@ -67,8 +67,8 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     },
   ],
   ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
-  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "resolved" }],
-  ["meet_ximen", { description: "Find and meet XI MEN", status: "resolved" }],
+  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "active" }],
+  ["meet_ximen", { description: "Find and meet XI MEN", status: "active" }],
   [
     "catch_sheets",
     {

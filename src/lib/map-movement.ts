@@ -16,12 +16,16 @@ let wasLocked = false;
  * switches walk/idle animation, advances the player, blocks movement
  * against `GAME_STATE.boundaries`, and re-centers the camera on the player.
  *
- * Returns the player's attempted box for this frame (even when blocked), so
- * a scene can run its own zone checks on it (battle encounters, door exits,
- * ...) — or `undefined` when no direction was pressed, so there was nothing
- * to check.
+ * Always returns the player's box for this frame — the attempted move box
+ * when a direction's held (even when blocked), otherwise the player's
+ * current, unchanged box — so a scene can unconditionally run its own zone
+ * checks on it every frame (battle encounters, door exits, ...), not just
+ * frames with input. That matters for a zone the player spawns already
+ * standing inside: with no movement yet to produce a box, a zone check
+ * gated on "only when the player moved" would never fire `onEnter` until
+ * the first keypress, well after the player's already visibly inside it.
  */
-export function movePlayer(dt: number): Rect | undefined {
+export function movePlayer(dt: number): Rect {
   const player = GAME_STATE.player;
 
   if (GAME_STATE.movementLocked || !GAME_STATE.gameStarted) {
@@ -37,7 +41,7 @@ export function movePlayer(dt: number): Rect | undefined {
     wasLocked = true;
     player.update(dt); // keeps whatever animation is current playing, just blocks movement
     followCamera(); // still track the player (e.g. its freshly-placed spawn tile, or a scripted walk() tweening its position) — only input-driven movement is blocked, not the camera
-    return undefined;
+    return player.collisionBox;
   }
   wasLocked = false;
 
@@ -49,7 +53,7 @@ export function movePlayer(dt: number): Rect | undefined {
   updateAnimation({ direction, running });
   player.update(dt);
 
-  let playerBox: Rect | undefined;
+  let playerBox: Rect = player.collisionBox;
 
   if (direction) {
     // [Frame rate] if NO delta time, this will be 200px/tick

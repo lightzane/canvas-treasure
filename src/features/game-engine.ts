@@ -6,6 +6,7 @@ import { flowershopScene } from "@/features/scenes/flowershop";
 import { homeScene } from "@/features/scenes/home";
 import { mansionScene } from "@/features/scenes/mansion";
 import { overworldScene } from "@/features/scenes/overworld";
+import { teashopScene } from "@/features/scenes/teashop";
 import { DIALOGUE, dialogueFontReady } from "@/lib/canvas/dialogue";
 import { FADE } from "@/lib/canvas/fade-transition";
 import { getAllLoadedImages } from "@/lib/load-image";
@@ -16,6 +17,7 @@ const SCENES: Record<SceneName, Scene> = {
   mansion: mansionScene,
   overworld: overworldScene,
   flowershop: flowershopScene,
+  teashop: teashopScene,
 };
 
 // Caps how much game time a single frame can advance. Without this, any stall
