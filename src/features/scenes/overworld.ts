@@ -469,7 +469,7 @@ const npcFloristFemale1 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMAL
 // Then call that function once in module-level and at the end of the event (never in scene.enter)
 function spawnOverworldNpcs() {
   // 2 people near house
-  respawnNPC(npcAdultFemale4, [66.55, 49]);
+  respawnNPC(npcAdultFemale4, [66.55, 48]);
   respawnNPC(npcAdultMale2, [66.5, 49.5]);
   // 2 people south of house (yellow roof)
   respawnNPC(npcAdultMale3, [55, 61]);
@@ -502,10 +502,24 @@ function spawnOverworldNpcs() {
   npcAdultFemale3.face("a");
   npcAdultFemale5.face("w");
   npcTeenGirl1.face("d");
-  npcAdultMale2.face("w");
+  npcAdultMale2.face("a");
   npcTeenGirl3.face("a");
 
-  // skip all interactions below this line ================
+  // ======================================================
+  // SKIP ALL interactions below this line ================
+
+  // The Avatar Casts
+  respawnNPC(npcAppa, [6.75, 30]);
+  respawnNPC(npcAang, [18, 30.5]);
+  respawnNPC(npcKatara, [18.5, 30.5]);
+  respawnNPC(npcSokka, [11, 33.5]);
+  respawnNPC(npcToph, [12.5, 33.5]);
+  npcAppa.face("d");
+  npcAang.face("d");
+  npcKatara.face("a");
+  npcSokka.face("d");
+  npcToph.face("a");
+
   respawnNPC(npcTeenBoy1, [123, 27.5]);
   npcTeenBoy1.face("s");
 
@@ -2384,10 +2398,13 @@ function cutsceneShowBirthdayPostcard() {
   DIALOGUE.effect(() => {
     DIALOGUE.lock();
     playExclamation(daomingsi);
-    gsap.delayedCall(3, () => {
-      playExclamation(huazelei, { glyph: "😅", hold: 5 });
-      DIALOGUE.unlock();
+    gsap.delayedCall(2, () => {
+      playExclamation(huazelei, {
+        glyph: "😅",
+        hold: 5,
+      });
     });
+    gsap.delayedCall(4.5, () => DIALOGUE.unlock());
   });
   f4Speaker(`daomingsi`, "DAO MING SI: Pero sketch lang iyan ni HUA ZE LEI!");
   DIALOGUE.effect(() => mainEventGuestExpressions("?", "darkviolet"));
@@ -2758,12 +2775,15 @@ function initMainEvent() {
 
   // Other NPC guests (no cleanup needed)
   respawnNPC(npcAang, [90.1, 45.75]);
+  npcAang.face("s");
   respawnNPC(npcAppa, [82, 38.5]);
   npcAppa.face("d");
   respawnNPC(npcKatara, [89.3, 45.75]);
+  npcKatara.face("s");
   respawnNPC(npcSokka, [87, 45]);
   npcSokka.face("w");
   respawnNPC(npcToph, [96.25, 45.75]);
+  npcToph.face("s");
 
   // Seated (left side)
   respawnNPC(npcAdultMale2, [89.3, 47.75]);
@@ -2914,7 +2934,9 @@ function mainEventGuestExpressions(glyphInput?: string, color?: string) {
           hold: glyphChance ? 3 : 1,
           color: glyphChance ? color : undefined,
         });
-      playAttentionBounce(guest);
+      playAttentionBounce(guest, {
+        hops: guest === npcAppa ? 3 : undefined,
+      });
     });
   });
 }

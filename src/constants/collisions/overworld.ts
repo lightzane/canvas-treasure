@@ -8,6 +8,6 @@ export const COLLISION_OVERWORLD = scaleTiledObjects([
 
 // prettier-ignore
 export const COLLISION_OVERWORLD_EVENT = scaleTiledObjects([
-  { x: 2929.69696969697, y: 1409.69696969697, width: 52, height: 446.651515152 },
-  { x: 3069, y: 1409.696969697, width: 52, height: 446.651515152 },
+  { x: 2929.7, y: 1409.7, width: 52, height: 446.652 },
+  { x: 3069, y: 1409.7, width: 52, height: 446.652 },
 ]);
