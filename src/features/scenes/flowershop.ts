@@ -1,3 +1,4 @@
+import { COLLISION_FLOWERSHOP } from "@/constants/collisions/flowershop";
 import { TILE_SIZE } from "@/constants/game-settings";
 import { TRIGGER_FLOWERSHOP } from "@/constants/triggers/flowershop";
 import { type TriggerName } from "@/constants/triggers/mansion";
@@ -24,6 +25,8 @@ import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
 import { scheduleFaceDirection } from "@/lib/npc-auto";
+import { createNpcSpawner } from "@/lib/npc-spawn";
+import { createTalkDispatch } from "@/lib/npc-talk";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 import { questSetStatus } from "@/lib/quests";
@@ -45,14 +48,9 @@ const npcStaffM2 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_MALE_IDLE } 
 const npcStaffF2 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMALE_IDLE } });
 const npcStaffF3 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMALE_IDLE } });
 
-const NPCS: PlayerSprite[] = [
-  npcCashier,
-  npcStaffM1,
-  npcStaffF1,
-  npcStaffM2,
-  npcStaffF2,
-  npcStaffF3,
-];
+// Starts blank — respawnNPC (below) is what actually populates this. Don't
+// push into this array directly (see @/lib/npc-spawn).
+const NPCS: PlayerSprite[] = [];
 
 // Fixed for the whole scene — nobody else ever becomes interactable here, so
 // this never needs rebuilding on re-entry.
@@ -68,18 +66,20 @@ const INTERACTABLES: Interactable[] = [
   npcStaffF3,
 ];
 
+const { respawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
+
 const questGardenShears = GAME_STATE.quests.get("garden_shears")!;
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
 };
 
-placeAtTile({ sprite: npcCashier, tile: [10, 2.6] });
-placeAtTile({ sprite: npcStaffM1, tile: [2.5, 4.2] });
-placeAtTile({ sprite: npcStaffF1, tile: [1.5, 4.2] });
-placeAtTile({ sprite: npcStaffM2, tile: [3.5, 6.7] });
-placeAtTile({ sprite: npcStaffF2, tile: [6.5, 6.2] });
-placeAtTile({ sprite: npcStaffF3, tile: [9, 5] });
+respawnNPC(npcCashier, [10, 2.6]);
+respawnNPC(npcStaffM1, [2.5, 4.2]);
+respawnNPC(npcStaffF1, [1.5, 4.2]);
+respawnNPC(npcStaffM2, [3.5, 7]);
+respawnNPC(npcStaffF2, [6.5, 6.2]);
+respawnNPC(npcStaffF3, [9, 5]);
 
 npcStaffM1.face("w");
 npcStaffF1.face("w");
@@ -99,7 +99,7 @@ export const flowershopScene: Scene = {
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(flowershopScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
-    GAME_STATE.boundaries = createBoundaries([]);
+    GAME_STATE.boundaries = createBoundaries(COLLISION_FLOWERSHOP);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_FLOWERSHOP);
 
     const spawnLocation: [number, number] = [10, 9];
@@ -148,48 +148,48 @@ function exitZone() {
 }
 
 function interactions(target: Sprite | undefined) {
-  if (target === npcCashier) {
-    DIALOGUE.show(`
-        FLORIST: Nag-aayos kami ng flowers
+  const { talkCommonM, talkCommonF } = createTalkDispatch(target);
+
+  talkCommonM(
+    npcCashier,
+    "s",
+    `FLORIST: Nag-aayos kami ng flowers
         for the event later! Sisiguraduhin nating
         super green and flowery ang vibe para
         damang-dama ang nature at alive na alive ang
-        place natin!
-    `);
-    DIALOGUE.onComplete = () => scheduleFaceDirection(npcCashier, "s");
-  }
-
-  if (target === npcStaffM1) {
-    DIALOGUE.show(`FLORIST: Hello po...`);
-    DIALOGUE.onComplete = () => scheduleFaceDirection(npcStaffM1, "w");
-  }
-
-  if (target === npcStaffF1) {
-    DIALOGUE.show(
-      `FLORIST: Hello te! Exiciting! Dami namin requests sa
+        place natin!`,
+  );
+  talkCommonM(npcStaffM1, "w", `FLORIST: Hello po...`);
+  talkCommonF(
+    npcStaffF1,
+    "w",
+    `FLORIST: Hello te! Exiciting! Dami namin requests sa
       flowers ngayon dahil sa event mamaya!`,
-    );
-    DIALOGUE.onComplete = () => scheduleFaceDirection(npcStaffF1, "w");
-  }
+  );
+  talkCommonM(npcStaffM2, "s", `FLORIST: Yes ma'am?`);
+  talkCommonF(
+    npcStaffF2,
+    "w",
+    `FLORIST: Ginagamit ko po ito'ng "GARDEN SHEARS" pang gupit or trim sa halaman.`,
+  );
 
-  if (target === npcStaffM2) {
-    DIALOGUE.show(`FLORIST: Yes ma'am?`);
-    DIALOGUE.onComplete = () => scheduleFaceDirection(npcStaffM2, "s");
-  }
-
-  if (target === npcStaffF2) {
-    DIALOGUE.show(`FLORIST: Ginagamit ko po ito'ng "GARDEN SHEARS" pang gupit or trim sa halaman.`);
-    DIALOGUE.onComplete = () => scheduleFaceDirection(npcStaffF2, "w");
-  }
-
-  if (target === npcStaffF3) {
-    mainQuestGardenShears();
+  // Stateful (branches on bagHasItem("shears")/questGardenShears.status,
+  // multi-step DIALOGUE.queue/effect) — stays its own named function via
+  // switch rather than talkCommon, same split as template.ts's npcExample.
+  switch (target) {
+    case npcStaffF3:
+      mainQuestGardenShears();
+      break;
   }
 }
 
 function mainQuestGardenShears() {
   if (!bagHasItem("shears")) DIALOGUE.show(`FLORIST: Ma'am? Anu po hanap nila...`);
-  else DIALOGUE.show(`FLORIST: Keep the garden shears po. I hope nakatulong po ito.`);
+  else
+    DIALOGUE.show({
+      text: `FLORIST: Keep the garden shears po. I hope nakatulong po ito.`,
+      color: "red",
+    });
 
   if (!bagHasItem("shears") && questGardenShears.status === "active") {
     hudSetBagIconVisible(false);

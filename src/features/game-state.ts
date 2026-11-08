@@ -105,7 +105,7 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "teashop" as SceneName,
+  sceneName: "overworld" as SceneName,
   /**
    * One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events").
    * `true` = complete.
