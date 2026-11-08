@@ -56,7 +56,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "invitation_postcard",
     {
       description: "Find out what's this treasure is about.",
-      status: "active",
+      status: "resolved",
     },
   ],
   [
@@ -73,9 +73,9 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 2,
+      qty: 3,
       totalQty: 3,
-      status: "active",
+      status: "resolved",
     },
   ],
   [
@@ -110,7 +110,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "sketch_unity",
     {
       description: "Find out what is Hua Ze Lei's sketch is about.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
 ]);

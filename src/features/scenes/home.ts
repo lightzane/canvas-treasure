@@ -168,6 +168,11 @@ export const homeScene: Scene = {
       });
     }
 
+    // The parcel is gone at this point, so rely on diff condition to display bag
+    if (GAME_STATE.sequence.closing_remarks) {
+      gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
+    }
+
     if (GAME_STATE.sequence.intro) GAME_STATE.movementLocked = false;
   },
 
