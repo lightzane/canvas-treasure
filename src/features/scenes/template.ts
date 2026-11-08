@@ -1,0 +1,193 @@
+/**
+ * Starting point for a new scene — copy this file, rename it (and
+ * `templateScene`/other identifiers below) to match the new area, then work
+ * through the TODOs. Deliberately NOT wired into `SceneName` (scene.ts) or
+ * `SCENES` (game-engine.ts) — those two are the only places a scene becomes
+ * real/navigable, and that's a per-scene decision for whoever uses this.
+ *
+ * Modeled on the shape shared by home.ts/mansion.ts/flowershop.ts (not
+ * overworld.ts, which is the one large hub scene with story-specific
+ * extras) — background/foreground map, player spawn, boundaries + trigger
+ * zones, NPCs + interactables via `createNpcSpawner` (both the permanent
+ * and the spawn-later-on-a-story-beat case), dialogue dispatch, and a
+ * `beginCutscene` example for anything more involved than one line.
+ */
+import { GAME_STATE } from "@/features/game-state";
+import { drawInteractPrompt, updateInteraction, type Interactable } from "@/features/interact";
+import type { Scene } from "@/features/scene";
+import { Sprite } from "@/features/sprite";
+import { PlayerSprite } from "@/features/sprite-player";
+import {
+  checkTriggerZones,
+  createBoundaries,
+  createTriggerZones,
+  type TriggerHandlers,
+} from "@/features/zone";
+import { addOnce } from "@/lib/array";
+import { DIALOGUE } from "@/lib/canvas/dialogue";
+import { isInViewport } from "@/lib/canvas/viewport";
+import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
+import { drawYSorted } from "@/lib/canvas/y-sort";
+import { beginCutscene } from "@/lib/cutscene";
+import { hudSetBagIconVisible } from "@/lib/hud";
+import { img } from "@/lib/img";
+import { movePlayer } from "@/lib/map-movement";
+import { createNpcSpawner } from "@/lib/npc-spawn";
+import { placeAtTile } from "@/lib/positioning";
+import { preload } from "@/lib/preload";
+import { IMGS_ADULT_MALE_1_IDLE } from "@/sprites/adult-male-1";
+import gsap from "gsap";
+
+// TODO: once this map has real Tiled exports, swap these in and drop the
+// `[]`s passed to createBoundaries/createTriggerZones below:
+//   import { COLLISION_TEMPLATE } from "@/constants/collisions/template";
+//   import { TRIGGER_TEMPLATE, type TriggerName } from "@/constants/triggers/template";
+// TriggerHandlers below also becomes TriggerHandlers<TriggerName> then.
+
+const IMG_MAP_BG = img("maps/template.png");
+const IMG_MAP_FG = img("maps/template-fg.png"); // delete this + `foreground` below if this map has no foreground layer (see mansion.ts)
+
+const background = new Sprite({ src: IMG_MAP_BG });
+const foreground = new Sprite({ src: IMG_MAP_FG });
+
+// TODO: swap IMGS_ADULT_MALE_1_IDLE for this scene's real cast — one
+// PlayerSprite per NPC, same as home.ts's GAME_STATE.mama or flowershop.ts's
+// npcStaffM1/F1/etc.
+const npcExample = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE } });
+// A second NPC, deliberately NOT spawned yet — demonstrates the "appears
+// after some story beat" half of the pattern below (like overworld.ts's
+// huazelei). Delete this one if every NPC here is permanent from the start.
+const npcLater = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE } });
+
+// Starts blank — respawnNPC (below) is what actually populates this, so it
+// doubles as both "who's currently in this scene" and the GAME_STATE.obstacles
+// source of truth. Don't push into this array directly.
+const NPCS: PlayerSprite[] = [];
+
+// respawnNPC never touches this on its own (an Interactable can carry its
+// own config — label, probeDistance, ... — so making something interactable
+// again is always a deliberate, separate call). Fixed here for npcExample
+// since it's permanent; npcLater's entry gets added dynamically when it
+// actually spawns, see npcExampleIntro() below.
+const INTERACTABLES: Interactable[] = [{ sprite: npcExample, label: "Talk" }];
+
+const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
+
+// Shorthand for placeAtTile + registering into NPCS + GAME_STATE.obstacles,
+// all at once (see createNpcSpawner in @/lib/npc-spawn). Called once here, at
+// module scope, for a baseline NPC present from the very start — same idiom
+// as overworld.ts's own spawnOverworldNpcs(). A conditional NPC instead calls
+// respawnNPC/despawnNPC from wherever that story beat actually happens (a
+// dialogue's onComplete, a trigger zone, ...) — see npcLater below.
+respawnNPC(npcExample, [5, 5]);
+
+const TRIGGER_HANDLERS: TriggerHandlers = {
+  exit: { onEnter: exitZone },
+};
+
+export const templateScene: Scene = {
+  fadeIn: 0.5,
+  fadeOut: 0.5,
+  ready: preload([background.image, foreground.image]).then(() =>
+    prepareViewportClamped([background, foreground]),
+  ),
+
+  enter() {
+    // TODO: this scene's own key, once one exists in audio.ts's MUSIC_REGISTRY:
+    // audioPlayMusic("template", { fade: 1, volume: 0.5 });
+
+    if (!GAME_STATE.bagIconVisible)
+      gsap.delayedCall(templateScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
+
+    GAME_STATE.boundaries = createBoundaries([]); // TODO: createBoundaries(COLLISION_TEMPLATE)
+    GAME_STATE.triggerZones = createTriggerZones([]); // TODO: createTriggerZones(TRIGGER_TEMPLATE)
+
+    const spawnLocation: [number, number] = [5, 10];
+
+    // spriteSize pins this to the player's stable boxSize — see the same
+    // comment in home.ts, or spriteSize's own doc in positioning.ts.
+    placeAtTile({
+      sprite: GAME_STATE.player,
+      tile: spawnLocation,
+      spriteSize: GAME_STATE.player.boxSize,
+    });
+
+    // Still needed even though respawnNPC already added npcExample to
+    // GAME_STATE.obstacles once above — that's a single array every scene
+    // reassigns wholesale in its own enter(), so whichever scene was active
+    // right before this one has since overwritten it with its own NPCs. This
+    // re-asserts this scene's own current NPCS every time it becomes active.
+    GAME_STATE.obstacles = [...NPCS];
+    GAME_STATE.player.face("s");
+    GAME_STATE.movementLocked = false;
+  },
+
+  update(dt) {
+    NPCS.filter(isInViewport).forEach((n) => n.update(dt));
+
+    const playerBox = movePlayer(dt);
+    if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+
+    updateInteraction(INTERACTABLES, interactions);
+  },
+
+  draw(ctx) {
+    drawViewportClamped(ctx, background);
+
+    // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
+
+    drawYSorted(ctx, [GAME_STATE.player, ...NPCS.filter(isInViewport)]);
+    drawViewportClamped(ctx, foreground);
+
+    if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, INTERACTABLES);
+  },
+};
+
+function exitZone() {
+  hudSetBagIconVisible(false);
+  // audioStopMusic(templateScene.fadeOut); // once this scene has real music playing above
+  GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
+  GAME_STATE.spawnLocation = [0, 0]; // TODO: wherever this scene's exit should drop the player in overworld
+  GAME_STATE.sceneName = "overworld"; // TODO: change if this scene should return somewhere else
+}
+
+// Mirrors overworld.ts's own `interactions()` — one case per
+// sprite/PlayerSprite, delegating to a named function for anything beyond a
+// one-line DIALOGUE.show().
+function interactions(target: Sprite | undefined) {
+  switch (target) {
+    case npcExample:
+      if (!hasMetNpcExample) npcExampleIntro();
+      else DIALOGUE.show(`NPC: Hello again!`);
+      break;
+    case npcLater:
+      DIALOGUE.show(`NPC: Thanks for finding me. Bye for now!`);
+      DIALOGUE.onComplete = () => despawnNPC(npcLater);
+      break;
+  }
+}
+
+// TODO: a real scene usually tracks this on GAME_STATE.sequence instead
+// (e.g. mansion.ts's `meet_daomingsi`) so it persists across re-entries —
+// kept as a local flag here since this template isn't a registered scene.
+let hasMetNpcExample = false;
+
+/**
+ * A short one-time scripted beat on first meeting — the beginCutscene +
+ * tiny-delay pattern used throughout overworld.ts for anything more
+ * involved than a single DIALOGUE.show(). The `0.00001` matters: a
+ * zero/omitted delay can let a frame of movement slip through before the
+ * lock actually bites. See beginCutscene's own doc in @/lib/cutscene.
+ */
+function npcExampleIntro() {
+  DIALOGUE.effect(beginCutscene, 0.00001);
+  DIALOGUE.show(`NPC: Oh — you must be new here!`);
+  DIALOGUE.queue(`NPC: Welcome. Someone else around here's been looking for you too...`);
+  DIALOGUE.onComplete = () => {
+    hasMetNpcExample = true;
+    hudSetBagIconVisible(true);
+    GAME_STATE.movementLocked = false;
+    respawnNPC(npcLater, [8, 8]); // the dynamic half of the pattern — appears only now
+    addOnce(INTERACTABLES, { sprite: npcLater, label: "Talk" }); // respawnNPC never does this part, see the comment on INTERACTABLES above
+  };
+}
