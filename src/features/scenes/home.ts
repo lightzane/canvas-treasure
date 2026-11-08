@@ -20,6 +20,7 @@ import { addOnce } from "@/lib/array";
 import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
 import { bagAddItem, bagHasItem } from "@/lib/bag";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
+import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
@@ -44,12 +45,17 @@ const IMG_MAP_FG = img("maps/home-fg.png");
 const IMG_PARCEL = img("others/parcel.png");
 const IMG_JOURNAL = img("others/book-and-pencil.png");
 const IMG_RUNNING_SHOES = img("others/shoes.png");
+const IMG_FLOWERS_BOUQUET = img("others/flowers-bouquet.png");
+const ICON_RED_HEART = img("others/red-heart.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
 const parcel = new Sprite({ src: IMG_PARCEL, scale: 2, boxSize: { height: 64, width: 64 } });
 const journal = new Sprite({ src: IMG_JOURNAL, scale: 2 });
 const runningShoes = new Sprite({ src: IMG_RUNNING_SHOES, scale: 1.5 });
+const flowersBouquet = new Sprite({ src: IMG_FLOWERS_BOUQUET, scale: 2 });
+
+placeAtTile({ sprite: flowersBouquet, tile: [4.75, 12.2] });
 
 const MAMA_INTERACTABLE: Interactable = { sprite: GAME_STATE.mama, label: "Talk" };
 // Sits across the table — needs a wider reach; a plain Sprite has nothing to face anyway.
@@ -59,6 +65,7 @@ const PARCEL_INTERACTABLE: Interactable = {
   facePlayer: false,
   label: "Get",
 };
+
 // Rebuilt each enter() (parcel presence depends on hasItem, not a fixed
 // story flag) and mutated in place on pickup — see interactions() below.
 let interactables: Interactable[] = [];
@@ -169,8 +176,9 @@ export const homeScene: Scene = {
     }
 
     // The parcel is gone at this point, so rely on diff condition to display bag
-    if (GAME_STATE.sequence.closing_remarks) {
+    if (questMain.status === "resolved") {
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
+      addOnce(interactables, { sprite: flowersBouquet, label: "Interact", facePlayer: false });
     }
 
     if (GAME_STATE.sequence.intro) GAME_STATE.movementLocked = false;
@@ -180,6 +188,7 @@ export const homeScene: Scene = {
     // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
     if (!isMamaOutside) GAME_STATE.mama.update(dt);
     if (questMain.status === "resolved") GAME_STATE.jp.update(dt); // drives its clip/frames — face()/play() alone only set intent, this is what applies it (see PlayerSprite.update)
+    // if (isInViewport(flowersBouquet) && questMain.status === "resolved") flowersBouquet.update(dt);
 
     const playerBox = movePlayer(dt);
     if (playerBox) checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
@@ -189,6 +198,7 @@ export const homeScene: Scene = {
 
   draw(ctx) {
     drawViewportClamped(ctx, background);
+    if (isInViewport(flowersBouquet) && questMain.status === "resolved") flowersBouquet.draw(ctx);
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
 
@@ -268,6 +278,14 @@ function interactions(target: Sprite | undefined) {
     GAME_STATE.movementLocked = true;
     playExclamation(GAME_STATE.jp, { glyph: "☺️" });
     DIALOGUE.queue({ text: `JP: Yes Love Love...`, color: "blue" });
+    DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
+  }
+
+  if (target === flowersBouquet) {
+    hudSetBagIconVisible(false);
+    GAME_STATE.movementLocked = true;
+    playExclamation(GAME_STATE.player, { icon: ICON_RED_HEART, hold: 1.5 });
+    DIALOGUE.show(`Flowers from my JP Love Love...`);
     DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
   }
 }
