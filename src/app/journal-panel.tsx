@@ -1,4 +1,5 @@
 import { GAME_STATE } from "@/features/game-state";
+import { img } from "@/lib/img";
 import { useState } from "react";
 
 /**
@@ -31,7 +32,7 @@ export function JournalPanel({ onClose }: { onClose: () => void }) {
       <div className="flex items-center justify-between border-b-2 border-amber-800/40 pb-2">
         <div className="flex gap-1 items-center">
           <img
-            src="/assets/images/others/book-and-pencil.png"
+            src={img("others/book-and-pencil.png")}
             alt=""
             className="size-8 shrink-0 [image-rendering:pixelated] drop-shadow"
           />

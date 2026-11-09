@@ -1944,6 +1944,7 @@ function cutsceneMarket() {
 
   DIALOGUE.effect(() => {
     beginCutscene();
+    playExclamation(meizuo, { glyph: "🤣" });
     playAttentionBounce(meizuo, {
       hops: 5,
       onComplete() {

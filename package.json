@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 8080",
     "build": "tsc -b && vite build",
+    "build:file": "tsc -b && vite build --config vite.file.config.ts --mode file",
     "lint": "oxlint",
     "format": "oxfmt ./src",
     "type-check": "tsc -b --noEmit",

@@ -160,7 +160,7 @@ export default function Layout() {
             className="absolute top-4 right-4 transition-transform hover:scale-110 active:scale-95 outline-0"
           >
             <img
-              src="/assets/purse.png"
+              src={`${import.meta.env.BASE_URL}assets/purse.png`}
               alt="Bag"
               className="size-16 [image-rendering:pixelated] drop-shadow-[0_0_5px_black]"
             />

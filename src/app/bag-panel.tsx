@@ -190,7 +190,7 @@ export function BagPanel({ onClose }: { onClose: () => void }) {
           className="w-[calc(100%+2.5rem)] -mx-5 -mt-5 mb-4 flex items-center gap-3 rounded-t-lg bg-linear-to-r from-amber-200 to-amber-800 px-5 py-3 cursor-pointer transition-colors hover:from-amber-400 hover:to-amber-700 active:from-amber-800 active:to-amber-900"
         >
           <img
-            src="/assets/purse.png"
+            src={`${import.meta.env.BASE_URL}assets/purse.png`}
             alt=""
             className="size-8 shrink-0 [image-rendering:pixelated] drop-shadow"
           />

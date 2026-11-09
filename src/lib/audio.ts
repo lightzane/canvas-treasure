@@ -5,6 +5,43 @@ import { Howl } from "howler";
 // than one import per file. Resolves correctly under any Vite `base` config too.
 const base = import.meta.env.BASE_URL.replace(/\/$/, "/assets/audio/");
 
+/**
+ * `vite.file.config.ts`'s `--mode file` build only (never the normal
+ * build/dev server — `MODE` stays `"production"`/`"development"` there,
+ * same as always). Howler's default (Web Audio API: fetch the whole file
+ * as an ArrayBuffer, decode it, sample-accurate seeking) needs a
+ * fetch()/XHR call — which Chrome and Firefox both flatly refuse from a
+ * `file:///` page, even to a file in the same folder, independent of any
+ * CORS header. `html5: true` instead plays through a plain `<audio>`
+ * element, the same loading path `<img src>` already uses successfully
+ * under `file://` — at the cost of `<audio>`'s own less precise
+ * `currentTime` seeking (tens of ms, format-dependent), which only
+ * actually matters for a *looping* sprite region re-seeking every cycle
+ * (currently just `f4`'s `loop` sprite) — a one-shot seek elsewhere lands
+ * close enough to be inaudible.
+ */
+const FILE_BUILD = import.meta.env.MODE === "file";
+
+// NOT a Howler.html5PoolSize fix — read Howler's own source before reaching
+// for that: Howler's shared <audio> pool (_html5AudioPool) is only ever
+// filled inside the unlock() handler it attaches to the page's first
+// click/keydown/touch (the standard mobile-autoplay-unlock pattern) — so at
+// MODULE LOAD, before any such gesture has happened, that pool is always
+// empty regardless of its configured size. _obtainHtml5Audio() already
+// handles an empty pool gracefully on its own (falls back to a plain `new
+// Audio()`); the "pool exhausted" warning it logs there is benign, not the
+// real problem. The real problem: every key in both registries gets its
+// Howl constructed eagerly, together, at this module's own load (see the
+// bottom of this file) — ~33 of them, several multi-megabyte — and that
+// many simultaneous <audio> loads starting at once under file:// hits a
+// Chromium concurrency ceiling, aborting the ones that lose the race
+// (net::ERR_ABORTED). See FILE_BUILD's use at the bottom of this file,
+// which is the actual fix: skip the eager pass for this build and let each
+// Howl construct lazily on its own first real play instead, same as
+// Howler's own default behavior without that eager pass at all — spreads
+// the loads out across actual gameplay instead of firing them all at once
+// before the player can even see a frame.
+
 export type SoundKey =
   | "click"
   | "pop"
@@ -239,7 +276,7 @@ function getSheetHowl(key: SheetKey): Howl {
 
   if (!howl) {
     const { src, sprite } = SOUND_SHEETS[key];
-    howl = new Howl({ src: [`${base}${src}`], sprite });
+    howl = new Howl({ src: [`${base}${src}`], sprite, html5: FILE_BUILD });
     sheetCache.set(key, howl);
   }
 
@@ -260,7 +297,7 @@ function getSoundVariants(key: SoundKey): Howl[] {
     const { src, silenceEnd } = entry;
 
     howls = src.map((file) => {
-      const howl = new Howl({ src: [`${base}${file}`] });
+      const howl = new Howl({ src: [`${base}${file}`], html5: FILE_BUILD });
       if (silenceEnd) howl.on("play", (id) => fadeToSilence(howl, id));
       return howl;
     });
@@ -339,7 +376,7 @@ function getMusicHowl(key: MusicKey, options?: PlayMusicOptions): Howl {
     let howl = musicSheetCache.get(entry.sheet);
     if (!howl) {
       const { src, sprite } = MUSIC_SHEETS[entry.sheet];
-      howl = new Howl({ src: [`${base}${src}`], sprite });
+      howl = new Howl({ src: [`${base}${src}`], sprite, html5: FILE_BUILD });
       musicSheetCache.set(entry.sheet, howl);
     }
     return howl;
@@ -352,6 +389,7 @@ function getMusicHowl(key: MusicKey, options?: PlayMusicOptions): Howl {
       src: [`${base}${entry}`],
       loop: options?.loop ?? true,
       volume: options?.volume ?? 1,
+      html5: FILE_BUILD,
     });
     musicCache.set(key, howl);
   }
@@ -599,6 +637,21 @@ export function audioPlayAmbience(keys: MusicKey | MusicKey[], options?: PlayMus
 
     activeAmbience.add(key);
 
+    // Reachable with an EXISTING instance of this exact key still playing —
+    // an explicit `seek` (like soundPark()'s own call always passes) skips
+    // the already-playing shortcut above on purpose, same as
+    // audioPlayMusic()'s own seek handling. audioPlayMusic() stays safe
+    // doing that because its swap logic already fades out whatever was
+    // previously active, even re-triggering the same key — this branch had
+    // no equivalent, so a repeated call (e.g. walking back and forth across
+    // a trigger zone boundary) just stacked up a new, independent
+    // instance each time, on top of the old one. musicSoundId below only
+    // ever remembers the LATEST id, so those earlier instances became
+    // unreachable — never stopped by audioStopAmbience, playing forever.
+    // Stopping whatever's already running first closes that gap.
+    const existingId = musicSoundId.get(key);
+    if (existingId !== undefined && howl.playing(existingId)) howl.stop(existingId);
+
     // getMusicHowl() never touches a cached howl's volume (only a brand
     // new one's, at creation) — so read the target explicitly here, then
     // silence only this sound id before fading it in. Never the group
@@ -702,5 +755,14 @@ export function audioStopAmbience(keys?: MusicKey | MusicKey[], fade?: number): 
 // so without this, the very first playSound()/playMusic() call for a given key
 // has to wait on that network+decode work before anything is audible — this
 // runs it well ahead of time, while there's plenty of gameplay before it's needed.
-(Object.keys(SOUND_REGISTRY) as SoundKey[]).forEach(getSoundVariants);
-(Object.keys(MUSIC_REGISTRY) as MusicKey[]).forEach((key) => getMusicHowl(key));
+//
+// Skipped for FILE_BUILD specifically — see its own doc comment above.
+// ~33 simultaneous <audio> loads at once under file:// aborts several of
+// them; each Howl instead falls back to constructing lazily on its own
+// first real play (getSoundVariants/getMusicHowl's own cache-or-build
+// logic already does this, it's just never reached while this runs
+// unconditionally), spreading the loads out across actual gameplay.
+if (!FILE_BUILD) {
+  (Object.keys(SOUND_REGISTRY) as SoundKey[]).forEach(getSoundVariants);
+  (Object.keys(MUSIC_REGISTRY) as MusicKey[]).forEach((key) => getMusicHowl(key));
+}
