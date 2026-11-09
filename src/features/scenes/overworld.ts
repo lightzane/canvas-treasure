@@ -141,17 +141,28 @@ const smallFountainB = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 },
 const smallFountainC = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
 const bigFountainA = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
+
+interface ReadableCfg {
+  tile: [number, number];
+  message: string;
+}
+
+/** Builds one readable prop's sprite (placed at `tile`) + its message — shared by SIGNPOSTS and MSG_BOTTLES below, just a different image per caller. */
+function createReadables(src: string, cfgs: ReadableCfg[]) {
+  return cfgs.map(({ tile, message }) => {
+    const sprite = new Sprite({ src, scale: 2 });
+    placeAtTile(sprite, tile);
+    return { sprite, message };
+  });
+}
+
 /**
  * One readable signpost — add a new one here and nothing else in this file
  * needs to change (its sprite, placement, and INTERACTABLES/interactions()
  * wiring are all generated below from this table, see SIGNPOSTS).
  */
-interface SignpostCfg {
-  tile: [number, number];
-  message: string;
-}
 
-const SIGNPOST_CFGS: SignpostCfg[] = [
+const SIGNPOST_CFGS: ReadableCfg[] = [
   { tile: [60, 45], message: "Your house..." },
   { tile: [85, 30], message: "DAO MING Mansion" },
   { tile: [88, 30], message: "DAO MING Mansion" },
@@ -175,13 +186,75 @@ const SIGNPOST_CFGS: SignpostCfg[] = [
   },
 ];
 
-const SIGNPOSTS = SIGNPOST_CFGS.map(({ tile, message }) => {
-  const sprite = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
-  placeAtTile(sprite, tile);
-  return { sprite, message };
-});
+const SIGNPOSTS = createReadables(IMG_SIGNPOST, SIGNPOST_CFGS);
+
+/**
+ * Common/ambient message bottles scattered on the beach — plain flavor
+ * reads, same table shape as SIGNPOST_CFGS (the original msgBottle1 quote
+ * is now just the first entry here). Separate from coreMsgBottle below,
+ * which is quest-tied (see readCoreMsgBottle()) and not a plain read.
+ */
+const MSG_BOTTLE_CFGS: ReadableCfg[] = [
+  {
+    tile: [45, 74],
+    message: `
+        "You'll never realize how important something, or someone...
+        IS to you, until the moment they are about to fade."
+        — JP Aguilar
+      `,
+  },
+  {
+    tile: [31, 74],
+    message: `
+        "If you want to go fast, go alone.
+        If you want to go far, we go together"
+        — Mufasa, Lion King
+      `,
+  },
+  {
+    tile: [35, 77],
+    message: `
+        "Yesterday is history, tomorrow is a mystery. And Today is a gift.
+        That's why it is called the present."
+        — Grand Master Oogway, Kung Fu Panda
+      `,
+  },
+  {
+    tile: [49, 76],
+    message: `
+        "It's true that history may repeat itself 
+        but people can't go back in time."
+        — Nico Robin, One Piece
+      `,
+  },
+  {
+    tile: [31, 79.5],
+    message: `
+        "Even though change is constant and inevitable,
+        it is hard to bring change to this existing world."
+        — Anonymous
+      `,
+  },
+  {
+    tile: [30, 84],
+    message: `
+        "Progression over time. Remember, consistency is more
+        important than perfection. Just keep going!"
+        — ChatGPT
+      `,
+  },
+  {
+    tile: [53.5, 75.5],
+    message: `
+        "Simplicity is the ultimate sophistication."
+        — Anonymous
+      `,
+  },
+];
+
+const MSG_BOTTLES = createReadables(IMG_MESSAGE_BOTTLE_H, MSG_BOTTLE_CFGS);
+
 const coreMsgBottle = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
-const msgBottle1 = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
 const balloonCrates = Array.from(
   { length: 6 },
   () => new Sprite({ src: IMG_BALLOON_CRATES, scale: 2 }),
@@ -347,7 +420,7 @@ const DECORS: Sprite[] = [
   wildBushMazeChest,
   wildBushBeach1,
   wildBushBeach2,
-  msgBottle1,
+  ...MSG_BOTTLES.map(({ sprite }) => sprite),
 ];
 
 /**
@@ -474,7 +547,7 @@ const INTERACTABLES: Interactable[] = [
   { sprite: wildBushBeach1, ...wildBushInteractablesCfgs },
   { sprite: wildBushBeach2, ...wildBushInteractablesCfgs },
   ...SIGNPOSTS.map(({ sprite }) => ({ sprite, ...signpostInteractablesCfgs })),
-  { sprite: msgBottle1, ...msgBottleInteractablesCfgs },
+  ...MSG_BOTTLES.map(({ sprite }) => ({ sprite, ...msgBottleInteractablesCfgs })),
 ];
 const HUAZELEI_INTERACTABLE: Interactable = huazelei;
 const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
@@ -574,7 +647,6 @@ placeAtTile(wildBushMazeEntrance, [106, 10]);
 placeAtTile(wildBushMazeChest, [117, 9]);
 placeAtTile(wildBushBeach1, [20, 51]);
 placeAtTile(wildBushBeach2, [20, 52]);
-placeAtTile(msgBottle1, [45, 74]);
 placeAtTile(chestEmpty, [119.75, 7.75]);
 placeAtTile(balloonCrates[0], [99, 74]);
 placeAtTile(balloonCrates[1], [99, 75]);
@@ -1095,6 +1167,12 @@ function cutsceneStartMessageBottle() {
 function interactions(target: Sprite | undefined) {
   const { readMessage } = createReadDispatch(target);
   SIGNPOSTS.forEach(({ sprite, message }) => readMessage(sprite, message));
+  MSG_BOTTLES.forEach(({ sprite, message }) => {
+    if (readMessage(sprite, "[MESSAGE IN A BOTTLE]")) {
+      DIALOGUE.queue(message);
+      queueMsgBottleNudge();
+    }
+  });
 
   switch (target) {
     case GAME_STATE.papa:
@@ -1130,10 +1208,7 @@ function interactions(target: Sprite | undefined) {
       interactWildBush(wildBushBeach2);
       break;
     case coreMsgBottle:
-      readBottle(coreMsgBottle);
-      break;
-    case msgBottle1:
-      readBottle(msgBottle1);
+      readCoreMsgBottle();
       break;
     case chestClose:
       openMazeChest();
@@ -1615,31 +1690,22 @@ function interactWildBush(bushSprite: Sprite) {
   };
 }
 
-function readBottle(msgBottle: Sprite) {
-  GAME_STATE.movementLocked = true;
-  const prefix = `[MESSAGE IN A BOTTLE]`;
-  DIALOGUE.show({ text: prefix, color: "black" });
-
-  switch (msgBottle) {
-    case coreMsgBottle:
-      hudSetBagIconVisible(false);
-      completeCoreMsgBottle();
-      return; // stop reading all the way down below (overrides DIALOGUE.onComplete)
-    case msgBottle1:
-      DIALOGUE.queue(`
-        "You'll never realize how important something, or someone...
-        IS to you, until the moment they are about to fade."
-        — JP Aguilar
-      `);
-      break;
+/**
+ * Queued right after any common message bottle's own text — "this isn't
+ * the one I'm looking for" — only while that quest is still active. Used by
+ * the MSG_BOTTLES dispatch in interactions(); coreMsgBottle never calls
+ * this, it's the one true bottle.
+ */
+function queueMsgBottleNudge() {
+  if (questMessageBottle.status === "active") {
+    DIALOGUE.queue(`Dili ito ang message-in-a-bottle na hinahanap ko...`);
   }
+}
 
-  DIALOGUE.onComplete = () => {
-    GAME_STATE.movementLocked = false;
-    if (questMessageBottle.status === "active" && msgBottle !== coreMsgBottle) {
-      DIALOGUE.show(`Dili ito ang message-in-a-bottle na hinahanap ko...`);
-    }
-  };
+function readCoreMsgBottle() {
+  DIALOGUE.show({ text: `[MESSAGE IN A BOTTLE]`, color: "black" });
+  hudSetBagIconVisible(false);
+  completeCoreMsgBottle();
 }
 
 function initCoreMessageBottle() {

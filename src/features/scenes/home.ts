@@ -59,7 +59,7 @@ const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
 const parcel = new Sprite({ src: IMG_PARCEL, scale: 2, boxSize: { height: 64, width: 64 } });
 const journal = new Sprite({ src: IMG_JOURNAL, scale: 2 });
-const runningShoes = new Sprite({ src: IMG_RUNNING_SHOES, scale: 1.5 });
+const runningShoes = new Sprite({ src: IMG_RUNNING_SHOES, scale: 1 });
 const flowersBouquet = new Sprite({ src: IMG_FLOWERS_BOUQUET, scale: 2 });
 const framePhotoSky = new Sprite({ src: IMG_FRAME_PHOTO_SKY, scale: 2 });
 const framePhoto = new Sprite({ src: IMG_FRAME_PHOTO, scale: 2 });
@@ -185,11 +185,11 @@ export const homeScene: Scene = {
     }
 
     if (!bagHasItem("shoes") && questRunningShoes.status === "active") {
-      placeAtTile({ sprite: runningShoes, tile: [10, 22] });
+      placeAtTile({ sprite: runningShoes, tile: [9.5, 22.6] });
       addOnce(interactables, {
         sprite: runningShoes,
         label: "Wear",
-        probeDistance: TILE_SIZE * 3,
+        probeDistance: TILE_SIZE,
       });
     }
 
@@ -225,6 +225,7 @@ export const homeScene: Scene = {
     }
 
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
+    if (!bagHasItem("shoes") && questRunningShoes.status === "active") runningShoes.draw(ctx);
 
     if (!isMamaOutside) drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
     else if (questMain.status === "resolved") drawYSorted(ctx, [GAME_STATE.player, GAME_STATE.jp]);
@@ -233,7 +234,6 @@ export const homeScene: Scene = {
 
     if (!bagHasItem("parcel") && questMain.status !== "resolved") parcel.draw(ctx);
     if (!bagHasItem("journal")) journal.draw(ctx);
-    if (!bagHasItem("shoes") && questRunningShoes.status === "active") runningShoes.draw(ctx);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, interactables);
   },
 };
