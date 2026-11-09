@@ -81,7 +81,28 @@ export const GAME_STATE = {
    * `collisionBox` into a `Zone` and push it onto `boundaries` — that freezes
    * it at whatever position it was at that moment, so it stops blocking
    * where the sprite actually is the instant it moves. Rebuilt fresh by each
-   * scene's `enter()`, same as `boundaries`/`triggerZones`.
+   * scene's `enter()`, same as `boundaries`/`triggerZones` — this is one
+   * array shared by every scene, not a per-scene one, so each scene's own
+   * `enter()` has to wholesale-reassign it (`GAME_STATE.obstacles =
+   * [...NPCS, ...]`) on every single visit, discarding whatever the
+   * previously-active scene left behind.
+   *
+   * `createNpcSpawner`'s `respawnNPC`/`despawnNPC` (@/lib/npc-spawn) ALSO
+   * touch this field directly — but by mutating it (`addOnce`/`remove`),
+   * never by reassigning — and that's deliberate, not a second competing
+   * reset mechanism. Those calls can legally fire either before a scene's
+   * first `enter()` ever runs (a scene's own module-level, baseline-NPC
+   * respawnNPC calls — at that point this still holds its initial `[]`
+   * default, so every scene's own baseline NPCs briefly pile in here
+   * together at module-load time; harmless, since nothing reads this for a
+   * real collision check that early, and the first scene to actually
+   * `enter()` immediately overwrites the mixed pile with its own clean
+   * array) or mid-session, well after some `enter()` already reset it for
+   * the current visit. Mutating is what makes both cases correct without
+   * the two call sites needing to know anything about each other's timing
+   * — whichever array this field currently points to gets edited directly,
+   * instead of a reassignment inside `respawnNPC` silently replacing
+   * whatever `enter()` had just set up.
    */
   obstacles: [] as Sprite[],
   triggerZones: [] as TriggerZone[],

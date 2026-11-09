@@ -1328,7 +1328,10 @@ function interactPaper2Part1() {
   }, 2.5);
 
   GAME_STATE.movementLocked = true;
-  DIALOGUE.queue(`Oh no! Hinangin na naman!`);
+  DIALOGUE.queue({
+    text: `Oh no! Hinangin na naman!`,
+    color: "black",
+  });
 }
 
 function interactPaper2Part2() {

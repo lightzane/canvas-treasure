@@ -11,11 +11,13 @@ export function addOnce<T>(list: T[], item: T) {
 
 /**
  * Drops `item` out of `list` in place — mutates the same array reference
- * rather than `.filter()`-ing a new one, which matters for a list something
- * else also holds a reference to (e.g. `GAME_STATE.obstacles` is assigned
- * the same array as a scene's own NPC/decor list, not a copy — replacing it
- * with a filtered copy here wouldn't update what `GAME_STATE.obstacles`
- * still points at). A no-op if `item` isn't in `list`.
+ * rather than `.filter()`-ing a new one. Matters because a caller like
+ * `despawnNPC` (@/lib/npc-spawn) passes in a live reference it expects to
+ * end up without `item` — e.g. `GAME_STATE.obstacles` itself — and a
+ * `.filter()` result reassigned only to this function's own local `list`
+ * parameter would never be visible to that caller at all (JS passes the
+ * reference by value, not by reference-to-reference), leaving the original
+ * array untouched. A no-op if `item` isn't in `list`.
  */
 export function remove<T>(list: T[], item: T) {
   const i = list.indexOf(item);

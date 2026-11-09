@@ -73,7 +73,14 @@ export class Sprite {
   scale: number;
   /** Px nudge applied only to the drawn image (e.g. by `playAttentionBounce`) — unlike `position`, never affects the shadow, collision, or camera. @default 0 */
   bounceOffset = 0;
-  private readonly _boxSize?: { width?: number; height?: number };
+  /**
+   * Not `private`/`readonly` — `PlayerSprite`'s constructor needs to correct
+   * this itself after construction, once its initial clip's image actually
+   * finishes loading (see the comment where it's set there). Everyone else
+   * should still treat this as read-only; `boxSize` (the getter below) is
+   * the public way to read it.
+   */
+  protected _boxSize?: { width?: number; height?: number };
   private readonly _collisionBoxSize?: SpriteProps["collisionBox"];
   private readonly shadow: boolean;
   private readonly _shadowOffset: { x: number; y: number };

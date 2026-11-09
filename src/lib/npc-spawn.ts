@@ -7,11 +7,12 @@ import { placeAtTile } from "@/lib/positioning";
 
 /**
  * Binds `respawnNPC`/`despawnNPC` to one scene's own `npcs`/`interactables`
- * arrays — each scene declares these as its own module-level constants
- * (different identities per scene, unlike `GAME_STATE.obstacles`, which
- * really is the same array everywhere), so this factory is called once per
+ * arrays — each scene declares these as its own module-level constants, a
+ * different array identity per scene — so this factory is called once per
  * scene file rather than the functions taking those arrays as a parameter
- * on every single call.
+ * on every single call. `GAME_STATE.obstacles`, also touched below, is the
+ * one exception: unlike `npcs`/`interactables`, it's shared by every scene
+ * (see its own doc comment in game-state.ts for the full reasoning).
  *
  * @example
  * const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
@@ -28,6 +29,11 @@ export function createNpcSpawner(npcs: PlayerSprite[], interactables: Interactab
     respawnNPC(npc: PlayerSprite, tile?: [number, number]) {
       if (tile) placeAtTile({ sprite: npc, tile });
       addOnce(npcs, npc);
+      // Mutates the array GAME_STATE.obstacles currently points to, rather
+      // than reassigning it — correct whether this runs at module scope
+      // (before any enter() has reset it yet) or mid-session (after one
+      // already has) — see GAME_STATE.obstacles' own doc comment for the
+      // full reasoning.
       addOnce(GAME_STATE.obstacles, npc);
     },
 
