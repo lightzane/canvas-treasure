@@ -1,6 +1,6 @@
 import { PAGE_SOUND_VOLUME } from "@/app/puzzle-viewer";
 import { COLLISION_OVERWORLD, COLLISION_OVERWORLD_EVENT } from "@/constants/collisions/overworld";
-import { TILE_SIZE } from "@/constants/game-settings";
+import { TILE_SIZE, ZOOM_LEVEL } from "@/constants/game-settings";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
 import { GAME_STATE } from "@/features/game-state";
 import {
@@ -116,6 +116,7 @@ const IMG_CHEST_CLOSE = img("others/chest-close.png");
 const IMG_CHEST_OPEN = img("others/chest-open.png");
 const IMG_CHEST_EMPTY = img("others/chest-empty.png");
 const IMG_BALLOON_CRATES = img("others/balloon-crates.png");
+const IMG_STREET_LIGHT = img("others/street-light.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const ICON_SHEARS = img("others/garden-shears.png");
 const ICON_PAPERS = img("others/paper-multi-32x32.png");
@@ -157,6 +158,122 @@ const chestCfgs: Partial<Sprite> = {
 const chestClose = new Sprite({ ...chestCfgs, src: IMG_CHEST_CLOSE });
 const chestOpen = new Sprite({ ...chestCfgs, src: IMG_CHEST_OPEN });
 const chestEmpty = new Sprite({ ...chestCfgs, src: IMG_CHEST_EMPTY });
+
+const createStreetLight = (tileX: number, tileY: number) => {
+  const streetLight = new Sprite({
+    src: IMG_STREET_LIGHT,
+    scale: 2,
+    boxSize: {
+      width: 15 * ZOOM_LEVEL, // check the actual width of the pixel art
+      height: TILE_SIZE * 2,
+    },
+    collisionBox: {
+      height: 24,
+    },
+  });
+  placeAtTile(streetLight, [tileX, tileY]);
+  return streetLight;
+};
+
+const STREET_LIGHTS: Sprite[] = [
+  createStreetLight(110, 6),
+  createStreetLight(52, 8),
+  createStreetLight(48, 8),
+  createStreetLight(40, 8),
+  createStreetLight(31, 8),
+  createStreetLight(26, 8),
+  createStreetLight(19, 8),
+  createStreetLight(43, 15),
+  createStreetLight(49, 15),
+  createStreetLight(108, 15),
+  createStreetLight(114, 15),
+  createStreetLight(69, 18),
+  createStreetLight(62, 18),
+  createStreetLight(52, 18),
+  createStreetLight(47, 18),
+  createStreetLight(34, 18),
+  createStreetLight(114, 20),
+  createStreetLight(108, 20),
+  createStreetLight(89, 20),
+  createStreetLight(84, 20),
+  createStreetLight(84, 24),
+  createStreetLight(89, 24),
+  createStreetLight(50, 25),
+  createStreetLight(69, 28),
+  createStreetLight(34, 28),
+  createStreetLight(47, 28),
+  createStreetLight(46, 30),
+  createStreetLight(80, 34),
+  createStreetLight(79, 35),
+  createStreetLight(109, 35),
+  createStreetLight(46, 36),
+  createStreetLight(110, 36),
+  createStreetLight(118, 37),
+  createStreetLight(23, 38),
+  createStreetLight(118, 41),
+  createStreetLight(23, 43),
+  createStreetLight(46, 44),
+  createStreetLight(70, 44),
+  createStreetLight(105, 50),
+  createStreetLight(83, 50),
+  createStreetLight(35, 51),
+  createStreetLight(62, 52),
+  createStreetLight(69, 52),
+  createStreetLight(80, 53),
+  createStreetLight(108, 53),
+  createStreetLight(96, 57),
+  createStreetLight(35, 51),
+  createStreetLight(35, 58),
+  createStreetLight(73, 61),
+  createStreetLight(39, 61),
+  createStreetLight(69, 61),
+  createStreetLight(115, 61),
+  createStreetLight(39, 65),
+  createStreetLight(47, 65),
+  createStreetLight(50, 65),
+  createStreetLight(58, 65),
+  createStreetLight(61, 65),
+  createStreetLight(69, 65),
+  createStreetLight(81, 66),
+  createStreetLight(87, 66),
+  createStreetLight(99, 66),
+  createStreetLight(105, 66),
+  createStreetLight(114, 66),
+  createStreetLight(123, 68),
+  createStreetLight(81, 68),
+  createStreetLight(87, 68),
+  createStreetLight(99, 68),
+  createStreetLight(105, 68),
+  createStreetLight(128, 68),
+  createStreetLight(36, 69),
+  createStreetLight(39, 69),
+  createStreetLight(91, 69),
+  createStreetLight(95, 69),
+  createStreetLight(77, 74),
+  createStreetLight(109, 74),
+  createStreetLight(91, 75),
+  createStreetLight(95, 75),
+  createStreetLight(91, 78),
+  createStreetLight(69, 78),
+  createStreetLight(95, 78),
+  createStreetLight(109, 78),
+  createStreetLight(77, 78),
+  createStreetLight(91, 84),
+  createStreetLight(95, 84),
+  createStreetLight(69, 85),
+  createStreetLight(81, 87),
+  createStreetLight(87, 87),
+  createStreetLight(99, 87),
+  createStreetLight(105, 87),
+  createStreetLight(114, 87),
+  createStreetLight(99, 91),
+  createStreetLight(81, 91),
+  createStreetLight(70, 91),
+  createStreetLight(87, 91),
+  createStreetLight(105, 91),
+  createStreetLight(114, 91),
+  createStreetLight(119, 92),
+];
 
 // removable decors
 const wildBushConfigs = {
@@ -411,28 +528,28 @@ const questDaoMingKeys = quests.get("daoming_keys")!;
 const questSketchUnity = quests.get("sketch_unity")!;
 
 // Static sprites that never relocates
-placeAtTile({ sprite: GAME_STATE.papa, tile: [63, 39] });
-placeAtTile({ sprite: smallFountainA, tile: [80.75, 51.5] });
-placeAtTile({ sprite: smallFountainB, tile: [105.75, 51.5] });
-placeAtTile({ sprite: smallFountainC, tile: [92.25, 76.5] });
-placeAtTile({ sprite: bigFountainA, tile: [80.25, 21.75] });
-placeAtTile({ sprite: bigFountainB, tile: [90.25, 21.75] });
-placeAtTile({ sprite: wildBushPaper, tile: [42, 73.5] });
-placeAtTile({ sprite: wildBushMazeEntrance, tile: [106, 10] });
-placeAtTile({ sprite: wildBushMazeChest, tile: [117, 9] });
-placeAtTile({ sprite: wildBushBeach1, tile: [20, 51] });
-placeAtTile({ sprite: wildBushBeach2, tile: [20, 52] });
-placeAtTile({ sprite: spHouse, tile: [60, 45] });
-placeAtTile({ sprite: spMansion1, tile: [85, 30] });
-placeAtTile({ sprite: spMansion2, tile: [88, 30] });
-placeAtTile({ sprite: msgBottle1, tile: [45, 74] });
-placeAtTile({ sprite: chestEmpty, tile: [119.75, 7.75] });
-placeAtTile({ sprite: balloonCrates[0], tile: [99, 74] });
-placeAtTile({ sprite: balloonCrates[1], tile: [99, 75] });
-placeAtTile({ sprite: balloonCrates[2], tile: [100, 75] });
-placeAtTile({ sprite: balloonCrates[3], tile: [108, 74] });
-placeAtTile({ sprite: balloonCrates[4], tile: [107, 75] });
-placeAtTile({ sprite: balloonCrates[5], tile: [108, 75] });
+placeAtTile(GAME_STATE.papa, [63, 39]);
+placeAtTile(smallFountainA, [80.75, 51.5]);
+placeAtTile(smallFountainB, [105.75, 51.5]);
+placeAtTile(smallFountainC, [92.25, 76.5]);
+placeAtTile(bigFountainA, [80.25, 21.75]);
+placeAtTile(bigFountainB, [90.25, 21.75]);
+placeAtTile(wildBushPaper, [42, 73.5]);
+placeAtTile(wildBushMazeEntrance, [106, 10]);
+placeAtTile(wildBushMazeChest, [117, 9]);
+placeAtTile(wildBushBeach1, [20, 51]);
+placeAtTile(wildBushBeach2, [20, 52]);
+placeAtTile(spHouse, [60, 45]);
+placeAtTile(spMansion1, [85, 30]);
+placeAtTile(spMansion2, [88, 30]);
+placeAtTile(msgBottle1, [45, 74]);
+placeAtTile(chestEmpty, [119.75, 7.75]);
+placeAtTile(balloonCrates[0], [99, 74]);
+placeAtTile(balloonCrates[1], [99, 75]);
+placeAtTile(balloonCrates[2], [100, 75]);
+placeAtTile(balloonCrates[3], [108, 74]);
+placeAtTile(balloonCrates[4], [107, 75]);
+placeAtTile(balloonCrates[5], [108, 75]);
 
 let nLoc = [92.5, 32.4] as [number, number];
 NORTH_GUARDS.forEach((npc, i) => {
@@ -705,7 +822,11 @@ export const overworldScene: Scene = {
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
-    GAME_STATE.obstacles = [...NPCS, ...OBSTACLE_DECORS.filter((d) => DECORS.includes(d))];
+    GAME_STATE.obstacles = [
+      ...NPCS,
+      ...STREET_LIGHTS,
+      ...OBSTACLE_DECORS.filter((d) => DECORS.includes(d)),
+    ];
 
     // `&& GAME_STATE.gameStarted` guards against this scene's `enter()` ever
     // running before the boot Start screen has been dismissed (currently
@@ -759,7 +880,7 @@ export const overworldScene: Scene = {
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
     DECORS.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
     drawFootprints(ctx);
-    drawYSorted(ctx, [player, ...NPCS.filter(isInViewport)]);
+    drawYSorted(ctx, [player, ...NPCS.filter(isInViewport), ...STREET_LIGHTS.filter(isInViewport)]);
 
     if (questDaoMingKeys.status === "resolved" && !GAME_STATE.sequence.closing_remarks)
       drawViewportClamped(ctx, foreground);

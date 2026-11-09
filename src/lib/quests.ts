@@ -60,14 +60,14 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "parcel",
     {
       description: "Get the parcel.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [
     "invitation_postcard", // main quest OR last quest
     {
       description: "Find out what's this treasure is about.",
-      status: "inactive",
+      status: "active",
     },
   ],
   [
