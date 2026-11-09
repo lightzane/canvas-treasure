@@ -57,6 +57,7 @@ import { placeAtTile } from "@/lib/positioning";
 import { BIRTHDAY_POSTCARD_SRC } from "@/lib/postcard-sticker";
 import { preload } from "@/lib/preload";
 import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
+import { createReadDispatch } from "@/lib/read-message";
 import { walk } from "@/lib/walk";
 import { IMGS_AANG_MOMO_IDLE } from "@/sprites/aang-momo";
 import { IMGS_ADULT_FEMALE_1_IDLE } from "@/sprites/adult-female-1";
@@ -140,9 +141,45 @@ const smallFountainB = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 },
 const smallFountainC = new Sprite({ src: IMG_FOUNTAIN_SMALL, frames: { max: 4 }, scale: 2 });
 const bigFountainA = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
 const bigFountainB = new Sprite({ src: IMG_FOUNTAIN_BIG, frames: { max: 4 }, scale: 2 });
-const spHouse = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
-const spMansion1 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
-const spMansion2 = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
+/**
+ * One readable signpost — add a new one here and nothing else in this file
+ * needs to change (its sprite, placement, and INTERACTABLES/interactions()
+ * wiring are all generated below from this table, see SIGNPOSTS).
+ */
+interface SignpostCfg {
+  tile: [number, number];
+  message: string;
+}
+
+const SIGNPOST_CFGS: SignpostCfg[] = [
+  { tile: [60, 45], message: "Your house..." },
+  { tile: [85, 30], message: "DAO MING Mansion" },
+  { tile: [88, 30], message: "DAO MING Mansion" },
+  { tile: [59, 29], message: "HUA ZE LEI's House" },
+  { tile: [37, 16], message: "MEI ZUO's House" },
+  { tile: [121, 89], message: "XI MEN's House" },
+  { tile: [124, 64], message: "IROH's TEASHOP — Famous for its aromatic Jasmine Tea" },
+  { tile: [93, 33], message: "Park North Entrance" },
+  { tile: [76, 44], message: "Park West Entrance" },
+  { tile: [111, 44], message: "Park East Entrance" },
+  { tile: [92, 57], message: "Park South Entrance" },
+  { tile: [92, 68], message: "Market North Entrance" },
+  { tile: [76, 75], message: "Market West Entrance" },
+  { tile: [110, 75], message: "Market East Entrance" },
+  { tile: [92, 86], message: "Market South Entrance" },
+  { tile: [46, 24], message: "Flower Garden — Planted with love, shaped like it too" },
+  {
+    tile: [39, 45],
+    message: "Flowershop — Every bloom in town? You can thank us for that!",
+    // TODO: Add npc saying this line: "The heart behind every garden in town!"
+  },
+];
+
+const SIGNPOSTS = SIGNPOST_CFGS.map(({ tile, message }) => {
+  const sprite = new Sprite({ src: IMG_SIGNPOST, scale: 2 });
+  placeAtTile(sprite, tile);
+  return { sprite, message };
+});
 const coreMsgBottle = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
 const msgBottle1 = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
 const balloonCrates = Array.from(
@@ -436,9 +473,7 @@ const INTERACTABLES: Interactable[] = [
   { sprite: wildBushMazeChest, ...wildBushInteractablesCfgs },
   { sprite: wildBushBeach1, ...wildBushInteractablesCfgs },
   { sprite: wildBushBeach2, ...wildBushInteractablesCfgs },
-  { sprite: spHouse, ...signpostInteractablesCfgs },
-  { sprite: spMansion1, ...signpostInteractablesCfgs },
-  { sprite: spMansion2, ...signpostInteractablesCfgs },
+  ...SIGNPOSTS.map(({ sprite }) => ({ sprite, ...signpostInteractablesCfgs })),
   { sprite: msgBottle1, ...msgBottleInteractablesCfgs },
 ];
 const HUAZELEI_INTERACTABLE: Interactable = huazelei;
@@ -539,9 +574,6 @@ placeAtTile(wildBushMazeEntrance, [106, 10]);
 placeAtTile(wildBushMazeChest, [117, 9]);
 placeAtTile(wildBushBeach1, [20, 51]);
 placeAtTile(wildBushBeach2, [20, 52]);
-placeAtTile(spHouse, [60, 45]);
-placeAtTile(spMansion1, [85, 30]);
-placeAtTile(spMansion2, [88, 30]);
 placeAtTile(msgBottle1, [45, 74]);
 placeAtTile(chestEmpty, [119.75, 7.75]);
 placeAtTile(balloonCrates[0], [99, 74]);
@@ -1061,6 +1093,9 @@ function cutsceneStartMessageBottle() {
 }
 
 function interactions(target: Sprite | undefined) {
+  const { readMessage } = createReadDispatch(target);
+  SIGNPOSTS.forEach(({ sprite, message }) => readMessage(sprite, message));
+
   switch (target) {
     case GAME_STATE.papa:
       interactPapa();
@@ -1093,13 +1128,6 @@ function interactions(target: Sprite | undefined) {
       break;
     case wildBushBeach2:
       interactWildBush(wildBushBeach2);
-      break;
-    case spHouse:
-      DIALOGUE.show("Your house...");
-      break;
-    case spMansion1:
-    case spMansion2:
-      DIALOGUE.show("DAO MING Mansion");
       break;
     case coreMsgBottle:
       readBottle(coreMsgBottle);
@@ -1590,7 +1618,7 @@ function interactWildBush(bushSprite: Sprite) {
 function readBottle(msgBottle: Sprite) {
   GAME_STATE.movementLocked = true;
   const prefix = `[MESSAGE IN A BOTTLE]`;
-  DIALOGUE.show(prefix);
+  DIALOGUE.show({ text: prefix, color: "black" });
 
   switch (msgBottle) {
     case coreMsgBottle:
