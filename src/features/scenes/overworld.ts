@@ -1,5 +1,9 @@
 import { PAGE_SOUND_VOLUME } from "@/app/puzzle-viewer";
-import { COLLISION_OVERWORLD, COLLISION_OVERWORLD_EVENT } from "@/constants/collisions/overworld";
+import {
+  COLLISION_OVERWORLD,
+  COLLISION_OVERWORLD_EVENT,
+  COLLISION_OVERWORLD_NON_EVENT,
+} from "@/constants/collisions/overworld";
 import { TILE_SIZE, ZOOM_LEVEL } from "@/constants/game-settings";
 import { TRIGGER_OVERWORLD, type TriggerName } from "@/constants/triggers/overworld";
 import { GAME_STATE } from "@/features/game-state";
@@ -113,10 +117,13 @@ const IMG_PAPER_WIND = img("others/paper-wind.png");
 const IMG_WILD_BUSH_CENTER = img("others/wild-bush-center.png");
 const IMG_SIGNPOST = img("others/signpost.png");
 const IMG_MESSAGE_BOTTLE_H = img("others/message-bottle-h.png");
+const IMG_BULLETIN_BOARD = img("others/bulletin-board.png");
 const IMG_CHEST_CLOSE = img("others/chest-close.png");
 const IMG_CHEST_OPEN = img("others/chest-open.png");
 const IMG_CHEST_EMPTY = img("others/chest-empty.png");
 const IMG_BALLOON_CRATES = img("others/balloon-crates.png");
+const IMG_WOODEN_CRATE = img("others/wooden-crate.png");
+const IMG_WOODEN_BARREL = img("others/wooden-barrel.png");
 const IMG_STREET_LIGHT = img("others/street-light.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const ICON_SHEARS = img("others/garden-shears.png");
@@ -126,7 +133,6 @@ const ICON_PARCEL = img("others/parcel-32x32.png");
 const MAIN_EVENT_PLAYER_MOVESPEED = 100;
 
 const background = new Sprite({ src: IMG_MAP_BG });
-/** Drawn on top of the player (tree canopies, roof overhangs, etc). */
 const foreground = new Sprite({ src: IMG_MAP_FG });
 
 const backgroundEvent = new Sprite({ src: IMG_MAP_EVENT_BG });
@@ -255,6 +261,22 @@ const MSG_BOTTLE_CFGS: ReadableCfg[] = [
 const MSG_BOTTLES = createReadables(IMG_MESSAGE_BOTTLE_H, MSG_BOTTLE_CFGS);
 
 const coreMsgBottle = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
+const bulletinBoard = new Sprite({
+  src: IMG_BULLETIN_BOARD,
+  scale: 2,
+  collisionBox: { height: 32 },
+});
+// Built once, not inline inside initBulletinBoard() — that function runs
+// every enter() while the quest is active, and addOnce() only dedupes by
+// reference. A fresh `{ sprite, label, ... }` literal built on every call
+// would never match itself, so re-entries would keep stacking duplicate
+// wrapper entries in INTERACTABLES, and removeInteractable() (on resolve)
+// only ever clears the first one — leaving the "Read" prompt as a ghost.
+const BULLETIN_BOARD_INTERACTABLE: Interactable = {
+  sprite: bulletinBoard,
+  label: "Read",
+  labelOffset: { y: 16 },
+};
 const balloonCrates = Array.from(
   { length: 6 },
   () => new Sprite({ src: IMG_BALLOON_CRATES, scale: 2 }),
@@ -385,6 +407,36 @@ const STREET_LIGHTS: Sprite[] = [
   createStreetLight(119, 92),
 ];
 
+const createProps = (src: string, tile: [number, number]) => {
+  const sprite = new Sprite({ src, scale: 2 });
+  // Explicit spriteSize: placeAtTile's own default (sprite.size) is the RAW,
+  // unscaled image size — fine when boxSize matches that raw size, wrong
+  // here since boxSize is TILE_SIZE (already 2x-scaled) while the source art
+  // is native 32x32. Centering on the raw size instead of boxSize is what
+  // produced the consistent 16px-off placement.
+  placeAtTile({ sprite, tile, spriteSize: sprite.boxSize });
+  return sprite;
+};
+
+function createPropsRow(src: string, tile: [number, number], count: number) {
+  return Array.from({ length: count }, (_, i) => createProps(src, [tile[0] + i, tile[1]]));
+}
+
+const woodenCrates: Sprite[] = [
+  ...createPropsRow(IMG_WOODEN_CRATE, [90, 40], 9), // Row 1 — solid line of 9
+  ...createPropsRow(IMG_WOODEN_CRATE, [90, 41], 3), // Row 2 — left half, before the gap
+  ...createPropsRow(IMG_WOODEN_CRATE, [96, 41], 3), // Row 2 — right half, after a 3-tile gap
+];
+
+const balloonBarrelRow: Sprite[] = [
+  createProps(IMG_BALLOON_CRATES, [90, 39]),
+  ...createPropsRow(IMG_WOODEN_BARREL, [91, 39], 2),
+  ...createPropsRow(IMG_WOODEN_BARREL, [96, 39], 2),
+  createProps(IMG_BALLOON_CRATES, [98, 39]),
+];
+
+const BEFORE_MAIN_EVENT_PROPS = [...balloonBarrelRow, ...woodenCrates];
+
 // removable decors
 const wildBushConfigs = {
   scale: 2,
@@ -439,6 +491,7 @@ const OBSTACLE_DECORS = [
   chestClose,
   chestOpen,
   chestEmpty,
+  ...BEFORE_MAIN_EVENT_PROPS,
 ];
 
 const NPCS: PlayerSprite[] = [GAME_STATE.papa];
@@ -654,6 +707,7 @@ placeAtTile(balloonCrates[2], [100, 75]);
 placeAtTile(balloonCrates[3], [108, 74]);
 placeAtTile(balloonCrates[4], [107, 75]);
 placeAtTile(balloonCrates[5], [108, 75]);
+placeAtTile(bulletinBoard, [93, 40]);
 
 let nLoc = [92.5, 32.4] as [number, number];
 NORTH_GUARDS.forEach((npc, i) => {
@@ -870,7 +924,7 @@ const MAIN_EVENT_GUESTS = [
 ];
 
 const BOUNDARIES_MAIN_EVENT = createBoundaries(COLLISION_OVERWORLD_EVENT);
-// TODO: boundaries non-event
+const BOUNDARIES_PARK_NORMAL = createBoundaries(COLLISION_OVERWORLD_NON_EVENT);
 
 export const overworldScene: Scene = {
   fadeIn: 1,
@@ -924,13 +978,17 @@ export const overworldScene: Scene = {
     GAME_STATE.spawnLocation = undefined;
 
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
+    // Normal park boundaries — before questDaoMingKeys resolves (main event
+    // not unlocked yet) and after questMain resolves (main event already
+    // torn down by closingRemarks()). Not during: initMainEvent() (called
+    // from initQuests(), below) layers BOUNDARIES_MAIN_EVENT on top instead
+    // for that window, and nothing here must also be active then.
+    if (questDaoMingKeys.status !== "resolved" || questMain.status === "resolved") {
+      BOUNDARIES_PARK_NORMAL.forEach((b) => addOnce(GAME_STATE.boundaries, b));
+    }
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
-    GAME_STATE.obstacles = [
-      ...NPCS,
-      ...STREET_LIGHTS,
-      ...OBSTACLE_DECORS.filter((d) => DECORS.includes(d)),
-    ];
+    GAME_STATE.obstacles = [...NPCS, ...STREET_LIGHTS];
 
     // `&& GAME_STATE.gameStarted` guards against this scene's `enter()` ever
     // running before the boot Start screen has been dismissed (currently
@@ -959,6 +1017,14 @@ export const overworldScene: Scene = {
     }
 
     initQuests();
+    // DECORS may have just changed inside initQuests() (e.g. a quest-gated
+    // prop toggling on/off this same visit) — filtering OBSTACLE_DECORS
+    // against DECORS here, after initQuests() has run, means a prop that
+    // just appeared/disappeared this visit obstructs (or stops) right away
+    // instead of only taking effect from the next re-entry.
+    OBSTACLE_DECORS.filter((d) => DECORS.includes(d)).forEach((d) =>
+      addOnce(GAME_STATE.obstacles, d),
+    );
   },
 
   update(dt) {
@@ -984,7 +1050,12 @@ export const overworldScene: Scene = {
     // GAME_STATE.boundaries.forEach((b) => b.draw(ctx)); // for debugging and boundary visibility
     DECORS.filter(isInViewport).forEach((sprite) => sprite.draw(ctx));
     drawFootprints(ctx);
-    drawYSorted(ctx, [player, ...NPCS.filter(isInViewport), ...STREET_LIGHTS.filter(isInViewport)]);
+    drawYSorted(ctx, [
+      player,
+      ...NPCS.filter(isInViewport),
+      ...STREET_LIGHTS.filter(isInViewport),
+      ...[bulletinBoard].filter((s) => isInViewport(s) && DECORS.includes(s)),
+    ]);
 
     if (questDaoMingKeys.status === "resolved" && !GAME_STATE.sequence.closing_remarks)
       drawViewportClamped(ctx, foreground);
@@ -1003,6 +1074,7 @@ function initQuests() {
 
   // Season 1:
   initQuestsDaomingsi();
+  initBulletinBoard();
   initQuestsHuazelei();
   initTracingPaper2();
   initCoreMessageBottle();
@@ -1166,6 +1238,24 @@ function cutsceneStartMessageBottle() {
 
 function interactions(target: Sprite | undefined) {
   const { readMessage } = createReadDispatch(target);
+
+  if (readMessage(bulletinBoard, `An announcement from the bulletin reads...`)) {
+    DIALOGUE.queue(`PARK ANNOUNCEMENT`);
+    DIALOGUE.queue(`
+      We are delighted to announce that preparations for a
+      very special celebration will soon begin within the
+      park grounds.
+      
+      For the duration of these preparations, the park will
+      be closed to the public. We kindly ask for your
+      understanding — and warmly welcome any volunteers
+      wishing to help bring this celebration to life.
+
+      — Park's Event Coordinator
+    `);
+    return;
+  }
+
   SIGNPOSTS.forEach(({ sprite, message }) => readMessage(sprite, message));
   MSG_BOTTLES.forEach(({ sprite, message }) => {
     if (readMessage(sprite, "[MESSAGE IN A BOTTLE]")) {
@@ -1320,6 +1410,7 @@ function interactHuazelei() {
   });
 }
 
+// TODO: add effect where we use gsap/canvas-confetti to animate falling pink cherry blossoms romantically.
 function meetLeiConversation() {
   hudSetBagIconVisible(false);
   let shineHandle: ShineHandle | null = null;
@@ -1706,6 +1797,28 @@ function readCoreMsgBottle() {
   DIALOGUE.show({ text: `[MESSAGE IN A BOTTLE]`, color: "black" });
   hudSetBagIconVisible(false);
   completeCoreMsgBottle();
+}
+
+/**
+ * Dao Ming Si's "missing keys" flyer — visible only while questDaoMingKeys
+ * is active, gone for good once it resolves. Unlike coreMsgBottle (spawn
+ * once, never removed), this needs an explicit despawn branch too, since
+ * it must disappear on resolution, not just stop re-appearing — re-checked
+ * every initQuests() call so a resolve mid-visit still takes it down on the
+ * very next entry.
+ */
+function initBulletinBoard() {
+  if (questDaoMingKeys.status === "active") {
+    addOnce(DECORS, bulletinBoard);
+    addOnce(INTERACTABLES, BULLETIN_BOARD_INTERACTABLE);
+    addOnce(GAME_STATE.obstacles, bulletinBoard);
+    BEFORE_MAIN_EVENT_PROPS.forEach((props) => addOnce(DECORS, props));
+  } else {
+    remove(DECORS, bulletinBoard);
+    remove(GAME_STATE.obstacles, bulletinBoard);
+    removeInteractable(INTERACTABLES, bulletinBoard);
+    BEFORE_MAIN_EVENT_PROPS.forEach((props) => remove(DECORS, props));
+  }
 }
 
 function initCoreMessageBottle() {
@@ -2779,7 +2892,7 @@ function cutsceneMainQuestReveal() {
   f4Speaker(
     "daomingsi",
     `...na hindi lahat ng treasure o kayamanan ay 
-    isang uri ng bagay tulad na lamang ng music box,
+    isang uri ng GOLD o bagay tulad na lamang ng music box,
     at hindi rin ito treasure chest na kailangan buksan
     ng keys o ng kung anuman.`,
   );

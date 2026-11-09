@@ -348,6 +348,7 @@ function nearMissConversation() {
       playExclamation(BUTLER);
     });
   }, 0.5);
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.daomingsi, { glyph: "🔥" }));
   DIALOGUE.queue({
     text: `DAO MING SI: Hinihingi ko ba ang opinyon mo HA?`,
     color: DIALOGUE_COLOR_DAOMINGSI,
@@ -394,7 +395,7 @@ function nearMissConversation() {
         delay: (delay += 0.3),
       });
     });
-  }, 5);
+  }, 1.5); // TODO: Add a "lock" icon in dialogue when it's locked just a handy player experience?
   DIALOGUE.onComplete = () => {
     hudSetBagIconVisible(true);
     GAME_STATE.sequence.meet_daomingsi = true;
