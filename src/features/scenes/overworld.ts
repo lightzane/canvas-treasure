@@ -196,6 +196,24 @@ const DECORS: Sprite[] = [
   msgBottle1,
 ];
 
+/**
+ * Candidate decor-obstacles, re-checked against DECORS on every enter()
+ * below instead of hardcoded wholesale — so a bush interactWildBush already
+ * cut (removed from DECORS once, permanently — nothing ever adds it back)
+ * or a chest not reached yet correctly stays out of GAME_STATE.obstacles
+ * too, rather than being unconditionally resurrected on the next re-entry.
+ */
+const OBSTACLE_DECORS = [
+  wildBushPaper,
+  wildBushMazeEntrance,
+  wildBushMazeChest,
+  wildBushBeach1,
+  wildBushBeach2,
+  chestClose,
+  chestOpen,
+  chestEmpty,
+];
+
 const NPCS: PlayerSprite[] = [GAME_STATE.papa];
 
 const spawnGuards = () => [
@@ -208,6 +226,15 @@ const NORTH_GUARDS: PlayerSprite[] = spawnGuards();
 const WEST_GUARDS: PlayerSprite[] = spawnGuards();
 const EAST_GUARDS: PlayerSprite[] = spawnGuards();
 const PARK_EVENT_GUARDS: PlayerSprite[] = [...NORTH_GUARDS, ...WEST_GUARDS, ...EAST_GUARDS];
+
+// Built once, not inline per-call inside initMainEventGuards() — addOnce()
+// dedupes by reference, so a fresh `{ sprite, probeDistance }` literal
+// created on every call would never match its own earlier copy, silently
+// piling up duplicate entries in INTERACTABLES on every re-entry.
+const PARK_EVENT_GUARDS_INTERACTABLES: Interactable[] = PARK_EVENT_GUARDS.map((npc) => ({
+  sprite: npc,
+  probeDistance: 8,
+}));
 
 const AISLE_GUARDS_ROW_A: PlayerSprite[] = [
   new PlayerSprite({ sprites: { idle: IMGS_HH_STAFF_FEMALE_1_IDLE } }),
@@ -678,14 +705,7 @@ export const overworldScene: Scene = {
     GAME_STATE.boundaries = createBoundaries(COLLISION_OVERWORLD);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
-    GAME_STATE.obstacles = [
-      ...NPCS,
-      wildBushPaper,
-      wildBushMazeEntrance,
-      wildBushMazeChest,
-      wildBushBeach1,
-      wildBushBeach2,
-    ];
+    GAME_STATE.obstacles = [...NPCS, ...OBSTACLE_DECORS.filter((d) => DECORS.includes(d))];
 
     // `&& GAME_STATE.gameStarted` guards against this scene's `enter()` ever
     // running before the boot Start screen has been dismissed (currently
@@ -752,10 +772,9 @@ export const overworldScene: Scene = {
 };
 
 function initQuests() {
-  if (questMain.status === "resolved") {
-    initFreeRoam();
-    return;
-  }
+  // Main event's already been torn down once, by closingRemarks() itself,
+  // right as it happened — nothing left to do on any later re-entry.
+  if (questMain.status === "resolved") return;
 
   // Season 1:
   initQuestsDaomingsi();
@@ -2582,7 +2601,7 @@ function cutsceneMainQuestReveal() {
     color: "blue",
   });
   DIALOGUE.queue(
-    `Iyung missing treasure, ay natakpan lamang ng mabuti sa ilalim ng first layer nito.`,
+    `Iyung missing treasure, ay natakpan lamang ng mabuti sa ilalim ng top layer nito.`,
   );
   DIALOGUE.effect(() => {
     GAME_STATE.movementLocked = true;
@@ -2592,7 +2611,7 @@ function cutsceneMainQuestReveal() {
     text: `YOU: (thinking) Kailangan ko buksan yung chest na galing parcel sa bag...`,
     color: "black",
   });
-  DIALOGUE.queue(`Yung treasure nasa ilalim lang ng first layer nito...`);
+  DIALOGUE.queue(`Yung treasure nasa ilalim lang ng top layer nito...`);
   DIALOGUE.effect(() => {
     playExclamation(player);
     playAttentionBounce(player, { hops: 3 });
@@ -2658,12 +2677,14 @@ function closingRemarks() {
         spawnOverworldNpcs();
         despawnNPC(npcIroh);
         despawnNPC(npcZuko);
+        cleanupMainEvent(); // f4 + both guard formations, papa back to his free-roam spot
       },
     });
   };
 }
 
-function initFreeRoam() {
+/** One-time teardown of everything spawned only for the main event — called once, directly by closingRemarks(), not re-run on every later re-entry. */
+function cleanupMainEvent() {
   if (questMain.status !== "resolved") return;
   const cleanupNpcs = [...f4, ...AISLE_GUARDS, ...PARK_EVENT_GUARDS];
   cleanupNpcs.forEach((npc) => despawnNPC(npc));
@@ -2727,10 +2748,8 @@ function interactXimen() {
 function initMainEventGuards() {
   if (questMazeChest.status !== "resolved") return;
 
-  PARK_EVENT_GUARDS.forEach((npc) => {
-    respawnNPC(npc);
-    addOnce(INTERACTABLES, { sprite: npc, probeDistance: 8 });
-  });
+  PARK_EVENT_GUARDS.forEach((npc) => respawnNPC(npc));
+  PARK_EVENT_GUARDS_INTERACTABLES.forEach((entry) => addOnce(INTERACTABLES, entry));
   AISLE_GUARDS.forEach((npc) => addOnce(INTERACTABLES, npc));
 
   if (questDaoMingKeys.status !== "resolved") {
