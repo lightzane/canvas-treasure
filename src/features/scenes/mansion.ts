@@ -392,7 +392,7 @@ function nearMissConversation() {
     quests.forEach(({ description }) => {
       playQuestToast(description, { delay: (delay += 0.3) });
     });
-  }, 1.5); // TODO: Add a "lock" icon in dialogue when it's locked just a handy player experience?
+  }, 1.5);
   DIALOGUE.onComplete = () => {
     hudSetBagIconVisible(true);
     GAME_STATE.sequence.meet_daomingsi = true;

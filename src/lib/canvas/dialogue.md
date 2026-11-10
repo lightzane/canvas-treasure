@@ -162,11 +162,44 @@ DIALOGUE.effect(() => {
 DIALOGUE.queue("...oh!"); // box is back automatically for this one
 ```
 
+### Locking a message until something else finishes
+
+For a cutscene beat where a message needs to stay on screen until something
+else completes (an NPC walking into position, a timed animation) rather than
+until the player happens to press a key, call `.lock()` from inside that
+`effect()`, then `.unlock()` once the thing it's waiting on finishes. Unlike
+`hideBox()`, nothing releases this automatically — `unlock()` must be called
+explicitly:
+
+```ts
+DIALOGUE.effect(() => {
+  DIALOGUE.lock();
+  walk(jp, [[20, 10]], { onComplete: () => DIALOGUE.unlock() });
+});
+DIALOGUE.queue("JP: Happy birthday!");
+```
+
+The typewriter still finishes revealing normally while locked — only the
+actual advance is blocked. A small padlock icon appears in the box's corner
+the whole time it's locked, and pressing Z/X while locked shakes it (with a
+sound) instead of silently doing nothing, so the block reads as deliberate
+rather than the game looking stuck.
+
+> [!WARNING]
+> `lock()` and whatever will eventually call `unlock()` must be _started_
+> from the same `effect()`, before the locked message — never from a later
+> one queued after it. `pending` runs strictly in order, so anything queued
+> after a locked message can't run until that message is dismissed, which is
+> exactly what the lock is blocking: a deadlock, the key sitting on the far
+> side of the locked door.
+
 ## Controls
 
 - **Hold Z or X**: reveal the current page faster.
-- **Press Z or X** once a page is fully revealed: advance to the next page, or
-  close the dialogue if it was the last page.
+- **Press Z or X** once a page is fully revealed: advance to the next page,
+  or close the dialogue if it was the last page — unless the conversation is
+  currently locked (see above), in which case nothing advances and the lock
+  icon shakes instead.
 
 A page never auto-advances just because a key is _held through_ the reveal
 finishing — you get a beat to read it before a fresh press moves on.

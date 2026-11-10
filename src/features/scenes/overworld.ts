@@ -125,8 +125,9 @@ const IMG_WOODEN_BARREL = img("others/wooden-barrel.png");
 const IMG_STREET_LIGHT = img("others/street-light.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const ICON_SHEARS = img("others/garden-shears.png");
-const ICON_PAPERS = img("others/paper-multi-32x32.png");
-const ICON_PARCEL = img("others/parcel-32x32.png");
+const ICON_PAPERS = img("others/paper-multi-32.png");
+const ICON_PARCEL = img("others/parcel-32.png");
+const ICON_UNLOCKED = img("others/padlock-unlocked-64.png");
 
 const MAIN_EVENT_PLAYER_MOVESPEED = 100;
 
@@ -1468,7 +1469,7 @@ function meetLeiConversation() {
   let shineHandle: EffectHandle | null = null;
   const cherryBlossomHandle = playCherryBlossoms({ duration: 60 * 60 * 24 * 2 });
 
-  audioPlayMusic("zz_makeawish", { seek: 5.5, fade: 1, volume: VOLUME_MAIN_BG });
+  audioPlayMusic("zz_makeawish", { seek: 5.5, fade: 1, volume: VOLUME_MAIN_BG + 0.25 });
 
   DIALOGUE.effect(beginCutscene, 0.00001);
 
@@ -1959,7 +1960,8 @@ function openMazeChest() {
     placeAtTile({ sprite: chestOpen, tile: [119.75, 7.75] });
     addOnce(DECORS, chestOpen);
     addOnce(GAME_STATE.obstacles, chestOpen);
-    audioPlaySound("gear_metallic_lock");
+    playExclamation(chestOpen, { icon: ICON_UNLOCKED });
+    audioPlaySound("gear_metallic_unlock");
     audioPauseMusic();
     removeInteractable(INTERACTABLES, chestClose);
     playExclamation(player);
@@ -2005,6 +2007,8 @@ function openMazeChest() {
     beginCutscene();
     huazelei.face("d");
     playExclamation(daomingsi, {
+      glyph: "?",
+      color: "darkviolet",
       onComplete: () => walk(daomingsi, { direction: "d", steps: 2 }),
     });
     playAttentionBounce(daomingsi, { hops: 5, duration: 0.05, delay: 2 });

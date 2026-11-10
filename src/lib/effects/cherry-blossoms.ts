@@ -66,7 +66,7 @@ export function playCherryBlossoms(options: CherryBlossomsOptions = {}): EffectH
   const flurryTimers: gsap.core.Tween[] = [];
 
   function start() {
-    const { left, right, top } = getCanvasBounds();
+    const { left, right } = getCanvasBounds();
     const width = right - left;
 
     // Each burst's origin.x is randomized once per fire() call, not once

@@ -1,6 +1,7 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, GAME_FONT_FAMILY } from "@/constants/game-settings";
 import { GAME_STATE } from "@/features/game-state";
 import { audioPlaySound } from "@/lib/audio";
+import { img } from "@/lib/img";
 import gsap from "gsap";
 
 const MAX_LINES_PER_PAGE = 2;
@@ -29,6 +30,16 @@ const PORTRAIT_MARGIN_LEFT = 32; // gap from the canvas's own left edge
 const PORTRAIT_LEFT = PORTRAIT_MARGIN_LEFT;
 const PORTRAIT_TOP = BOX_TOP + BOX_HEIGHT - PORTRAIT_SIZE;
 const BORDER_AND_PORTRAIT_COLOR = "#74b9ff"; // "#3498db";
+// Tells the player a cutscene is driving the conversation and there's
+// nothing to press right now — the opposite signal from drawReadMore()'s
+// triangle, which is why it sits in the box's corner rather than glued to
+// the text like that one: this is about the whole box's state, not "there's
+// more past this specific line".
+const LOCK_ICON_SRC = img("others/padlock-locked-64.png");
+const LOCK_ICON_SIZE = 28;
+const LOCK_ICON_MARGIN = 10;
+const LOCK_ICON_LEFT = BOX_LEFT + BOX_WIDTH - LOCK_ICON_SIZE - LOCK_ICON_MARGIN;
+const LOCK_ICON_TOP = BOX_TOP + LOCK_ICON_MARGIN;
 
 /** Resolves once the dialogue's pixel font is loaded — awaited by `GameEngine.start()` before the game loop begins. */
 export const dialogueFontReady = document.fonts.load(FONT);
@@ -75,6 +86,10 @@ class Dialogue {
   private lastPortrait: string | undefined;
   /** Lazily created once, reused for the app's life — shown/hidden/re-sourced in step with `portrait`, not recreated per message. */
   private portraitEl: HTMLImageElement | null = null;
+  /** Same lazily-created, reused-for-the-app's-life idea as `portraitEl`, shown/hidden in step with `locked` instead. */
+  private lockIconEl: HTMLImageElement | null = null;
+  /** The in-progress `playLockShake()` timeline, if any — killed and replaced on every new call so a spammed Z always restarts one clean shake instead of several independent timelines overlapping and fighting over the same element's properties. */
+  private lockShakeTimeline: gsap.core.Timeline | null = null;
   /** True from the moment an effect starts running until its delay (if any) finishes and the next item is settled — blocks player input from advancing early. */
   private resolvingEffects = false;
   /** True for the current pause only — see `hideBox()`. Reset automatically the moment the next message is ready to show. */
@@ -101,6 +116,7 @@ class Dialogue {
     this.lastPortrait = undefined; // same reasoning — no carrying over the previous conversation's speaker
     this.hidden = false; // in case a previous conversation got interrupted mid-hideBox()
     this.locked = false; // same reasoning — don't inherit a stale lock() from a previous conversation
+    this.updateLockIconElement();
     GAME_STATE.movementLocked = true;
     this.enqueue(input);
   }
@@ -201,11 +217,13 @@ class Dialogue {
    */
   lock() {
     this.locked = true;
+    this.updateLockIconElement();
   }
 
   /** Releases a `lock()` — the player can advance again immediately (right away if the current page is already fully revealed). */
   unlock() {
     this.locked = false;
+    this.updateLockIconElement();
   }
 
   private enqueue(input: DialogueInput) {
@@ -284,7 +302,14 @@ class Dialogue {
 
     // The typewriter still finishes revealing normally while locked — only
     // the actual advance is blocked, see lock()'s own doc comment.
-    if (justPressed && this.revealedChars >= totalChars && !this.locked) this.advance();
+    if (justPressed && this.revealedChars >= totalChars) {
+      if (!this.locked) this.advance();
+      // Mirror image of the line above — this is exactly the moment an
+      // advance attempt got blocked by the lock, not any other keypress
+      // (speeding up the typewriter reveal still works while locked, and
+      // shouldn't trigger this).
+      else this.playLockShake();
+    }
   }
 
   draw(ctx: CanvasRenderingContext2D) {
@@ -371,6 +396,70 @@ class Dialogue {
     el.style.left = `${(canvasRect?.left ?? 0) + PORTRAIT_LEFT}px`;
     el.style.top = `${(canvasRect?.top ?? 0) + PORTRAIT_TOP}px`;
     el.style.display = "block";
+  }
+
+  private ensureLockIconEl(): HTMLImageElement {
+    if (this.lockIconEl) return this.lockIconEl;
+
+    const el = document.createElement("img");
+    el.className = "game-effect-overlay";
+    el.src = LOCK_ICON_SRC;
+    el.style.width = `${LOCK_ICON_SIZE}px`;
+    el.style.height = `${LOCK_ICON_SIZE}px`;
+    el.style.display = "none";
+    document.body.appendChild(el);
+
+    this.lockIconEl = el;
+    return el;
+  }
+
+  /** Shows/hides the lock icon `<img>` to match `this.locked` — same DOM-overlay idea as `updatePortraitElement()`, called directly from `lock()`/`unlock()`/`show()` instead of the message-queue flow, since locking isn't tied to a particular page. */
+  private updateLockIconElement() {
+    const el = this.ensureLockIconEl();
+
+    if (!this.locked) {
+      el.style.display = "none";
+      return;
+    }
+
+    const canvasRect = document.getElementById("treasure")?.getBoundingClientRect();
+    el.style.left = `${(canvasRect?.left ?? 0) + LOCK_ICON_LEFT}px`;
+    el.style.top = `${(canvasRect?.top ?? 0) + LOCK_ICON_TOP}px`;
+    el.style.display = "block";
+  }
+
+  /**
+   * The iOS "wrong passcode" gesture on the lock icon — a quick scale pop
+   * into a horizontal shake, then settles back — played the moment an
+   * advance attempt gets blocked by the lock (see `update()`), so the block
+   * itself gives feedback instead of a keypress silently doing nothing.
+   * `repeat`/`yoyo` on one tween rather than chaining several manual steps;
+   * an even repeat count (6 total plays) lands back on `x: 0` on its own,
+   * so only `scale` needs an explicit reset after. GSAP's own default
+   * overwrite handles a repeated press just restarting the shake, same as
+   * mashing Z always has elsewhere in this file.
+   */
+  private playLockShake() {
+    const el = this.ensureLockIconEl();
+    audioPlaySound("gear_metallic_lock", { volume: 0.5 });
+    // Killing the prior timeline stops it fighting a new one for the same
+    // properties, but a kill mid-shake leaves x/scale at whatever value
+    // they were interrupted at, not back at rest — and both steps below
+    // animate to the same FIXED absolute values every time (x: 7, scale:
+    // 1.3/1), not a relative offset. So a shake that starts from a drifted
+    // position plays out over a shrunken range instead of the full
+    // intended motion — repeat that enough times (any real spam) and the
+    // starting point drifts close enough to the target that there's
+    // nothing left to visibly move, even though a tween is still running.
+    // Forcing both back to rest first guarantees every press's shake plays
+    // the same full range, regardless of how the previous one ended.
+    this.lockShakeTimeline?.kill();
+    gsap.set(el, { x: 0, scale: 1 });
+    this.lockShakeTimeline = gsap
+      .timeline()
+      .to(el, { scale: 1.3, duration: 0.1, ease: "back.out(3)" })
+      .to(el, { x: 7, duration: 0.06, repeat: 5, yoyo: true, ease: "power1.inOut" })
+      .to(el, { scale: 1, duration: 0.12, ease: "power2.out" });
   }
 
   private drawBox(ctx: CanvasRenderingContext2D) {

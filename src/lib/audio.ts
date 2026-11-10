@@ -51,6 +51,7 @@ export type SoundKey =
   | "page_turn_forward"
   | "page_turn_backward"
   | "page_slide"
+  | "gear_metallic_unlock"
   | "gear_metallic_lock"
   | "drums_of_preparations"
   | "applause_light"
@@ -164,7 +165,8 @@ const SOUND_REGISTRY: Record<SoundKey, SoundEntry> = {
   page_slide:              { src: ["fx/mixkit-paper-slide-1530.wav"] },
   // pop:                  { src: [...Array(5)].map((_, i) => `crack-${i + 1}.mp3`), silenceEnd: true }, // crack-*.mp3 recordings have an audible artifact at the end
   drums_of_preparations:   { src: ["fx/mixkit-drums-of-war-2784.wav"] },
-  gear_metallic_lock:      { src: ["fx/mixkit-gear-metallic-lock-sound-2858.wav"] },
+  gear_metallic_unlock:    { src: ["fx/mixkit-gear-metallic-lock-sound-2858.wav"] },
+  gear_metallic_lock:      { src: ["fx/mixkit-gear-fast-lock-tap-2857.wav"] },
   applause_light:          { src: ["fx/mixkit-audience-light-applause-354.wav"] },
   applause:                { src: ["fx/mixkit-ending-show-audience-clapping-478.wav"] },
 };
