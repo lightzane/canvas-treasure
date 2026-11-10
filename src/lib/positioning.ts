@@ -60,12 +60,27 @@ interface PosSpawnTileParams {
   tile: [number, number];
   spriteSize: { width: number; height: number };
   origin: { x: number; y: number };
+  /**
+   * Which edge of the tile the sprite's box anchors to on the Y axis — X
+   * always stays centered on the tile, since nothing placed this way is
+   * wider than one tile yet. "center" (the default) is exactly the old,
+   * only behavior: correct whenever spriteSize.height is one tile, since
+   * centering and top/bottom-aligning a same-sized box land on the same
+   * pixel. It only diverges once a sprite spans more than one tile (a
+   * 2-tile-tall signpost) — there, "center" leaves it floating half the
+   * excess height above the tile you actually meant. "top"/"bottom" let
+   * the given tile mean exactly the cell you'd read off Tiled for that
+   * edge, so no fractional row is ever needed.
+   * @default "center"
+   */
+  anchor?: "top" | "center" | "bottom";
 }
 
 export function getPosSpawnTile({
   tile: [col, row],
   spriteSize: { width, height },
   origin: { x, y },
+  anchor = "center",
 }: PosSpawnTileParams) {
   // Get the tile's starting pixel (1st tile at index 0 = 0px, 2nd tile at index 1 = 48px)
   const tileLeftX = col * TILE_SIZE;
@@ -82,9 +97,16 @@ export function getPosSpawnTile({
   const spriteX = width / 2;
   const spriteY = height / 2;
 
+  const anchorY =
+    anchor === "top"
+      ? tileTopY
+      : anchor === "bottom"
+        ? tileTopY + TILE_SIZE - height
+        : tileCenterY - spriteY;
+
   return {
     x: x + tileCenterX - spriteX,
-    y: y + tileCenterY - spriteY,
+    y: y + anchorY,
   };
 }
 
@@ -113,6 +135,8 @@ interface PlaceAtTileParams {
    * the live `.size` instead). @default sprite.size
    */
   spriteSize?: { width: number; height: number };
+  /** Forwarded to `getPosSpawnTile` — see its own doc. @default "center" */
+  anchor?: "top" | "center" | "bottom";
 }
 
 /**
@@ -151,6 +175,7 @@ interface PlaceAtTileParams {
  * @example
  * placeAtTile(teaset1, [2, 7]);
  * placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation, spriteSize: GAME_STATE.player.boxSize });
+ * placeAtTile({ sprite: signpost, tile: [60, 46], spriteSize: signpost.boxSize, anchor: "bottom" }); // tile = where it's planted
  */
 export function placeAtTile(sprite: Sprite, tile: [number, number]): void;
 export function placeAtTile(params: PlaceAtTileParams): void;
@@ -160,12 +185,18 @@ export function placeAtTile(spriteOrParams: Sprite | PlaceAtTileParams, tile?: [
     tile: at,
     origin = { x: 0, y: 0 },
     spriteSize,
+    anchor,
   }: PlaceAtTileParams = tile !== undefined
     ? { sprite: spriteOrParams as Sprite, tile }
     : (spriteOrParams as PlaceAtTileParams);
 
   const place = () => {
-    sprite.position = getPosSpawnTile({ tile: at, spriteSize: spriteSize ?? sprite.size, origin });
+    sprite.position = getPosSpawnTile({
+      tile: at,
+      spriteSize: spriteSize ?? sprite.size,
+      origin,
+      anchor,
+    });
   };
 
   if (!spriteSize && !sprite.image.complete)

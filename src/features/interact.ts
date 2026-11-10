@@ -2,7 +2,7 @@ import { GAME_FONT_FAMILY } from "@/constants/game-settings";
 import { isColliding, type Rect } from "@/features/collisions";
 import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
-import { Sprite } from "@/features/sprite";
+import { resolveBox, Sprite, type BoxShape } from "@/features/sprite";
 import { PlayerSprite } from "@/features/sprite-player";
 import { audioPlaySound } from "@/lib/audio";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
@@ -23,6 +23,18 @@ export interface InteractableConfig {
   label?: string;
   /** Nudges the label popup's position, in screen px, relative to its default (horizontally centered on `boxSize`, just above the sprite's head) — not every sprite's artwork is drawn the same relative to its own `position`/`boxSize`, so this corrects per sprite rather than needing one offset that fits everyone. @default { x: 0, y: 0 } */
   labelOffset?: { x?: number; y?: number };
+  /**
+   * Overrides what the interact probe checks against — same shape as
+   * `Sprite`'s own `collisionBox`, resolved the same way, just independent
+   * of it. Needed when `collisionBox` has been narrowed for movement
+   * precision to the point of being an unreliable target to land a probe
+   * on (e.g. a signpost's collision trimmed to just its post, a few px
+   * tall — fine for blocking movement, too thin to reliably catch with a
+   * probe). A bare `{}` resolves to the sprite's full `boxSize`. Every
+   * interactable that doesn't set this keeps checking `sprite.collisionBox`
+   * exactly as before. @default sprite.collisionBox
+   */
+  probeBox?: BoxShape;
 }
 
 /**
@@ -82,7 +94,12 @@ function getFacingProbe({ box, facing, distance }: FacingProbeOptions): Rect {
   }
 }
 
-/** Shared lookup — no side effects. Whichever of `interactables` the player is directly facing, within its own `probeDistance`, or `undefined`. */
+/**
+ * Shared lookup — no side effects. Whichever of `interactables` the player
+ * is directly facing, within its own `probeDistance`, or `undefined`.
+ * Checks against `probeBox` when an entry sets one, else `sprite.collisionBox`
+ * — see `InteractableConfig.probeBox` for why those two can differ.
+ */
 function resolveFacedInteractable(
   player: { collisionBox: Rect; facing: Direction },
   interactables: Interactable[],
@@ -90,7 +107,10 @@ function resolveFacedInteractable(
   return interactables.map(toConfig).find((config) => {
     const distance = config.probeDistance ?? DEFAULT_PROBE_DISTANCE;
     const probe = getFacingProbe({ box: player.collisionBox, facing: player.facing, distance });
-    return isColliding(probe, config.sprite.collisionBox);
+    const target = config.probeBox
+      ? resolveBox(config.sprite.position, config.sprite.boxSize, config.probeBox)
+      : config.sprite.collisionBox;
+    return isColliding(probe, target);
   });
 }
 

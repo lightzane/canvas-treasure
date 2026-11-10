@@ -1,8 +1,12 @@
 import type { Sprite } from "@/features/sprite";
 
-/** Depth key: a sprite's feet (bottom edge of its box), not its top — two sprites with different heights still sort correctly by how far "down" they stand. */
+/**
+ * Depth key: a sprite's feet (bottom edge of its box, plus its own
+ * `feetOffset` correction), not its top — two sprites with different
+ * heights still sort correctly by how far "down" they stand.
+ */
 function feetY(sprite: Sprite) {
-  return sprite.position.y + sprite.boxSize.height;
+  return sprite.position.y + sprite.boxSize.height + sprite.feetOffset;
 }
 
 /**

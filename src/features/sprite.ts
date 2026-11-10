@@ -3,6 +3,53 @@ import { loadImage } from "@/lib/load-image";
 
 export type Position = { x: number; y: number };
 
+/** A smaller box anchored somewhere inside a bigger one — `Sprite.collisionBox`'s own config shape, reused wherever the same "narrower rect, positioned relative to a sprite's full box" idea comes up (see `InteractableConfig.probeBox` in `interact.ts`). */
+export interface BoxShape {
+  width?: number;
+  height?: number;
+  anchor?: "top" | "center" | "bottom";
+  offset?: { x?: number; y?: number };
+}
+
+/**
+ * Resolves a `BoxShape` against a sprite's actual `position`/`boxSize` into
+ * an absolute `{ position, width, height }` — the one place this math
+ * lives, shared by `Sprite.collisionBox`'s getter and anything else that
+ * needs the same computation from a different shape config (e.g. an
+ * `InteractableConfig`'s `probeBox`, which can't just read
+ * `sprite.collisionBox` when that's been narrowed for movement precision
+ * to the point of being an unreliable interact target). `shape` undefined
+ * — or a bare `{}` — resolves to `box` itself, unmoved: the same "no
+ * override" fallback `collisionBox` has always had.
+ */
+export function resolveBox(
+  position: Position,
+  box: { width: number; height: number },
+  shape: BoxShape | undefined,
+): { position: Position; width: number; height: number } {
+  const width = shape?.width ?? box.width;
+  const height = shape?.height ?? box.height;
+
+  const y =
+    shape?.anchor === "top"
+      ? 0
+      : shape?.anchor === "center"
+        ? (box.height - height) / 2
+        : box.height - height;
+
+  const offsetX = shape?.offset?.x ?? 0;
+  const offsetY = shape?.offset?.y ?? 0;
+
+  return {
+    position: {
+      x: position.x + (box.width - width) / 2 + offsetX,
+      y: position.y + y + offsetY,
+    },
+    width,
+    height,
+  };
+}
+
 // Shadow matches the map art's light source: sun at ~12 o'clock, ~70° above the horizon.
 const SUN_CLOCK_HOUR = 12;
 const SUN_ELEVATION_DEG = 70;
@@ -30,9 +77,13 @@ interface SpriteProps {
    * horizontally inside `boxSize`; `anchor` picks where it sits vertically
    * (e.g. `"bottom"` for a feet-only hitbox under a taller sprite). Each axis
    * defaults independently to `boxSize`'s own size when omitted, same as
-   * `boxSize` itself does against the render size.
+   * `boxSize` itself does against the render size. `offset` nudges the
+   * result further, for art whose solid region isn't itself symmetric
+   * around `anchor`'s reference edge — e.g. a signpost's board-on-a-post
+   * shape, where the board is taller than the post, so even a correctly
+   * anchored/sized box still centers over the board, not the post.
    */
-  collisionBox?: { width?: number; height?: number; anchor?: "top" | "center" | "bottom" };
+  collisionBox?: BoxShape;
   /** A flat ellipse drawn under the sprite, anchored to `boxSize`'s bottom edge. @default false */
   shadow?: boolean;
   /**
@@ -46,6 +97,18 @@ interface SpriteProps {
   shadowOffset?: { x?: number; y?: number };
   /** Multiplier applied to the drawn size only — never affects frame cropping. @default 1 */
   scale?: number;
+  /**
+   * Nudges `feetY` in `y-sort.ts` independently of `boxSize`'s own bottom
+   * edge — same idea as `shadowOffset`, but for draw order instead of the
+   * shadow. `boxSize`'s bottom edge assumes the art's solid pixels reach
+   * all the way to the bottom of its own canvas; when they don't (e.g.
+   * signpost.png has ~26px of transparent padding below the post's actual
+   * foot), Y-sort reads the sprite as standing further forward than it
+   * visually is, which can flip the draw order wherever another sprite's
+   * feet land inside that padding. Negative pulls the sort reference up
+   * (toward the art), positive pushes it down. @default 0
+   */
+  feetOffset?: number;
 }
 
 interface SpriteFrames {
@@ -71,6 +134,7 @@ export class Sprite {
   frames: Required<NonNullable<SpriteProps["frames"]>>;
   opacity = 1;
   scale: number;
+  readonly feetOffset: number;
   /** Px nudge applied only to the drawn image (e.g. by `playAttentionBounce`) — unlike `position`, never affects the shadow, collision, or camera. @default 0 */
   bounceOffset = 0;
   /**
@@ -94,6 +158,7 @@ export class Sprite {
     shadow = false,
     shadowOffset,
     scale = 1,
+    feetOffset = 0,
   }: SpriteProps) {
     this.image = loadImage(src);
     this.position = position;
@@ -103,6 +168,7 @@ export class Sprite {
     this.shadow = shadow;
     this._shadowOffset = { x: shadowOffset?.x ?? 0, y: shadowOffset?.y ?? 0 };
     this.scale = scale;
+    this.feetOffset = feetOffset;
   }
 
   get width() {
@@ -139,35 +205,7 @@ export class Sprite {
 
   /** Rect used for wall-collision checks. Each axis defaults independently to `boxSize`'s own size (anchored at `position`) when `collisionBox` isn't set. */
   get collisionBox(): { position: Position; width: number; height: number } {
-    const box = this.boxSize;
-    const size = this._collisionBoxSize;
-
-    if (!size) {
-      return {
-        position: { x: this.position.x, y: this.position.y },
-        width: box.width,
-        height: box.height,
-      };
-    }
-
-    const width = size.width ?? box.width;
-    const height = size.height ?? box.height;
-
-    const y =
-      size.anchor === "top"
-        ? 0
-        : size.anchor === "center"
-          ? (box.height - height) / 2
-          : box.height - height;
-
-    return {
-      position: {
-        x: this.position.x + (box.width - width) / 2,
-        y: this.position.y + y,
-      },
-      width,
-      height,
-    };
+    return resolveBox(this.position, this.boxSize, this._collisionBoxSize);
   }
 
   /**

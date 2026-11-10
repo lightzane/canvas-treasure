@@ -153,11 +153,35 @@ interface ReadableCfg {
   message: string;
 }
 
-/** Builds one readable prop's sprite (placed at `tile`) + its message — shared by SIGNPOSTS and MSG_BOTTLES below, just a different image per caller. */
-function createReadables(src: string, cfgs: ReadableCfg[]) {
+/**
+ * Builds one readable prop's sprite (placed at `tile`) + its message —
+ * shared by SIGNPOSTS and MSG_BOTTLES below, just a different image (and,
+ * optionally, collisionBox/feetOffset) per caller. Omitted collisionBox
+ * (MSG_BOTTLES' case) leaves the sprite non-obstructing, same as not
+ * passing one at all; MSG_BOTTLES also never goes through drawYSorted (it's
+ * drawn via the flat DECORS pass instead), so feetOffset wouldn't matter
+ * for it regardless.
+ */
+function createReadables(
+  src: string,
+  cfgs: ReadableCfg[],
+  collisionBox?: {
+    width?: number;
+    height?: number;
+    anchor?: "top" | "center" | "bottom";
+    offset?: { x?: number; y?: number };
+  },
+  feetOffset?: number,
+) {
   return cfgs.map(({ tile, message }) => {
-    const sprite = new Sprite({ src, scale: 2 });
-    placeAtTile(sprite, tile);
+    const sprite = new Sprite({
+      src,
+      scale: 2,
+      collisionBox,
+      feetOffset,
+    });
+    // explicitly sets the spriteSize because we have "scale"
+    placeAtTile({ sprite, tile, spriteSize: sprite.boxSize, anchor: "bottom" });
     return { sprite, message };
   });
 }
@@ -168,31 +192,60 @@ function createReadables(src: string, cfgs: ReadableCfg[]) {
  * wiring are all generated below from this table, see SIGNPOSTS).
  */
 
+// Row = the post's base cell (where it's planted), not the board — matches
+// createReadables' anchor: "bottom" below. One row higher than what you'd
+// read off the board itself in Tiled.
 const SIGNPOST_CFGS: ReadableCfg[] = [
-  { tile: [60, 45], message: "Your house..." },
-  { tile: [85, 30], message: "DAO MING Mansion" },
-  { tile: [88, 30], message: "DAO MING Mansion" },
-  { tile: [59, 29], message: "HUA ZE LEI's House" },
-  { tile: [37, 16], message: "MEI ZUO's House" },
-  { tile: [121, 89], message: "XI MEN's House" },
-  { tile: [124, 64], message: "IROH's TEASHOP — Famous for its aromatic Jasmine Tea" },
-  { tile: [93, 33], message: "Park North Entrance" },
-  { tile: [76, 44], message: "Park West Entrance" },
-  { tile: [111, 44], message: "Park East Entrance" },
-  { tile: [92, 57], message: "Park South Entrance" },
-  { tile: [92, 68], message: "Market North Entrance" },
-  { tile: [76, 75], message: "Market West Entrance" },
-  { tile: [110, 75], message: "Market East Entrance" },
-  { tile: [92, 86], message: "Market South Entrance" },
-  { tile: [46, 24], message: "Flower Garden — Planted with love, shaped like it too" },
+  { tile: [60, 46], message: "Your house..." },
+  { tile: [85, 31], message: "DAO MING Mansion" },
+  { tile: [88, 31], message: "DAO MING Mansion" },
+  { tile: [59, 30], message: "HUA ZE LEI's House" },
+  { tile: [37, 17], message: "MEI ZUO's House" },
+  { tile: [121, 90], message: "XI MEN's House" },
+  { tile: [124, 65], message: "IROH's TEASHOP — Famous for its aromatic Jasmine Tea" },
+  { tile: [93, 34], message: "Park North Entrance" },
+  { tile: [76, 45], message: "Park West Entrance" },
+  { tile: [111, 45], message: "Park East Entrance" },
+  { tile: [92, 58], message: "Park South Entrance" },
+  { tile: [92, 69], message: "Market North Entrance" },
+  { tile: [76, 76], message: "Market West Entrance" },
+  { tile: [110, 76], message: "Market East Entrance" },
+  { tile: [92, 87], message: "Market South Entrance" },
+  { tile: [46, 25], message: "Flower Garden — Planted with love, shaped like it too" },
   {
-    tile: [39, 45],
+    tile: [39, 46],
     message: "Flowershop — Every bloom in town? You can thank us for that!",
     // TODO: Add npc saying this line: "The heart behind every garden in town!"
   },
 ];
 
-const SIGNPOSTS = createReadables(IMG_SIGNPOST, SIGNPOST_CFGS);
+const SIGNPOSTS = createReadables(
+  IMG_SIGNPOST,
+  SIGNPOST_CFGS,
+  {
+    // signpost.png's content isn't just padded, it's shaped: a wider board
+    // (raw rows 13-33, 21px incl. the top knob) sitting above a narrower
+    // post (raw rows 34-50, 17px incl. the flared foot) — verified by
+    // scanning each row's opaque pixel span, not eyeballed. Because the
+    // board is taller than the post, "anchor: center" on the full content
+    // box lands on the board, not the post. Collision should only be the
+    // post anyway — the board is above head height, same as how
+    // STREET_LIGHTS only collide near their base, not the lamp fixture — so
+    // this targets just the post's rows directly instead of trying to force
+    // it out of anchor/centering math. x stays centered by default (the
+    // post's 25px raw width is itself centered in the 32px canvas).
+    width: 25 * ZOOM_LEVEL,
+    height: 2 * ZOOM_LEVEL,
+    anchor: "top",
+    offset: { y: 44 * ZOOM_LEVEL },
+  },
+  // boxSize's bottom edge (what drawYSorted's feetY reads by default) sits
+  // 13 raw px / 26 scaled px below the art's actual foot — same padding
+  // measured above, just the bottom side of it. Pulls the Y-sort reference
+  // up to where the post visually ends, so sorting matches what's drawn
+  // instead of the padded canvas edge.
+  -13 * ZOOM_LEVEL, // feetOffset
+);
 
 /**
  * Common/ambient message bottles scattered on the beach — plain flavor
@@ -583,8 +636,13 @@ const wildBushInteractablesCfgs: Partial<Interactable> = {
 
 const signpostInteractablesCfgs: Partial<Interactable> = {
   label: "Read",
-  labelOffset: { x: -12.5, y: 32 },
+  labelOffset: { y: 32 },
   probeDistance: 0,
+  // collisionBox is trimmed to just the post for movement precision — way
+  // too thin to reliably land the interact probe on. {} falls back to the
+  // sprite's full boxSize for probing purposes only; movement collision is
+  // untouched.
+  probeBox: {},
 };
 
 const msgBottleInteractablesCfgs: Partial<Interactable> = {
@@ -739,7 +797,6 @@ const npcCfg: Partial<PlayerProps> = {
   shadowOffset: { y: -3 },
 };
 
-// TODO: place these in the overworld randomly scattered
 const npcAang = new PlayerSprite({ sprites: { idle: IMGS_AANG_MOMO_IDLE }, ...npcCfg });
 const npcAppa = new PlayerSprite({
   sprites: { idle: IMGS_APPA_IDLE },
@@ -750,7 +807,6 @@ const npcKatara = new PlayerSprite({ sprites: { idle: IMGS_KATARA_IDLE }, ...npc
 const npcSokka = new PlayerSprite({ sprites: { idle: IMGS_SOKKA_IDLE }, ...npcCfg });
 const npcToph = new PlayerSprite({ sprites: { idle: IMGS_TOPH_IDLE }, ...npcCfg });
 
-// TODO: place them in the teashop
 const npcZuko = new PlayerSprite({ sprites: { idle: IMGS_ZUKO_IDLE }, ...npcCfg });
 const npcIroh = new PlayerSprite({
   sprites: { idle: IMGS_IROH_EARTH_IDLE },
@@ -758,12 +814,11 @@ const npcIroh = new PlayerSprite({
   scale: 1.1,
 });
 
-// TODO: place these in the overworld randomly scattered
-const npcAdultMale1 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg, scale: 1.1 }); // prettier-ignore
-const npcAdultMale2 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.1 }); // prettier-ignore
-const npcAdultMale3 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg, scale: 1.1 }); // prettier-ignore
-const npcAdultMale4 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.1 }); // prettier-ignore
-const npcAdultMale5 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.1 }); // prettier-ignore
+const npcAdultMale1 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
+const npcAdultMale2 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
+const npcAdultMale3 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
+const npcAdultMale4 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
+const npcAdultMale5 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
 const npcAdultFemale1 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE}, ...npcCfg, scale: 1.05 }) // prettier-ignore
 const npcAdultFemale2 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_2_IDLE}, ...npcCfg, scale: 1.05 }) // prettier-ignore
 const npcAdultFemale3 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE}, ...npcCfg, scale: 1.05 }) // prettier-ignore
@@ -784,7 +839,6 @@ const npcBeachFemale2 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FE
 const npcFloristMale1 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_MALE_IDLE }, ...npcCfg }); // prettier-ignore
 const npcFloristFemale1 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMALE_IDLE }, ...npcCfg }); // prettier-ignore
 
-// TODO: Add a single function to spawn all overworld npcs (that participate in main event)
 // Then call that function once in module-level and at the end of the event (never in scene.enter)
 function spawnOverworldNpcs() {
   // 2 people near house
@@ -988,7 +1042,7 @@ export const overworldScene: Scene = {
     }
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
 
-    GAME_STATE.obstacles = [...NPCS, ...STREET_LIGHTS];
+    GAME_STATE.obstacles = [...NPCS, ...STREET_LIGHTS, ...SIGNPOSTS.map(({ sprite }) => sprite)];
 
     // `&& GAME_STATE.gameStarted` guards against this scene's `enter()` ever
     // running before the boot Start screen has been dismissed (currently
@@ -1054,6 +1108,7 @@ export const overworldScene: Scene = {
       player,
       ...NPCS.filter(isInViewport),
       ...STREET_LIGHTS.filter(isInViewport),
+      ...SIGNPOSTS.map(({ sprite }) => sprite).filter(isInViewport),
       ...[bulletinBoard].filter((s) => isInViewport(s) && DECORS.includes(s)),
     ]);
 
