@@ -41,16 +41,14 @@ import { birthdayConfetti } from "@/lib/confetti";
 import { beginCutscene } from "@/lib/cutscene";
 import { drift } from "@/lib/drift";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
+import { playCherryBlossoms } from "@/lib/effects/cherry-blossoms";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
+import type { EffectHandle } from "@/lib/effects/handle";
 import { playImagePreview } from "@/lib/effects/image-preview";
 import { playIrisReveal } from "@/lib/effects/iris-reveal";
 import { playLeafBurst } from "@/lib/effects/leaf-burst";
-import {
-  playQuestCompleteBanner,
-  playQuestToast,
-  type QuestToastHandle,
-} from "@/lib/effects/quest-toast";
-import { playShine, type ShineHandle } from "@/lib/effects/shine";
+import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
+import { playShine } from "@/lib/effects/shine";
 import { drawFootprints, trackFootstep, updateFootprints } from "@/lib/footprints";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
@@ -670,9 +668,9 @@ let paperWindAnimating = false;
 // them the player is currently inside, with ">0" meaning "on sand" overall.
 let sandZoneCount = 0;
 
-let tracingPaper2ShineHandle: ShineHandle | undefined;
-let coreMsgBottleShineHandle: ShineHandle | undefined;
-let jpShineHandle: ShineHandle | undefined;
+let tracingPaper2ShineHandle: EffectHandle | undefined;
+let coreMsgBottleShineHandle: EffectHandle | undefined;
+let jpShineHandle: EffectHandle | undefined;
 
 function scheduleMamaFacePapa() {
   scheduleFaceDirection(GAME_STATE.mama, "d");
@@ -1465,14 +1463,15 @@ function interactHuazelei() {
   });
 }
 
-// TODO: add effect where we use gsap/canvas-confetti to animate falling pink cherry blossoms romantically.
 function meetLeiConversation() {
   hudSetBagIconVisible(false);
-  let shineHandle: ShineHandle | null = null;
+  let shineHandle: EffectHandle | null = null;
+  const cherryBlossomHandle = playCherryBlossoms({ duration: 60 * 60 * 24 * 2 });
 
   audioPlayMusic("zz_makeawish", { seek: 5.5, fade: 1, volume: VOLUME_MAIN_BG });
 
   DIALOGUE.effect(beginCutscene, 0.00001);
+
   DIALOGUE.effect(() => {
     DIALOGUE.lock();
     const quest = GAME_STATE.quests.get("meet_huazelei")!;
@@ -1501,6 +1500,7 @@ function meetLeiConversation() {
   DIALOGUE.queue(`...si "DAO MING SI" naghahanap ng kiss?`);
   DIALOGUE.effect(() => playExclamation(player), 0.5);
   DIALOGUE.queue(`Ahh, hinahanap niya ang "keys" o susi niya...`);
+  DIALOGUE.effect(() => cherryBlossomHandle.stop());
   DIALOGUE.queue(`Paumanhin ngunit wala naman sa akin ang mga keys niya.`);
   DIALOGUE.effect(() => {
     audioPlayAmbience("amb_wind_interior");
@@ -1784,7 +1784,7 @@ function interactPaper2Part2() {
   });
 }
 
-let shearsToastHandle: QuestToastHandle | null;
+let shearsToastHandle: EffectHandle | null;
 
 function interactWildBush(bushSprite: Sprite) {
   if (!bagHasItem("shears")) {
@@ -2859,7 +2859,7 @@ function cutsceneShowBirthdayPostcard() {
   };
 }
 
-let questToast: QuestToastHandle | undefined;
+let questToast: EffectHandle | undefined;
 
 function cutsceneMainQuestReminder() {
   DIALOGUE.effect(beginCutscene, 0.00001);

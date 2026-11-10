@@ -44,7 +44,8 @@ export function birthdayConfetti(duration = 15) {
   return iife;
 }
 
-function getCanvasBounds() {
+/** `top` is extra beyond what `birthdayConfetti` itself needs — added for `cherry-blossoms.ts`, which also launches from above the canvas, not just from its left/right edges. */
+export function getCanvasBounds() {
   const canvas = document.getElementById("treasure") as HTMLCanvasElement;
   const rect = canvas.getBoundingClientRect();
   const viewportWidth = window.innerWidth;
@@ -52,5 +53,6 @@ function getCanvasBounds() {
   return {
     left: rect.left / viewportWidth,
     right: rect.right / viewportWidth,
+    top: rect.top / window.innerHeight,
   };
 }

@@ -1,4 +1,5 @@
 import { GAME_FONT_FAMILY } from "@/constants/game-settings";
+import type { EffectHandle } from "@/lib/effects/handle";
 import {
   BIRTHDAY_POSTCARD_SRC,
   BIRTHDAY_STICKER_CLASSNAME,
@@ -28,11 +29,6 @@ export interface ImagePreviewOptions {
   onComplete?: () => void;
 }
 
-export interface ImagePreviewHandle {
-  /** Dismisses the preview early — fades it out and removes it, regardless of `hold`. Safe to call more than once. */
-  stop: () => void;
-}
-
 const DEFAULT_BG = "linear-gradient(to bottom, #fff, #fffbeb)"; // same cream gradient ImageViewer defaults to
 
 /**
@@ -60,12 +56,9 @@ const DEFAULT_BG = "linear-gradient(to bottom, #fff, #fffbeb)"; // same cream gr
  * @example
  * const preview = playImagePreview(img("treasure/postcard.jpg"), { hold: "manual" });
  * // ...later, e.g. once a cutscene's own next beat is ready...
- * preview.stop();
+ * preview.stop(); // dismisses early — fades it out and removes it, regardless of hold; safe to call more than once
  */
-export function playImagePreview(
-  src: string,
-  options: ImagePreviewOptions = {},
-): ImagePreviewHandle {
+export function playImagePreview(src: string, options: ImagePreviewOptions = {}): EffectHandle {
   const { delay = 0 } = options;
 
   let pending: gsap.core.Tween | null = null;

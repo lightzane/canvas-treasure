@@ -1,4 +1,5 @@
 import type { Sprite } from "@/features/sprite";
+import type { EffectHandle } from "@/lib/effects/handle";
 import gsap from "gsap";
 
 export interface AttentionBounceOptions {
@@ -12,11 +13,6 @@ export interface AttentionBounceOptions {
   delay?: number;
   /** Runs once every hop has finished. Never fires for `hops: "infinite"` — nothing to stop it is called from outside. */
   onComplete?: () => void;
-}
-
-export interface AttentionBounceHandle {
-  /** Cancels the bounce — mid-delay, mid-hop, or mid-infinite-loop — and snaps the sprite back to its original position. */
-  stop: () => void;
 }
 
 /**
@@ -33,12 +29,12 @@ export interface AttentionBounceHandle {
  * @example
  * const bounce = playAttentionBounce(npc, { hops: "infinite" });
  * // ...later, e.g. right before dialogue starts...
- * bounce.stop();
+ * bounce.stop(); // cancels the bounce — mid-delay, mid-hop, or mid-infinite-loop — and snaps the sprite back to its original position
  */
 export function playAttentionBounce(
   sprite: Sprite,
   options: AttentionBounceOptions = {},
-): AttentionBounceHandle {
+): EffectHandle {
   const { height = 12, duration = 0.15, hops = 1, delay = 0, onComplete } = options;
 
   let active: gsap.core.Tween | null = null;

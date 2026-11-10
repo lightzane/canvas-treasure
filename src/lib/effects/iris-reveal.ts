@@ -1,3 +1,4 @@
+import type { EffectHandle } from "@/lib/effects/handle";
 import gsap from "gsap";
 
 /**
@@ -17,7 +18,7 @@ import gsap from "gsap";
  * // the destination scene's own fadeIn, if any, takes over from there).
  * const handle = playIrisReveal({ direction: "out" });
  * // ...later...
- * handle.stop();
+ * handle.stop(); // removes the overlay immediately, mid-animation or after — the only way an "out" overlay ever goes away; safe to call more than once
  */
 export interface IrisRevealOptions {
   duration?: number;
@@ -38,20 +39,11 @@ export interface IrisRevealOptions {
   onComplete?: () => void;
 }
 
-export interface IrisRevealHandle {
-  /**
-   * Removes the overlay immediately, mid-animation or after it's finished.
-   * The only way an `"out"` overlay ever goes away, since it otherwise stays
-   * on purpose (see `direction`) — safe to call more than once.
-   */
-  stop: () => void;
-}
-
-export function playIrisReveal(options: IrisRevealOptions = {}): IrisRevealHandle {
+export function playIrisReveal(options: IrisRevealOptions = {}): EffectHandle {
   const { duration = 1, delay = 0, softness = 0, direction = "in", onComplete } = options;
 
   if (delay > 0) {
-    let inner: IrisRevealHandle | null = null;
+    let inner: EffectHandle | null = null;
     const call = gsap.delayedCall(delay, () => {
       inner = playIrisReveal({ duration, softness, direction, onComplete });
     });

@@ -60,26 +60,26 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "parcel",
     {
       description: "Get the parcel.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [
     "invitation_postcard", // main quest OR last quest
     {
       description: "Find out what's this treasure is about.",
-      status: "inactive",
+      status: "active",
     },
   ],
   [
     "daoming_keys",
     {
       description: "Help DAO MING SI find his missing keys.",
-      status: "inactive",
+      status: "active",
     },
   ],
-  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "inactive" }],
-  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "inactive" }],
-  ["meet_ximen", { description: "Find and meet XI MEN", status: "inactive" }],
+  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "active" }],
+  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "active" }],
+  ["meet_ximen", { description: "Find and meet XI MEN", status: "active" }],
   [
     "catch_sheets",
     {

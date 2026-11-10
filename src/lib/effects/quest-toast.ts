@@ -1,5 +1,6 @@
 import { GAME_FONT_FAMILY } from "@/constants/game-settings";
 import { audioPlaySound } from "@/lib/audio";
+import type { EffectHandle } from "@/lib/effects/handle";
 import type { QuestEntry } from "@/lib/quests";
 import gsap from "gsap";
 
@@ -17,11 +18,6 @@ export interface QuestToastOptions {
   delay?: number;
   /** Runs once the toast has fully faded out and removed itself. */
   onComplete?: () => void;
-}
-
-export interface QuestToastHandle {
-  /** Stops the toast — fades it out and removes it, regardless of how much hold time (if any) was left. Required for `hold: "infinite"` (nothing else will ever remove it); safe to call early on a normal one too, or more than once. */
-  stop: () => void;
 }
 
 const MARGIN_TOP = 24;
@@ -132,12 +128,12 @@ function resolveToastContent(
  * @example
  * const toast = playQuestToast("Waiting on something...", { hold: "infinite" });
  * // ...later...
- * toast.stop();
+ * toast.stop(); // fades it out and removes it, regardless of hold time left — required for hold: "infinite", nothing else will ever remove it; safe to call early on a normal one too, or more than once
  */
 export function playQuestToast(
   input: string | QuestEntry,
   options: Omit<QuestToastOptions, "description" | "qty" | "totalQty"> = {},
-): QuestToastHandle {
+): EffectHandle {
   const merged: QuestToastOptions = { ...resolveToastContent(input), ...options };
   const { delay = 0 } = merged;
 
@@ -314,10 +310,11 @@ export interface QuestCompleteBannerOptions {
  *
  * @example playQuestCompleteBanner("Quest Complete!");
  * @example playQuestCompleteBanner({ text: "Quest Complete!", hold: "infinite" });
+ *
+ * Returned handle's `.stop()` fades the banner out and removes it early,
+ * regardless of hold time left — same semantics as `playQuestToast`'s own.
  */
-export function playQuestCompleteBanner(
-  input: string | QuestCompleteBannerOptions,
-): QuestToastHandle {
+export function playQuestCompleteBanner(input: string | QuestCompleteBannerOptions): EffectHandle {
   const options: QuestCompleteBannerOptions = typeof input === "string" ? { text: input } : input;
   const { delay = 0 } = options;
 

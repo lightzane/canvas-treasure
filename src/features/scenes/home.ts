@@ -23,15 +23,12 @@ import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
-import { playAttentionBounce, type AttentionBounceHandle } from "@/lib/effects/attention-bounce";
+import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
+import type { EffectHandle } from "@/lib/effects/handle";
 import { playImagePreview } from "@/lib/effects/image-preview";
-import {
-  playQuestCompleteBanner,
-  playQuestToast,
-  type QuestToastHandle,
-} from "@/lib/effects/quest-toast";
-import { playShine, type ShineHandle } from "@/lib/effects/shine";
+import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
+import { playShine } from "@/lib/effects/shine";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
@@ -88,10 +85,10 @@ const PARCEL_INTERACTABLE: Interactable = {
 // story flag) and mutated in place on pickup — see interactions() below.
 let interactables: Interactable[] = [];
 
-let firstQuest: QuestToastHandle | undefined;
-let parcelBounce: AttentionBounceHandle | null = null;
-let parcelShine: ShineHandle | null = null;
-let journalShine: ShineHandle | null = null;
+let firstQuest: EffectHandle | undefined;
+let parcelBounce: EffectHandle | null = null;
+let parcelShine: EffectHandle | null = null;
+let journalShine: EffectHandle | null = null;
 function scheduleMamaFaceNorth() {
   if (bagHasItem("parcel")) hudSetBagIconVisible(true);
   scheduleFaceDirection(GAME_STATE.mama, "w");

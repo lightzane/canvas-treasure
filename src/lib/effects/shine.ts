@@ -1,4 +1,5 @@
 import type { Sprite } from "@/features/sprite";
+import type { EffectHandle } from "@/lib/effects/handle";
 import gsap from "gsap";
 import { toScreen } from "@/lib/canvas/screen";
 
@@ -13,10 +14,6 @@ export interface ShineOptions {
   color?: string;
   /** Seconds to wait before starting. */
   delay?: number;
-}
-
-export interface ShineHandle {
-  stop: () => void;
 }
 
 // An 8-point sparkle/glint outline (a 4-point star with shallow notches
@@ -50,7 +47,7 @@ const SPARKLE_CLIP_PATH =
  * // ...later, once found/picked up...
  * shine.stop();
  */
-export function playShine(target: Sprite, options: ShineOptions = {}): ShineHandle {
+export function playShine(target: Sprite, options: ShineOptions = {}): EffectHandle {
   const { mode = "shimmer", size = 20, color = "#fff176", delay = 0 } = options;
 
   const el = document.createElement("div");
