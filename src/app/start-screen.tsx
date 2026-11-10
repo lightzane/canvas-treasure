@@ -106,7 +106,7 @@ export function StartScreen({
 
   return (
     <div
-      className={`absolute inset-0 aspect-video flex items-center justify-center bg-black/25 p-6 backdrop-blur-md transition-all duration-500 ease-out ${
+      className={`absolute inset-0 flex items-center justify-center bg-black/25 p-6 backdrop-blur-md transition-all duration-500 ease-out ${
         entered ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
       }`}
     >

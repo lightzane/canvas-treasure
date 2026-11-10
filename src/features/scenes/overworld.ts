@@ -105,7 +105,6 @@ const IMG_MAP_BG = img("maps/overworld.png");
 const IMG_MAP_FG = img("maps/overworld-fg.png");
 
 const IMG_MAP_EVENT_BG = img("maps/overworld_event.png");
-// const IMG_MAP_FG = img("maps/overworld-fg.png");
 
 const IMG_FOUNTAIN_SMALL = img("others/fountain-small.png");
 const IMG_FOUNTAIN_BIG = img("others/fountain-big.png");
@@ -180,7 +179,9 @@ function createReadables(
       feetOffset,
     });
     // explicitly sets the spriteSize because we have "scale"
-    placeAtTile({ sprite, tile, spriteSize: sprite.boxSize, anchor: "bottom" });
+    const place = () => placeAtTile({ sprite, tile, spriteSize: sprite.boxSize, anchor: "bottom" });
+    if (!sprite.image.complete) sprite.image.addEventListener("load", place, { once: true });
+    place();
     return { sprite, message };
   });
 }
@@ -424,10 +425,6 @@ const STREET_LIGHTS: Sprite[] = [
   createStreetLight(105, 66),
   createStreetLight(114, 66),
   createStreetLight(123, 68),
-  createStreetLight(81, 68),
-  createStreetLight(87, 68),
-  createStreetLight(99, 68),
-  createStreetLight(105, 68),
   createStreetLight(128, 68),
   createStreetLight(36, 69),
   createStreetLight(39, 69),
@@ -476,8 +473,8 @@ function createPropsRow(src: string, tile: [number, number], count: number) {
 
 const woodenCrates: Sprite[] = [
   ...createPropsRow(IMG_WOODEN_CRATE, [90, 40], 9), // Row 1 — solid line of 9
-  ...createPropsRow(IMG_WOODEN_CRATE, [90, 41], 3), // Row 2 — left half, before the gap
-  ...createPropsRow(IMG_WOODEN_CRATE, [96, 41], 3), // Row 2 — right half, after a 3-tile gap
+  ...createPropsRow(IMG_WOODEN_CRATE, [90, 41], 2), // Row 2 — left half, before the gap
+  ...createPropsRow(IMG_WOODEN_CRATE, [97, 41], 2), // Row 2 — right half, after a 4-tile gap
 ];
 
 const balloonBarrelRow: Sprite[] = [
@@ -1469,7 +1466,7 @@ function meetLeiConversation() {
   let shineHandle: EffectHandle | null = null;
   const cherryBlossomHandle = playCherryBlossoms({ duration: 60 * 60 * 24 * 2 });
 
-  audioPlayMusic("zz_makeawish", { seek: 5.5, fade: 1, volume: VOLUME_MAIN_BG + 0.25 });
+  audioPlayMusic("zz_makeawish", { seek: 60 + 5.5, fade: 1, volume: VOLUME_MAIN_BG + 0.25 });
 
   DIALOGUE.effect(beginCutscene, 0.00001);
 
@@ -1480,6 +1477,7 @@ function meetLeiConversation() {
       questSetStatus(quest, "resolved");
       playQuestToast(quest);
       playQuestCompleteBanner(`Meet Hua Ze Lei Completed!`);
+      cherryBlossomHandle.stop();
     });
     gsap.delayedCall(10, () => DIALOGUE.unlock());
   });
@@ -1489,7 +1487,6 @@ function meetLeiConversation() {
     color: DIALOGUE_COLOR_HUAZELEI,
     portrait: PORTRAIT_HUAZELEI,
   });
-
   f4Speaker("huazelei", `F4 HUA ZE LEI: Hello CHERYL, naghahanap ka ng kiss?`);
 
   DIALOGUE.effect(() => {
@@ -1501,7 +1498,6 @@ function meetLeiConversation() {
   DIALOGUE.queue(`...si "DAO MING SI" naghahanap ng kiss?`);
   DIALOGUE.effect(() => playExclamation(player), 0.5);
   DIALOGUE.queue(`Ahh, hinahanap niya ang "keys" o susi niya...`);
-  DIALOGUE.effect(() => cherryBlossomHandle.stop());
   DIALOGUE.queue(`Paumanhin ngunit wala naman sa akin ang mga keys niya.`);
   DIALOGUE.effect(() => {
     audioPlayAmbience("amb_wind_interior");
@@ -2247,6 +2243,8 @@ function cutsceneMarket() {
   DIALOGUE.effect(() => {
     playAttentionBounce(meizuo);
     playExclamation(meizuo);
+    ximen.face("s"); // TODO: test this
+    // TODO: add conditional foreground? The "arch" in the main event park area
   }, 0.5);
 
   f4Speaker("meizuo", `Oii si CHE pala nandito!`);
@@ -2854,7 +2852,7 @@ function cutsceneShowBirthdayPostcard() {
     birthdayConfetti();
     bagIncItem("birthday_postcard");
     audioPlayMusic("happy_birthday", { fade: 1, volume: 0.3 });
-    audioPlayAmbience("zz_makeawish", { seek: 14, volume: 0.9 });
+    audioPlayAmbience("zz_makeawish", { seek: 60 + 14, volume: 0.9 });
     audioPlaySound("applause_light", { volume: 0.3 });
     gsap.delayedCall(2, () => audioPlaySound("applause_light", { volume: 0.3 }));
     gsap.delayedCall(4, () => audioPlaySound("applause_light", { volume: 0.3 }));

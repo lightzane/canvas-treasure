@@ -36,6 +36,7 @@ import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
 import { QUESTS, questSetStatus } from "@/lib/quests";
+import { walk } from "@/lib/walk";
 import gsap from "gsap";
 
 const BG_MUSIC_VOLUME = 0.6;
@@ -458,18 +459,36 @@ function exitZone() {
   hudSetBagIconVisible(false);
 
   if (!GAME_STATE.sequence.mama_parcel) {
-    playExclamation(GAME_STATE.player);
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Nasan ka?", color: "red" });
-    return; // no parcel yet — stay home
+    return mustStayHome(); // no parcel yet — stay home
   }
 
   if (!bagHasItem("parcel") && questMain.status !== "resolved") {
-    playExclamation(GAME_STATE.player);
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Paki kuha nitong parcel.", color: "red" });
-    return; // no parcel yet — stay home
+    return mustStayHome(); // no parcel yet — stay home
   }
 
   audioStopMusic(homeScene.fadeOut);
   GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
   GAME_STATE.sceneName = "overworld";
+}
+
+function mustStayHome() {
+  DIALOGUE.effect(() => playExclamation(GAME_STATE.player));
+  DIALOGUE.queue({ text: `Tawag ako ni MAMA...`, color: "black" });
+  DIALOGUE.effect(() => {
+    GAME_STATE.movementLocked = true;
+    walk(GAME_STATE.player, [13, 19], {
+      onComplete: () => (GAME_STATE.movementLocked = false),
+    });
+  });
+  // pullPending() auto-unlocks movement the instant its queue goes empty —
+  // which happens the moment walk() is CALLED above, not when the glide to
+  // [13, 19] actually finishes (walk() kicks off a background tween and
+  // returns right away). Without re-locking here, movePlayer sees unlocked
+  // + no key held every frame of the glide and stomps play("walk") back to
+  // "idle" continuously, even though the position tween itself keeps
+  // running fine. walk()'s own onComplete above is what releases this for
+  // real, once the character has actually arrived.
+  DIALOGUE.onComplete = () => (GAME_STATE.movementLocked = true);
 }
