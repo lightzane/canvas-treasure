@@ -1795,8 +1795,7 @@ function interactWildBush(bushSprite: Sprite) {
         shearsToastHandle?.stop();
         const quest = GAME_STATE.quests.get("garden_shears")!;
         questSetStatus(quest, "active");
-        shearsToastHandle = playQuestToast({
-          ...quest,
+        shearsToastHandle = playQuestToast(quest, {
           hold: 10,
           onComplete() {
             shearsToastHandle = null;
@@ -2230,9 +2229,8 @@ function cutsceneMarket() {
     const q2 = quests.get("meet_ximen")!;
     questSetStatus(q1, "resolved");
     questSetStatus(q2, "resolved");
-    playQuestToast({ ...q1, hold: 8 });
-    // playQuestToast({ ...q2, delay: 0.2, hold: 8 }); // TODO: why delay didn't worked?!
-    gsap.delayedCall(0.2, () => playQuestToast({ ...q2, hold: 8 }));
+    playQuestToast(q1, { hold: 8 });
+    playQuestToast(q2, { delay: 0.2, hold: 8 });
     playQuestCompleteBanner(`Meet Mei Zuo & Xi Men Complete!`);
     gsap.delayedCall(4, () => {
       audioPlayMusic("market", { volume: 0.3, fade: 0.5 });
@@ -2358,7 +2356,7 @@ function cutsceneMarket() {
   f4Speaker(`meizuo`, `MEI ZUO: HAHAHAHAHA! HAHAHAHAHAHA!`);
 
   DIALOGUE.onComplete = () => {
-    gsap.delayedCall(0.5, () => playQuestToast({ ...questDaoMingKeys, hold: 10 }));
+    playQuestToast(questDaoMingKeys, { delay: 0.5, hold: 10 });
     hudSetBagIconVisible(true);
     GAME_STATE.sequence.market_cutscene = true;
   };
@@ -2878,7 +2876,7 @@ function cutsceneMainQuestReminder() {
   f4Speaker("daomingsi", "DAO MING SI: Teka nga muna, meron pa isang last quest!");
   DIALOGUE.effect(() => {
     beginCutscene();
-    playQuestToast({ ...questMain, hold: 8 });
+    playQuestToast(questMain, { hold: 8 });
     gsap.delayedCall(0.5, () => {
       player.face("s");
       jp.face("s");

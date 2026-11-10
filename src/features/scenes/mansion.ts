@@ -390,10 +390,7 @@ function nearMissConversation() {
     let delay = 0;
 
     quests.forEach(({ description }) => {
-      playQuestToast({
-        description,
-        delay: (delay += 0.3),
-      });
+      playQuestToast(description, { delay: (delay += 0.3) });
     });
   }, 1.5); // TODO: Add a "lock" icon in dialogue when it's locked just a handy player experience?
   DIALOGUE.onComplete = () => {

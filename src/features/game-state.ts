@@ -126,15 +126,15 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "overworld" as SceneName,
+  sceneName: "home" as SceneName,
   /**
    * One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events").
    * `true` = complete.
    * Add here conditions / progress that should not be listed under Quests.
    */
   sequence: {
-    intro: true,
-    mama_parcel: true,
+    intro: false,
+    mama_parcel: false,
     meet_daomingsi: false,
     meet_huazelei: false,
     chasing_sheet_2: false,
@@ -199,9 +199,9 @@ export const GAME_STATE = {
    */
   bagViewedItems: new Set<ItemName>(),
   bag: new Map<ItemName, BagEntry>([
-    ["journal", { type: "item", quantity: 1 }],
+    ["journal", { type: "item", quantity: 0 }],
     ["treasure", { type: "item", quantity: 0 }],
-    ["parcel", { type: "item", quantity: 1 }],
+    ["parcel", { type: "item", quantity: 0 }],
     ["birthday_postcard", { type: "item", quantity: 0 }],
     ["sketch", { type: "item", quantity: 0 }],
     ["papers", { type: "item", quantity: 0 }],
@@ -227,7 +227,7 @@ export const GAME_STATE = {
    * regardless of any dev shortcut currently set there.
    * @default false
    */
-  gameStarted: true,
+  gameStarted: false,
   /** Blocks player input in `movePlayer`. Starts locked — each scene's `enter()` releases it once it's actually ready (and re-locks it for its own exits/cutscenes, e.g. home's exit trigger). */
   movementLocked: true,
   /** Whether running (hold X, with shoes) is allowed in the current scene — default on; a cramped interior (home, mansion) sets this `false` in its own `enter()`. Takes priority over everything else: no shoes, no X held, none of it matters here if this is `false`. */

@@ -70,21 +70,22 @@ function repositionToasts() {
 }
 
 /**
- * Normalizes `playQuestToast`'s three accepted input forms into one shape.
- * A `QuestEntry` always has `status`; `QuestToastOptions` never does — a
- * reliable runtime discriminant matching the type-level distinction.
+ * Resolves `playQuestToast`'s `input` — purely "what to show" — into the
+ * content fields of `QuestToastOptions`. Never touches delay/hold/
+ * onComplete; those only ever come from `playQuestToast`'s separate
+ * `options` param, so there's nothing here that could collide with or
+ * drop them.
  */
-function normalizeToastInput(input: string | QuestToastOptions | QuestEntry): QuestToastOptions {
+function resolveToastContent(
+  input: string | QuestEntry,
+): Pick<QuestToastOptions, "description" | "qty" | "totalQty" | "resolved"> {
   if (typeof input === "string") return { description: input };
-  if ("status" in input) {
-    return {
-      description: input.description,
-      qty: input.qty,
-      totalQty: input.totalQty,
-      resolved: input.status === "resolved",
-    };
-  }
-  return input;
+  return {
+    description: input.description,
+    qty: input.qty,
+    totalQty: input.totalQty,
+    resolved: input.status === "resolved",
+  };
 }
 
 /**
@@ -111,35 +112,40 @@ function normalizeToastInput(input: string | QuestToastOptions | QuestEntry): Qu
  * this, same as `playExclamation`/`playAttentionBounce` already get called
  * next to a `GAME_STATE.bag.set(...)` rather than bundled into one call.
  *
- * Takes a bare string as shorthand for `{ description }`, the full options
- * object when `resolved`/`qty`/`hold`/etc. are needed, or a `QuestEntry`
- * straight from `GAME_STATE.quests` — its `status`/`qty`/`totalQty` are
- * read directly, so `resolved` is derived automatically from
- * `status === "resolved"` instead of needing to be passed redundantly
- * alongside it. Same two-form idea as `playQuestCompleteBanner`'s own
- * `string | {...}` and `DialogueInput` (`dialogue.ts`), extended with this
- * third form the same way `questSetStatus`/`questSetProgress` accept
- * `QuestId | QuestEntry`.
+ * `(input, options)` — the same two-param shape as `playExclamation`/
+ * `playLeafBurst`/`playShine` elsewhere in this folder, not a single
+ * overloaded object. `input` is purely "what to show": a bare string, or a
+ * `QuestEntry` straight from `GAME_STATE.quests` (its `status`/`qty`/
+ * `totalQty` read directly — `resolved` derives from
+ * `status === "resolved"`). `options` is purely "how/when": `resolved`
+ * (only meaningful alongside a plain string, which carries no status of
+ * its own), `hold`, `delay`, `onComplete`. Keeping these separate — rather
+ * than spreading a `QuestEntry` together with extras into one object —
+ * means `input` is never a `QuestEntry`-plus-extras hybrid, so there's
+ * nothing for a "which shape did I get" check to misread `status` from and
+ * silently drop delay/hold/onComplete on the floor.
  *
  * @example playQuestToast("Catch the sheets.");
- * @example playQuestToast({ description: quest.description });
- * @example playQuestToast({ description: quest.description, qty: 5, totalQty: 10 }); // half-filled pie
- * @example playQuestToast({ description: quest.description, resolved: true });
  * @example playQuestToast(questEntry); // resolved/qty/totalQty read straight off it
+ * @example playQuestToast(questEntry, { delay: 0.5, hold: 8 });
+ * @example playQuestToast("Found something!", { resolved: true });
  * @example
- * const toast = playQuestToast({ description: "Waiting on something...", hold: "infinite" });
+ * const toast = playQuestToast("Waiting on something...", { hold: "infinite" });
  * // ...later...
  * toast.stop();
  */
-export function playQuestToast(input: string | QuestToastOptions | QuestEntry): QuestToastHandle {
-  const options = normalizeToastInput(input);
-  const { delay = 0 } = options;
+export function playQuestToast(
+  input: string | QuestEntry,
+  options: Omit<QuestToastOptions, "description" | "qty" | "totalQty"> = {},
+): QuestToastHandle {
+  const merged: QuestToastOptions = { ...resolveToastContent(input), ...options };
+  const { delay = 0 } = merged;
 
   let pending: gsap.core.Tween | null = null;
   let stopInner: (() => void) | null = null;
 
   const start = () => {
-    stopInner = runToast(options);
+    stopInner = runToast(merged);
   };
 
   if (delay > 0) pending = gsap.delayedCall(delay, start);

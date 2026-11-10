@@ -265,7 +265,7 @@ function interactions(target: Sprite | undefined) {
       DIALOGUE.hideBox();
       firstQuest?.stop();
       const quest = QUESTS.get("parcel")!;
-      playQuestToast({ description: quest.description, resolved: true });
+      playQuestToast(quest.description, { resolved: true });
       playQuestCompleteBanner(`Completed. A Journey Begins...!`);
       questSetStatus(quest, "resolved");
 
@@ -426,10 +426,7 @@ function mamaParcelConversation() {
     );
 
     DIALOGUE.effect(() => {
-      firstQuest = playQuestToast({
-        description: QUESTS.get("parcel")!.description,
-        hold: "infinite",
-      });
+      firstQuest = playQuestToast(QUESTS.get("parcel")!, { hold: "infinite" });
     });
 
     DIALOGUE.onComplete = () => {
@@ -450,7 +447,7 @@ function interactShoes() {
     DIALOGUE.hideBox();
     questSetStatus(questRunningShoes, "resolved");
     bagAddItem("shoes");
-    playQuestToast({ description: questRunningShoes.description, resolved: true });
+    playQuestToast(questRunningShoes);
     playQuestCompleteBanner(`Running Shoes Acquired!`);
   }, 3);
   DIALOGUE.queue(`Para tumakbo, i-hold ko lang iyung SHIFT or X keys sa keyboard while moving.`);
