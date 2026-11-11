@@ -54,6 +54,10 @@ function resolveDirectionMessage(
  * on `target` yourself instead (a `switch`, see template.ts's npcExample)
  * and call `DIALOGUE.show`/`beginCutscene` directly.
  *
+ * Returns whether `npc` was actually the target, same as `readMessage` —
+ * so a caller needing more than one line (or any other follow-up) can
+ * chain onto it instead of just firing it and moving on.
+ *
  * @example
  * function interactions(target: Sprite | undefined) {
  *   const { talkCommonM, talkCommonF } = createTalkDispatch(target);
@@ -62,28 +66,30 @@ function resolveDirectionMessage(
  * }
  */
 export function createTalkDispatch(target: Sprite | undefined) {
-  function talkCommonM(npc: PlayerSprite, message: string): void;
-  function talkCommonM(npc: PlayerSprite, direction: Direction, message: string): void;
+  function talkCommonM(npc: PlayerSprite, message: string): boolean;
+  function talkCommonM(npc: PlayerSprite, direction: Direction, message: string): boolean;
   function talkCommonM(
     npc: PlayerSprite,
     directionOrMessage: Direction | string,
     message?: string,
-  ) {
-    if (target !== npc) return;
+  ): boolean {
+    if (target !== npc) return false;
     const [direction, text] = resolveDirectionMessage(directionOrMessage, message);
     talkCommon(npc, "blue", direction, text);
+    return true;
   }
 
-  function talkCommonF(npc: PlayerSprite, message: string): void;
-  function talkCommonF(npc: PlayerSprite, direction: Direction, message: string): void;
+  function talkCommonF(npc: PlayerSprite, message: string): boolean;
+  function talkCommonF(npc: PlayerSprite, direction: Direction, message: string): boolean;
   function talkCommonF(
     npc: PlayerSprite,
     directionOrMessage: Direction | string,
     message?: string,
-  ) {
-    if (target !== npc) return;
+  ): boolean {
+    if (target !== npc) return false;
     const [direction, text] = resolveDirectionMessage(directionOrMessage, message);
     talkCommon(npc, "red", direction, text);
+    return true;
   }
 
   return { talkCommonM, talkCommonF };

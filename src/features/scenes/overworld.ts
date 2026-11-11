@@ -56,6 +56,7 @@ import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer, panCameraToTile, setCameraToTile } from "@/lib/map-movement";
 import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
+import { createNpcMessages, npcMessagesInteractions } from "@/lib/npc-messages";
 import { createNpcSpawner } from "@/lib/npc-spawn";
 import { placeAtTile } from "@/lib/positioning";
 import { BIRTHDAY_POSTCARD_SRC } from "@/lib/postcard-sticker";
@@ -918,6 +919,38 @@ function spawnOverworldNpcs() {
 
 spawnOverworldNpcs();
 
+// createNpcMessages/npcMessagesInteractions: a tuple entry is an existing,
+// already-spawned sprite (respawnNPC above already handled it — this just
+// wires up its line + interactable registration); an object entry is a
+// brand-new NPC, spawned/obstacled/interactable here too.
+const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
+  [
+    npcAdultFemale4,
+    "f",
+    "Grabe ang sarap mabuhay dito, napakalinis at relaxing ang paligid!",
+    () => {
+      DIALOGUE.effect(() => playExclamation(npcAdultMale2));
+      DIALOGUE.effect(() => npcAdultMale2.face("w"), 0.5);
+      DIALOGUE.queue({
+        text: "At lalong masarap kasama ang mga taong mahal mo sa buhay.",
+        color: "blue",
+      });
+    },
+  ],
+  [
+    npcAdultMale2,
+    "m",
+    "Ang tao, kahit gaano mapag-isa, maaaring hindi niya lang nahahanap pa ang taong gusto niya kasama sa buhay na comfortable siya.",
+  ],
+  {
+    idleSprites: IMGS_ELDER_MAN_IDLE,
+    tile: [68, 51.5],
+    face: "w",
+    gender: "m",
+    message: `Kailangan panatilihin malinis ang kapaligiran.`,
+  },
+]);
+
 const MAIN_EVENT_GUESTS_LEFT_SIDE = [
   npcAdultMale2,
   npcAdultFemale1,
@@ -1324,6 +1357,8 @@ function interactions(target: Sprite | undefined) {
       queueMsgBottleNudge();
     }
   });
+
+  npcMessagesInteractions(target, NPC_MESSAGES);
 
   switch (target) {
     case jp:
