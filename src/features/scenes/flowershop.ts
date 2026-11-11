@@ -128,7 +128,6 @@ export const flowershopScene: Scene = {
   },
 
   update(dt) {
-    // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
     NPCS.filter(isInViewport).forEach((n) => n.update(dt));
 
     const playerBox = movePlayer(dt);

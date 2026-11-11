@@ -9,10 +9,14 @@
  * overworld.ts, which is the one large hub scene with story-specific
  * extras) — background/foreground map, player spawn, boundaries + trigger
  * zones, NPCs + interactables via `createNpcSpawner` (both the permanent
- * and the spawn-later-on-a-story-beat case), and both dialogue-dispatch
- * shapes: `createTalkDispatch(target)` + `talkCommonM`/`talkCommonF`
- * (@/lib/npc-talk) for a flat one-off line with no state (see teashop.ts
- * for a whole scene that's only ever this), and a `switch` + named
+ * and the spawn-later-on-a-story-beat case), and three dialogue-dispatch
+ * shapes: `createNpcMessages`/`npcMessagesInteractions` (@/lib/npc-messages)
+ * for a flat one-off line with no state — prefer this for any NEW ambient
+ * NPC, one declarative entry instead of a separate PlayerSprite const +
+ * respawnNPC + INTERACTABLES entry + dispatch call; `createTalkDispatch(target)`
+ * + `talkCommonM`/`talkCommonF` (@/lib/npc-talk) for that same flat-line case
+ * on a sprite that's already being spawned/managed some other way (see
+ * teashop.ts for a whole scene that's only ever this); and a `switch` + named
  * function + `beginCutscene` for anything stateful (first-meet vs.
  * already-met, multi-line, spawning another NPC afterward, ...).
  */
@@ -36,6 +40,7 @@ import { beginCutscene } from "@/lib/cutscene";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
+import { createNpcMessages, npcMessagesInteractions } from "@/lib/npc-messages";
 import { createNpcSpawner } from "@/lib/npc-spawn";
 import { createTalkDispatch } from "@/lib/npc-talk";
 import { placeAtTile } from "@/lib/positioning";
@@ -69,6 +74,10 @@ const npcLater = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE } })
 // talkCommonF call. See teashop.ts for a whole scene built only out
 // of this NPC's kind.
 const npcSimple = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE } });
+// A fourth NPC, spawned/managed the normal way (like npcSimple above) —
+// but its line is wired through createNpcMessages' tuple form below
+// instead of a direct talkCommonM call, see NPC_MESSAGES below.
+const npcManaged = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE } });
 
 // Starts blank — respawnNPC (below) is what actually populates this, so it
 // doubles as both "who's currently in this scene" and the GAME_STATE.obstacles
@@ -96,6 +105,28 @@ const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 respawnNPC(npcExample, [5, 5]);
 respawnNPC(npcSimple, [7, 5]);
 npcSimple.face("s");
+respawnNPC(npcManaged, [9, 7]);
+
+// createNpcMessages: a flat one-off line with no state, same case as
+// npcSimple above, but declarative — no switch case or dispatch call of
+// its own needed in interactions() below, just one array entry per NPC.
+// Two shapes, see npc-messages.ts's own doc:
+// - a tuple ([sprite, gender, message]) for a sprite already spawned/
+//   managed some other way (npcManaged above) — only its line gets wired
+//   up here, nothing about spawning happens.
+// - an object ({idleSprites, tile, gender, message}) for a brand-new
+//   NPC — this one call places it and adds it to NPCS/obstacles/
+//   INTERACTABLES too, no separate PlayerSprite const or respawnNPC call
+//   needed at all.
+const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
+  [npcManaged, "m", `NPC: Nice weather we're having.`],
+  {
+    idleSprites: IMGS_ADULT_MALE_1_IDLE,
+    tile: [9, 5],
+    gender: "m",
+    message: `NPC: Haven't seen you around before!`,
+  },
+]);
 
 const TRIGGER_HANDLERS: TriggerHandlers = {
   exit: { onEnter: exitZone },
@@ -195,6 +226,8 @@ function exitZone() {
 function interactions(target: Sprite | undefined) {
   const { talkCommonM } = createTalkDispatch(target);
   talkCommonM(npcSimple, "s", `NPC: Just passing through, nothing much to say.`);
+
+  npcMessagesInteractions(target, NPC_MESSAGES);
 
   // Mirrors overworld.ts's own `interactions()` — one case per
   // sprite/PlayerSprite, delegating to a named function for anything

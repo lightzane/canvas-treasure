@@ -74,47 +74,47 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "daoming_keys",
     {
       description: "Help DAO MING SI find his missing keys.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
-  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "inactive" }],
-  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "inactive" }],
-  ["meet_ximen", { description: "Find and meet XI MEN", status: "inactive" }],
+  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
+  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "resolved" }],
+  ["meet_ximen", { description: "Find and meet XI MEN", status: "resolved" }],
   [
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 0,
+      qty: 2,
       totalQty: 3,
-      status: "inactive",
+      status: "active",
     },
   ],
   [
     "garden_shears",
     {
       description: "Find a way to remove the wild bush.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [
     "running_shoes",
     {
       description: "Find running shoes at home.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [
     "message_in_bottle",
     {
       description: "Find the bottle that contains the treasure map.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [

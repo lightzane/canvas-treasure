@@ -212,7 +212,6 @@ export const homeScene: Scene = {
   },
 
   update(dt) {
-    // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
     if (!isMamaOutside) GAME_STATE.mama.update(dt);
 
     const playerBox = movePlayer(dt);

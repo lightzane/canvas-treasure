@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="186" nextobjectid="889">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="186" nextobjectid="890">
  <editorsettings>
   <export target="overworld.json" format="json"/>
  </editorsettings>
@@ -1157,7 +1157,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <group id="42" name="event" visible="0">
+ <group id="42" name="event">
   <layer id="41" name="event_floor" width="140" height="100">
    <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1995,7 +1995,7 @@
    <object id="60" x="3069" y="1409.7" width="52" height="446.652"/>
   </objectgroup>
  </group>
- <group id="55" name="non_event">
+ <group id="55" name="non_event" visible="0">
   <layer id="54" name="benches" width="140" height="100">
    <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14193,7 +14193,7 @@
 </data>
   </layer>
  </group>
- <objectgroup color="#ff2600" id="159" name="collisions" visible="0">
+ <objectgroup color="#ff2600" id="159" name="collisions">
   <object id="2" x="1600.16" y="1406.5" width="255.845" height="65.5"/>
   <object id="120" x="1922.52" y="1406.5" width="253.475" height="65.5"/>
   <object id="121" x="1731.85" y="1278.87" width="154.504" height="59"/>
@@ -14467,8 +14467,8 @@
   <object id="405" x="1262.92" y="359.639" width="37.6367" height="178.625"/>
   <object id="406" x="1197.2" y="513.77" width="105.741" height="24.4937"/>
   <object id="407" x="1208.55" y="500.627" width="65.7148" height="23.8963"/>
-  <object id="408" x="1036.5" y="396.678" width="136.209" height="80.0526"/>
-  <object id="409" x="1201.39" y="416.99" width="59.7407" height="57.3511"/>
+  <object id="408" x="1036.5" y="396.678" width="131.912" height="77.5135"/>
+  <object id="409" x="1205.1" y="416.99" width="56.0298" height="57.3511"/>
   <object id="410" x="1166.14" y="393.691" width="98.5722" height="31.6626"/>
   <object id="411" x="1410.48" y="446.263" width="154.131" height="28.0781"/>
   <object id="412" x="1388.37" y="390.704" width="200.729" height="17.9222"/>
@@ -14625,7 +14625,7 @@
   <object id="572" x="3830.69" y="2700.95" width="254.658" height="33.9216"/>
   <object id="573" x="3890.66" y="2735.36" width="35.3965" height="74.2343"/>
   <object id="574" x="3954.08" y="2736.35" width="130.77" height="70.793"/>
-  <object id="575" x="3928.03" y="2730.94" width="33.9216" height="24.5809"/>
+  <object id="575" x="3922.19" y="2732.06" width="33.9216" height="71.3151"/>
   <object id="576" x="4070.1" y="2695.54" width="83.0834" height="32.9384"/>
   <object id="577" x="4117.79" y="2720.12" width="35.3965" height="147.485"/>
   <object id="578" x="3980.14" y="2838.43" width="141.586" height="36.3473"/>
@@ -14925,6 +14925,7 @@
   <object id="886" x="818.627" y="1784.63" width="67.1868" height="165.026"/>
   <object id="887" x="1251.35" y="1452.68" width="25.3765" height="21.0672"/>
   <object id="888" x="330.195" y="1826.11" width="16.5097" height="58.0072"/>
+  <object id="889" x="1164.84" y="393.555" width="41.2109" height="80.4688"/>
  </objectgroup>
  <group id="162" name="trigger_zones" visible="0" locked="1">
   <objectgroup color="#ff40ff" id="167" name="restrict">

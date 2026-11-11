@@ -8,8 +8,22 @@ export interface CherryBlossomsOptions {
   duration?: number;
   /** Seconds to wait before starting. */
   delay?: number;
-  /** Runs once the effect has fully finished — naturally, or via an early `.stop()`. */
+  /** Runs once the effect has fully finished — naturally, or via an early `.stop()`/`.fade()`. */
   onComplete?: () => void;
+}
+
+export interface CherryBlossomsHandle extends EffectHandle {
+  /**
+   * Fades out whatever's already drifting over `duration` seconds, instead
+   * of letting it finish naturally like `.stop()` does — also stops
+   * launching new petals. canvas-confetti has no per-particle fade (its own
+   * `.reset()` is an instant, un-faded clear), so this works one level up:
+   * a GSAP opacity tween on this effect's own canvas, then `.reset()` once
+   * it's fully transparent so the engine actually stops computing hidden
+   * particles instead of just hiding them.
+   * @default 1.5
+   */
+  fade: (duration?: number) => void;
 }
 
 // Pulled from the cherry tree's own art: its pale highlight, the canopy's
@@ -23,15 +37,43 @@ const PETAL_COLORS = ["#f9d1e0", "#f2a8c7", "#d9789f", "#fffaf5"];
 // actually renders at, a simple silhouette reads better than fussy detail.
 const PETAL_SHAPE = confetti.shapeFromPath("M10 0 Q20 10 10 20 Q0 10 10 0 Z");
 
+// A dedicated canvas (not the shared default canvas-confetti instance other
+// callers like birthdayConfetti/playLeafBurst use) — lazily created once and
+// reused across every playCherryBlossoms() call, same "one persistent
+// overlay, never torn down" lifecycle as the library's own default canvas.
+// Owning it ourselves is what gives .fade() an actual element to fade;
+// reused rather than recreated per call so repeated calls (e.g. once per
+// wind-gust cue) don't each leave behind their own canvas.
+let sharedCanvas: HTMLCanvasElement | null = null;
+let sharedFire: confetti.CreateTypes | null = null;
+
+function ensureFire(): confetti.CreateTypes {
+  if (!sharedFire) {
+    sharedCanvas = document.createElement("canvas");
+    Object.assign(sharedCanvas.style, {
+      position: "fixed",
+      inset: "0",
+      width: "100%",
+      height: "100%",
+      pointerEvents: "none",
+      zIndex: "100", // canvas-confetti's own default for its auto-created canvas
+    });
+    document.body.appendChild(sharedCanvas);
+    sharedFire = confetti.create(sharedCanvas, { resize: true });
+  }
+  // Undoes a previous call's .fade() — a fresh call always starts fully visible.
+  sharedCanvas!.style.opacity = "1";
+  return sharedFire;
+}
+
 /**
  * A gentle, continuous rain of cherry-blossom petals drifting down across
- * the whole game canvas — `canvas-confetti` under the hood, same floating
- * overlay canvas already used elsewhere (`playLeafBurst`, `birthdayConfetti`
- * in `src/lib/confetti.ts`), not the game canvas — but shaped and colored to
- * read as petals, not party confetti: `PETAL_SHAPE` instead of the default
- * shapes, `PETAL_COLORS` instead of confetti's usual bright mix, low gravity
- * and long `ticks` so each one drifts the full height of the canvas instead
- * of vanishing partway down.
+ * the whole page — `canvas-confetti` under the hood, its own dedicated
+ * overlay canvas (see `ensureFire`), shaped and colored to read as petals,
+ * not party confetti: `PETAL_SHAPE` instead of the default shapes,
+ * `PETAL_COLORS` instead of confetti's usual bright mix, low gravity and
+ * long `ticks` so each one drifts the full height of the canvas instead of
+ * vanishing partway down.
  *
  * Fires in two clusters rather than one flat loop: a handful of bursts
  * staggered tightly together right at the start, then the same burst
@@ -50,10 +92,12 @@ const PETAL_SHAPE = confetti.shapeFromPath("M10 0 Q20 10 10 20 Q0 10 10 0 Z");
  *
  * Returned handle's `.stop()` stops launching new petals early — whatever's
  * already drifting finishes its own fall naturally, same as
- * `src/lib/confetti.ts`'s `birthdayConfetti`.
+ * `src/lib/confetti.ts`'s `birthdayConfetti`. Use `.fade()` instead for an
+ * early, faded conclusion rather than a natural one.
  */
-export function playCherryBlossoms(options: CherryBlossomsOptions = {}): EffectHandle {
+export function playCherryBlossoms(options: CherryBlossomsOptions = {}): CherryBlossomsHandle {
   const { duration = 15, delay = 0, onComplete } = options;
+  const fire = ensureFire();
 
   let done = false;
   function finish() {
@@ -69,7 +113,7 @@ export function playCherryBlossoms(options: CherryBlossomsOptions = {}): EffectH
     const { left, right } = getCanvasBounds();
     const width = right - left;
 
-    // Each burst's origin.x is randomized once per fire() call, not once
+    // Each burst's origin.x is randomized once per burst() call, not once
     // per particle — so a big particleCount all shares one starting point.
     // With startVelocity this low there's nothing left to separate them
     // from each other as they fall, so a large burst reads as one tight
@@ -77,8 +121,8 @@ export function playCherryBlossoms(options: CherryBlossomsOptions = {}): EffectH
     // small and firing it often is what actually spreads petals across the
     // canvas — a different random origin.x every time — not a bigger
     // particleCount or more spread on a single burst.
-    function fire() {
-      confetti({
+    function burst() {
+      fire({
         particleCount: 2,
         // A real "launch" velocity (15, confetti's own default range) is
         // what reads as fireworks/a cannon shot, in ANY direction — angle
@@ -107,10 +151,10 @@ export function playCherryBlossoms(options: CherryBlossomsOptions = {}): EffectH
     // Initial flurry — the same small burst fired many times in quick
     // succession, each sampling its own random origin.x, so the opening
     // moment is already spread across the canvas instead of a handful of
-    // clumps. Count bumped up from 6 since each fire() now only places 2
+    // clumps. Count bumped up from 6 since each burst() now only places 2
     // petals instead of 15.
     for (let i = 0; i < 16; i++) {
-      flurryTimers.push(gsap.delayedCall(i * 0.05, () => fire()));
+      flurryTimers.push(gsap.delayedCall(i * 0.05, () => burst()));
     }
 
     // Then a steady, gentle drift for the rest of duration. Tweening {} with
@@ -125,10 +169,16 @@ export function playCherryBlossoms(options: CherryBlossomsOptions = {}): EffectH
       {
         duration: interval,
         repeat: Math.ceil(duration / interval),
-        onRepeat: () => fire(),
+        onRepeat: () => burst(),
         onComplete: finish,
       },
     );
+  }
+
+  function stopBursts() {
+    pending?.kill();
+    flurryTimers.forEach((t) => t.kill());
+    driver?.kill();
   }
 
   const pending = delay > 0 ? gsap.delayedCall(delay, start) : null;
@@ -136,10 +186,19 @@ export function playCherryBlossoms(options: CherryBlossomsOptions = {}): EffectH
 
   return {
     stop: () => {
-      pending?.kill();
-      flurryTimers.forEach((t) => t.kill());
-      driver?.kill();
+      stopBursts();
       finish();
+    },
+    fade: (fadeDuration = 1.5) => {
+      stopBursts();
+      gsap.to(sharedCanvas, {
+        opacity: 0,
+        duration: fadeDuration,
+        onComplete: () => {
+          fire.reset();
+          finish();
+        },
+      });
     },
   };
 }

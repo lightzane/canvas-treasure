@@ -130,6 +130,7 @@ const IMG_BALLOON_CRATES = img("others/balloon-crates.png");
 const IMG_WOODEN_CRATE = img("others/wooden-crate.png");
 const IMG_WOODEN_BARREL = img("others/wooden-barrel.png");
 const IMG_STREET_LIGHT = img("others/street-light.png");
+const IMG_WOODEN_BALLOON_ARCH = img("others/wooden-balloon-arch.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const ICON_SHEARS = img("others/garden-shears.png");
 const ICON_PAPERS = img("others/paper-multi-32.png");
@@ -322,6 +323,17 @@ const MSG_BOTTLE_CFGS: ReadableCfg[] = [
 const MSG_BOTTLES = createReadables(IMG_MESSAGE_BOTTLE_H, MSG_BOTTLE_CFGS);
 
 const coreMsgBottle = new Sprite({ src: IMG_MESSAGE_BOTTLE_H, scale: 2 });
+// Only ever placed/added to DECORS inside initMainEvent() — doesn't exist in
+// the world before then, torn down again by cleanupMainEvent().
+const balloonArch = new Sprite({
+  src: IMG_WOODEN_BALLOON_ARCH,
+  scale: 2,
+  // AISLE_GUARDS_ROW_A (row 54.5, 96px tall) has feetY 3568 — 16px less than
+  // this sprite's own box-bottom feetY of 3584 (tile row 55, anchor
+  // "bottom", 256px box) — pulls the sort reference up past that gap so
+  // those two guards correctly draw in front instead of behind the arch.
+  feetOffset: -32,
+});
 const bulletinBoard = new Sprite({
   src: IMG_BULLETIN_BOARD,
   scale: 2,
@@ -1116,17 +1128,22 @@ export const overworldScene: Scene = {
 
   update(dt) {
     DECORS.filter(isInViewport).forEach((sprite) => sprite.update(dt));
+
+    const jpActive = isQuestResolved(questMain);
+    // jp is only excluded here once jpActive — otherwise followSprite()
+    // never runs (it's a no-op while inactive), so nothing would ever call
+    // jp.update(dt) at all: any scripted walk() on jp before questMain
+    // resolves (e.g. cutsceneMidAisleJp) would tween its position with no
+    // animation, frozen on whatever frame it last had.
     NPCS.filter(isInViewport)
-      .filter((npc) => npc !== jp) // handled by followSprite
+      .filter((npc) => npc !== jp || !jpActive)
       .forEach((n) => n.update(dt));
 
     if (paperWindAnimating) paperWind1.update(dt);
-    // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
 
     const playerBox = movePlayer(dt);
     checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
-    const jpActive = isQuestResolved(questMain);
     jpCompanion.follow(dt, jpActive);
     if (jpActive) trackFootstep(jp, isInsideZone("sand", jp.collisionBox, GAME_STATE.triggerZones));
 
@@ -1148,9 +1165,15 @@ export const overworldScene: Scene = {
       ...NPCS.filter(isInViewport),
       ...STREET_LIGHTS.filter(isInViewport),
       ...SIGNPOSTS.map(({ sprite }) => sprite).filter(isInViewport),
-      ...[bulletinBoard].filter((s) => isInViewport(s) && DECORS.includes(s)),
+      ...[bulletinBoard, balloonArch].filter((s) => isInViewport(s) && DECORS.includes(s)),
     ]);
 
+    // There were supposed to have a different foreground for each background
+    // but it turns out that there's only a single foreground during the event
+    // and not worth it at all to create another foreground of a large size
+    // but still keeping this condition here as an example
+    // and in case foreground increases, then it's only worth
+    // to create another foreground image of the same large size
     if (questDaoMingKeys.status === "resolved" && !GAME_STATE.sequence.closing_remarks)
       drawViewportClamped(ctx, foreground);
     else drawViewportClamped(ctx, foreground);
@@ -1534,7 +1557,6 @@ function meetLeiConversation() {
       questSetStatus(quest, "resolved");
       playQuestToast(quest);
       playQuestCompleteBanner(`Meet Hua Ze Lei Completed!`);
-      cherryBlossomHandle.stop();
     });
     gsap.delayedCall(10, () => DIALOGUE.unlock());
   });
@@ -1557,6 +1579,7 @@ function meetLeiConversation() {
   DIALOGUE.queue(`Ahh, hinahanap niya ang "keys" o susi niya...`);
   DIALOGUE.queue(`Paumanhin ngunit wala naman sa akin ang mga keys niya.`);
   DIALOGUE.effect(() => {
+    cherryBlossomHandle.fade();
     audioPlayAmbience("amb_wind_interior");
     DIALOGUE.clearPortrait();
     DIALOGUE.hideBox();
@@ -1974,26 +1997,47 @@ function completeCoreMsgBottle() {
     despawnNPC(huazelei);
   }, 3);
 
+  // Nothing queued here on purpose — queuing the lines below (and locking)
+  // while playImagePreview is up is what let its lock icon (always above
+  // the preview's own lower z-index, see image-preview.ts) and even the
+  // lines themselves bleed through before the player closed it. Queuing
+  // them from inside onComplete instead means there's nothing to show or
+  // lock until the preview is already gone.
   DIALOGUE.effect(() => {
+    beginCutscene();
     audioPlaySound("page_turn_forward", { volume: PAGE_SOUND_VOLUME });
     playImagePreview(PHOTO_TREASURE_MAP, {
-      hold: 4.5,
-      onComplete: () => audioPlaySound("page_turn_backward", { volume: PAGE_SOUND_VOLUME }),
+      onComplete: () => {
+        audioPlaySound("page_turn_backward", { volume: PAGE_SOUND_VOLUME });
+        // .show(), not .queue() — this starts the conversation fresh, which
+        // also sets GAME_STATE.movementLocked = true again on its own, so
+        // movement stays locked once the image preview is actually closed.
+        DIALOGUE.show(`Mahahanap ko na rin ang teasure para sa event!`);
+        DIALOGUE.queue(`Ilagay ko lang sa bag ito treasure map para maalala ko...`);
+
+        DIALOGUE.effect(() => {
+          questSetStatus(questMazeChest, "active");
+          playQuestToast(questMazeChest);
+        }, 0.00001);
+
+        DIALOGUE.onComplete = () => {
+          GAME_STATE.movementLocked = false;
+          hudSetBagIconVisible(true);
+          spawnMazeChest();
+        };
+      },
     });
-  }, 5);
-  DIALOGUE.queue(`Mahahanap ko na rin ang teasure para sa event!`);
-  DIALOGUE.queue(`Ilagay ko lang sa bag ito treasure map para maalala ko...`);
-
-  DIALOGUE.effect(() => {
-    questSetStatus(questMazeChest, "active");
-    playQuestToast(questMazeChest);
+    // DIALOGUE's own queue goes idle right after this effect (nothing is
+    // queued until playImagePreview's onComplete above queues more) — its
+    // own idle-completion unconditionally releases movementLocked, which
+    // would let the player move for however long the preview stays open.
+    // Re-locking here runs synchronously from inside that same idle-check
+    // (see pullPending() in dialogue.ts), so the false-then-true flip never
+    // lands on a frame the game loop can actually observe as unlocked.
+    DIALOGUE.onComplete = () => {
+      GAME_STATE.movementLocked = true;
+    };
   }, 0.00001);
-
-  DIALOGUE.onComplete = () => {
-    GAME_STATE.movementLocked = false;
-    hudSetBagIconVisible(true);
-    spawnMazeChest();
-  };
 }
 
 function spawnMazeChest() {
@@ -2261,6 +2305,8 @@ function cutsceneMarket() {
     walk(player, [101.5, 75], {
       onComplete: () => {
         player.face("w");
+        meizuo.face("w");
+        ximen.face("s");
         playExclamation(meizuo);
         playExclamation(ximen);
       },
@@ -2300,8 +2346,6 @@ function cutsceneMarket() {
   DIALOGUE.effect(() => {
     playAttentionBounce(meizuo);
     playExclamation(meizuo);
-    ximen.face("s"); // TODO: test this
-    // TODO: add conditional foreground? The "arch" in the main event park area
   }, 0.5);
 
   f4Speaker("meizuo", `Oii si CHE pala nandito!`);
@@ -3130,6 +3174,7 @@ function cleanupMainEvent() {
   const cleanupNpcs = [...f4, ...AISLE_GUARDS, ...PARK_EVENT_GUARDS];
   cleanupNpcs.forEach((npc) => despawnNPC(npc));
   respawnNPC(GAME_STATE.papa, [63, 39]);
+  remove(DECORS, balloonArch);
 }
 
 function interactMeizuo() {
@@ -3217,6 +3262,18 @@ function initMainEvent() {
   addOnce(DECORS, chestEmpty);
   addOnce(GAME_STATE.obstacles, chestEmpty);
   BOUNDARIES_MAIN_EVENT.forEach((b) => addOnce(GAME_STATE.boundaries, b));
+
+  // No retry-on-load needed here (unlike createReadables/createProps) —
+  // this only ever runs from initMainEvent(), inside enter(), which can't
+  // fire before GameEngine.start()'s own image-preload gate has already
+  // resolved every sprite's image, this one included.
+  placeAtTile({
+    sprite: balloonArch,
+    tile: [94, 55],
+    spriteSize: balloonArch.boxSize,
+    anchor: "bottom",
+  });
+  addOnce(DECORS, balloonArch);
 
   jp.moveSpeed = 50;
   huazelei.moveSpeed = 50;

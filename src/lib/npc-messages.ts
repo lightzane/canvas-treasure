@@ -17,6 +17,8 @@ export interface NewNpcMessageCfg {
   face?: Direction;
   /** Face this direction again once the line ends — same as talkCommonM/F's own `direction` param. @default undefined (keeps facing whatever way it already was) */
   direction?: Direction;
+  /** Turn to face the player once interacted with — same as `InteractableConfig`'s own `facePlayer`. Set `false` for an NPC that shouldn't turn (e.g. one facing away on purpose). @default true */
+  facePlayer?: boolean;
   /** Runs right when the message is shown — `DIALOGUE.queue(...)`/`.effect(...)` here attaches onto this same conversation, same idea as `readMessage`'s own chaining. */
   onShow?: () => void;
 }
@@ -86,13 +88,18 @@ function resolveExistingCfg(cfg: ExistingNpcMessageCfg): NpcMessageEntry {
  *   ],
  * );
  */
-function spawnNewCfg(cfg: NewNpcMessageCfg, npcs: PlayerSprite[]): NpcMessageEntry {
-  const { idleSprites, tile, gender, message, face = "s", direction, onShow } = cfg;
+function spawnNewCfg(
+  cfg: NewNpcMessageCfg,
+  npcs: PlayerSprite[],
+  interactables: Interactable[],
+): NpcMessageEntry {
+  const { idleSprites, tile, gender, message, face = "s", direction, facePlayer, onShow } = cfg;
   const sprite = new PlayerSprite({ sprites: { idle: idleSprites } });
   placeAtTile(sprite, tile);
   sprite.face(face);
   addOnce(npcs, sprite);
   addOnce(GAME_STATE.obstacles, sprite);
+  addOnce(interactables, { sprite, facePlayer });
   return { sprite, gender, message, direction, onShow };
 }
 
@@ -102,9 +109,12 @@ export function createNpcMessages(
   cfgs: NpcMessageCfg[],
 ): NpcMessageEntry[] {
   return cfgs.map((cfg) => {
-    const entry = isExistingCfg(cfg) ? resolveExistingCfg(cfg) : spawnNewCfg(cfg, npcs);
-    addOnce(interactables, entry.sprite);
-    return entry;
+    if (isExistingCfg(cfg)) {
+      const entry = resolveExistingCfg(cfg);
+      addOnce(interactables, entry.sprite);
+      return entry;
+    }
+    return spawnNewCfg(cfg, npcs, interactables);
   });
 }
 
