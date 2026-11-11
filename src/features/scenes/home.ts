@@ -23,6 +23,7 @@ import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { createCompanion } from "@/lib/companion";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import type { EffectHandle } from "@/lib/effects/handle";
@@ -35,7 +36,7 @@ import { movePlayer } from "@/lib/map-movement";
 import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
-import { QUESTS, questSetStatus } from "@/lib/quests";
+import { isQuestResolved, QUESTS, questSetStatus } from "@/lib/quests";
 import { walk } from "@/lib/walk";
 import gsap from "gsap";
 
@@ -99,6 +100,7 @@ let isMamaOutside = false;
 
 const questRunningShoes = GAME_STATE.quests.get("running_shoes")!;
 const questMain = GAME_STATE.quests.get("invitation_postcard")!;
+const jpCompanion = createCompanion(GAME_STATE.jp, { followDistance: 1 });
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
@@ -119,30 +121,39 @@ export const homeScene: Scene = {
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
     // Main quest just completed
-    if (!GAME_STATE.cameraFollow && questMain.status === "resolved") GAME_STATE.cameraFollow = true;
+    if (!GAME_STATE.cameraFollow && isQuestResolved(questMain)) GAME_STATE.cameraFollow = true;
 
     isMamaOutside = questRunningShoes.status !== "inactive";
 
+    // Fresh per-visit state — everything below only ever ADDS to obstacles/
+    // interactables via addOnce, never reassigns, so one registration (e.g.
+    // jp's, below) can never get silently wiped out by a later, unrelated
+    // one (e.g. mama's).
     GAME_STATE.boundaries = createBoundaries(COLLISION_HOME);
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_HOME);
+    GAME_STATE.obstacles = [];
+    interactables = [];
 
+    // Spawn at home's doorsteps
     let spawnLocation: [number, number] = [13, 19];
-    let jpSpawnLocation: [number, number] = [3.75, 14]; // [13, 19.5] use this coordinate when "npc follow player" feature exists
+    let jpSpawnLocation: [number, number] = [13, 19.5];
 
-    if (questMain.status === "resolved") {
-      GAME_STATE.jp.face("s");
-    }
+    if (isQuestResolved(questMain)) GAME_STATE.jp.face("a");
 
+    // Intro sequence not yet completed
     if (!GAME_STATE.sequence.intro) {
       spawnLocation = [3, 14];
       homeScene.fadeIn = 0.5;
       homeScene.fadeOut = 1;
-    } else if (!GAME_STATE.sequence.closing_remarks && questMain.status === "resolved") {
+    }
+    // Main quest was just resolved after the closing remarks, spawn them at the room
+    else if (!GAME_STATE.sequence.closing_remarks && isQuestResolved(questMain)) {
       spawnLocation = [3, 14];
       jpSpawnLocation = [3.75, 14];
-      GAME_STATE.jp.face("a");
       GAME_STATE.sequence.closing_remarks = true;
-    } else {
+    }
+    // Normally entering from the overworld
+    else {
       GAME_STATE.player.face("a");
     }
 
@@ -165,21 +176,16 @@ export const homeScene: Scene = {
     }
 
     placeAtTile({ sprite: GAME_STATE.mama, tile: [3.75, 3] });
-    if (questMain.status === "resolved") {
-      placeAtTile({ sprite: GAME_STATE.jp, tile: jpSpawnLocation });
-      GAME_STATE.obstacles = [GAME_STATE.jp];
-      interactables = [GAME_STATE.jp];
-    }
+    if (isQuestResolved(questMain)) jpCompanion.spawn(jpSpawnLocation, interactables);
 
     // Mama at home
     if (!isMamaOutside) {
-      GAME_STATE.obstacles = [GAME_STATE.mama]; // blocks walking through her, tracking wherever she currently is
+      addOnce(GAME_STATE.obstacles, GAME_STATE.mama); // blocks walking through her, tracking wherever she currently is
     }
 
     if (!GAME_STATE.sequence.closing_remarks) {
-      interactables = bagHasItem("parcel")
-        ? [MAMA_INTERACTABLE]
-        : [MAMA_INTERACTABLE, PARCEL_INTERACTABLE];
+      addOnce(interactables, MAMA_INTERACTABLE);
+      if (!bagHasItem("parcel")) addOnce(interactables, PARCEL_INTERACTABLE);
     }
 
     if (!bagHasItem("shoes") && questRunningShoes.status === "active") {
@@ -192,7 +198,7 @@ export const homeScene: Scene = {
     }
 
     // The parcel is gone at this point, so rely on diff condition to display bag
-    if (questMain.status === "resolved") {
+    if (isQuestResolved(questMain)) {
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
       addOnce(DECORS, flowersBouquet);
       addOnce(DECORS, framePhotoSky);
@@ -208,17 +214,18 @@ export const homeScene: Scene = {
   update(dt) {
     // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
     if (!isMamaOutside) GAME_STATE.mama.update(dt);
-    if (questMain.status === "resolved") GAME_STATE.jp.update(dt); // drives its clip/frames — face()/play() alone only set intent, this is what applies it (see PlayerSprite.update)
 
     const playerBox = movePlayer(dt);
     checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+
+    jpCompanion.follow(dt, isQuestResolved(questMain));
 
     updateInteraction(interactables, interactions);
   },
 
   draw(ctx) {
     drawViewportClamped(ctx, background);
-    if (questMain.status === "resolved") {
+    if (isQuestResolved(questMain)) {
       DECORS.filter(isInViewport).forEach((decor) => decor.draw(ctx));
     }
 
@@ -226,11 +233,11 @@ export const homeScene: Scene = {
     if (!bagHasItem("shoes") && questRunningShoes.status === "active") runningShoes.draw(ctx);
 
     if (!isMamaOutside) drawYSorted(ctx, [GAME_STATE.mama, GAME_STATE.player]);
-    else if (questMain.status === "resolved") drawYSorted(ctx, [GAME_STATE.player, GAME_STATE.jp]);
+    else if (isQuestResolved(questMain)) drawYSorted(ctx, [GAME_STATE.player, GAME_STATE.jp]);
     else GAME_STATE.player.draw(ctx);
     drawViewportClamped(ctx, foreground);
 
-    if (!bagHasItem("parcel") && questMain.status !== "resolved") parcel.draw(ctx);
+    if (!bagHasItem("parcel") && !isQuestResolved(questMain)) parcel.draw(ctx);
     if (!bagHasItem("journal")) journal.draw(ctx);
     if (GAME_STATE.facedTarget) drawInteractPrompt(ctx, GAME_STATE.facedTarget, interactables);
   },
@@ -308,7 +315,7 @@ function interactions(target: Sprite | undefined) {
 
   if (target === GAME_STATE.jp) {
     focus();
-    playExclamation(GAME_STATE.jp, { glyph: "☺️" });
+    playExclamation(GAME_STATE.jp, { glyph: "☺️", hold: 3 });
     DIALOGUE.queue({ text: `JP: Yes Love Love...`, color: "blue" });
     DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
   }
@@ -463,7 +470,7 @@ function exitZone() {
     return mustStayHome(); // no parcel yet — stay home
   }
 
-  if (!bagHasItem("parcel") && questMain.status !== "resolved") {
+  if (!bagHasItem("parcel") && !isQuestResolved(questMain)) {
     DIALOGUE.show({ text: "MAMA: CHINGKAY! Paki kuha nitong parcel.", color: "red" });
     return mustStayHome(); // no parcel yet — stay home
   }

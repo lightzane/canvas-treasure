@@ -90,6 +90,26 @@ interface TriggerHandler {
 export type TriggerHandlers<Name extends string = string> = Partial<Record<Name, TriggerHandler>>;
 
 /**
+ * Pure query: is `box` currently (fully) inside any zone named `name`? Same
+ * full-containment rule `checkTriggerZones` uses (not just touching an
+ * edge), but stateless — no `onEnter`/`onLeave`, no `zone.entered` tracking.
+ * For anything that needs to read a zone's current overlap without being
+ * the player, whose crossing is what actually fires that zone's own
+ * handlers — e.g. an NPC needing to know it's standing on the same "sand"
+ * zones the player's own trigger reacts to, without also firing that
+ * trigger's side effects (scene transitions, cutscenes, ...) just because
+ * the NPC happened to wander through it.
+ *
+ * @example trackFootstep(jp, isInsideZone("sand", jp.collisionBox, GAME_STATE.triggerZones));
+ */
+export function isInsideZone(name: string, box: Rect, zones: TriggerZone[]): boolean {
+  const boxArea = box.width * box.height;
+  return zones.some(
+    (zone) => zone.name === name && getOverlapArea(box, zone) >= boxArea - OVERLAP_EPSILON,
+  );
+}
+
+/**
  * Dispatches each zone's `onEnter`/`onLeave` by `zone.name` — the one place
  * overlap-tracking lives, shared by every scene. Requires the player's whole
  * box inside the zone (not just touching its edge) before firing `onEnter`.

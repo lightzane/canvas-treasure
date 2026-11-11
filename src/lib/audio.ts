@@ -55,7 +55,8 @@ export type SoundKey =
   | "gear_metallic_lock"
   | "drums_of_preparations"
   | "applause_light"
-  | "applause";
+  | "applause"
+  | "teleport";
 export type MusicKey =
   | "home"
   | "overworld_event"
@@ -169,6 +170,7 @@ const SOUND_REGISTRY: Record<SoundKey, SoundEntry> = {
   gear_metallic_lock:      { src: ["fx/mixkit-gear-fast-lock-tap-2857.wav"] },
   applause_light:          { src: ["fx/mixkit-audience-light-applause-354.wav"] },
   applause:                { src: ["fx/mixkit-ending-show-audience-clapping-478.wav"] },
+  teleport:                { src: ["fx/teleport-minato.mp3", "fx/teleport-dbz.mp3"], silenceEnd: true },
 };
 
 type MusicEntry = string | MusicSheetEntry;

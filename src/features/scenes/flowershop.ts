@@ -15,10 +15,12 @@ import {
 } from "@/features/zone";
 import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
 import { bagHasItem, bagIncItem } from "@/lib/bag";
+import { addOnce } from "@/lib/array";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { createCompanion } from "@/lib/companion";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { hudSetBagIconVisible } from "@/lib/hud";
@@ -29,7 +31,7 @@ import { createNpcSpawner } from "@/lib/npc-spawn";
 import { createTalkDispatch } from "@/lib/npc-talk";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
-import { questSetStatus } from "@/lib/quests";
+import { isQuestResolved, questSetStatus } from "@/lib/quests";
 import { IMGS_FLORIST_FEMALE_IDLE } from "@/sprites/florist-female";
 import { IMGS_FLORIST_MALE_IDLE } from "@/sprites/florist-male";
 import gsap from "gsap";
@@ -69,6 +71,7 @@ const INTERACTABLES: Interactable[] = [
 const { respawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 
 const questGardenShears = GAME_STATE.quests.get("garden_shears")!;
+const jpCompanion = createCompanion(GAME_STATE.jp, { followDistance: 1 });
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
@@ -112,6 +115,13 @@ export const flowershopScene: Scene = {
       spriteSize: GAME_STATE.player.boxSize,
     });
 
+    // New companion
+    if (isQuestResolved("invitation_postcard")) {
+      addOnce(INTERACTABLES, GAME_STATE.jp);
+      respawnNPC(GAME_STATE.jp, [spawnLocation[0] - 1, spawnLocation[1]]);
+      GAME_STATE.jp.face("w");
+    }
+
     GAME_STATE.obstacles = [...NPCS];
     GAME_STATE.player.face("w");
     GAME_STATE.movementLocked = false;
@@ -123,6 +133,8 @@ export const flowershopScene: Scene = {
 
     const playerBox = movePlayer(dt);
     checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+
+    jpCompanion.follow(dt, isQuestResolved("invitation_postcard"));
 
     updateInteraction(INTERACTABLES, interactions);
   },

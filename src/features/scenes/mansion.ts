@@ -13,11 +13,13 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
+import { addOnce } from "@/lib/array";
 import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { createCompanion } from "@/lib/companion";
 import { beginCutscene } from "@/lib/cutscene";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
@@ -28,7 +30,7 @@ import { movePlayer } from "@/lib/map-movement";
 import { createNpcSpawner } from "@/lib/npc-spawn";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
-import { questSetStatus, type QuestEntry, type QuestId } from "@/lib/quests";
+import { isQuestResolved, questSetStatus, type QuestEntry, type QuestId } from "@/lib/quests";
 import { walk, type WalkHandle } from "@/lib/walk";
 import { IMGS_BUTLER_IDLE, PORTRAIT_BUTLER } from "@/sprites/butler";
 import {
@@ -180,6 +182,7 @@ placeAtTile(table3, [19.22, 17.4]);
 // ---- Quests / triggers ----
 
 const questDaomingKeys = GAME_STATE.quests.get("daoming_keys")!;
+const jpCompanion = createCompanion(GAME_STATE.jp, { followDistance: 1 });
 
 const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   exit: { onEnter: exitZone },
@@ -229,6 +232,13 @@ export const mansionScene: Scene = {
       BUTLER.face("s");
     }
 
+    // New companion
+    if (isQuestResolved("invitation_postcard")) {
+      addOnce(INTERACTABLES, GAME_STATE.jp);
+      respawnNPC(GAME_STATE.jp, [spawnLocation[0] - 1, spawnLocation[1]]);
+      GAME_STATE.jp.face("w");
+    }
+
     GAME_STATE.obstacles = [...NPCS, ...DECORS]; // blocks walking through any of them, tracking wherever each currently is
 
     GAME_STATE.player.face("w");
@@ -241,6 +251,8 @@ export const mansionScene: Scene = {
 
     const playerBox = movePlayer(dt);
     checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+
+    jpCompanion.follow(dt, isQuestResolved("invitation_postcard"));
 
     updateInteraction(INTERACTABLES, interactions);
   },

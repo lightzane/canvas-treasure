@@ -28,13 +28,21 @@ coordinate — then build a plain `position: fixed` element from that. This is
 fine for anything brief enough that the camera won't have panned
 meaningfully during it, which covers most effects here.
 
-`shine.ts` is the one real exception so far: it's infinite by design (runs
-until `.stop()`), so the camera genuinely can move meaningfully over its
-lifetime. It still stays DOM/CSS + GSAP — just re-reads the target's screen
+`shine.ts` and `exclamation-bubble.ts` are the two exceptions so far — each
+for its own reason, but the same adaptation: re-read the target's screen
 position every frame via `gsap.ticker.add(reposition)` instead of once at
-creation. That's the correct adaptation for a long-running effect; it's not
-license to add a canvas-drawn one — still ask first if a future effect seems
-to need that.
+creation. `shine.ts` is infinite by design (runs until `.stop()`), so the
+_camera_ genuinely can pan meaningfully over its lifetime. `exclamation-
+bubble.ts` is still a short, bounded, disposable effect (same shape as
+everything else here) — but its _target_ can be a followed companion the
+player is free to walk up to mid-stride, so the target itself can move
+enough during that short lifetime to visibly detach from a one-time
+position read. Because its lifetime is already bounded by its own timeline
+(unlike `shine.ts`), it needs no `.stop()` handle — the ticker callback is
+added once at creation and removed in that same timeline's own
+`onComplete`, right alongside the element's own cleanup. Neither is license
+to add a canvas-drawn effect — still ask first if a future one seems to
+need that.
 
 ## Shape every effect follows
 

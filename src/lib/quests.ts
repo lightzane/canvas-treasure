@@ -126,6 +126,12 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
   ],
 ]);
 
+/** Whether a quest is resolved — accepts either its `QuestId` or an already-fetched `QuestEntry`, same two-form support as `questSetStatus` below. A nonexistent id returns `false`. */
+export function isQuestResolved(quest: QuestId | QuestEntry): boolean {
+  const entry = typeof quest === "string" ? GAME_STATE.quests.get(quest) : quest;
+  return entry?.status === "resolved";
+}
+
 /**
  * Changes a quest's status in place — accepts either its `QuestId` (looked
  * up fresh) or the `QuestEntry` itself, for a caller that's already fetched

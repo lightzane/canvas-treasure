@@ -2,7 +2,7 @@ import { RUN_SPEED_BONUS } from "@/constants/game-settings";
 import { isColliding, type Rect } from "@/features/collisions";
 import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
-import type { Position } from "@/features/sprite";
+import type { Position, Sprite } from "@/features/sprite";
 import { bagHasItem } from "@/lib/bag";
 import { getPosSpawnTile } from "@/lib/positioning";
 import { getMoveDelta, isSingleLeg, legTarget, type WalkLeg } from "@/lib/walk-math";
@@ -64,7 +64,7 @@ export function movePlayer(dt: number): Rect {
     const speed = player.moveSpeed + (running ? RUN_SPEED_BONUS : 0);
     const distance = speed * dt;
     const { dx, dy } = getMoveDelta(direction, distance);
-    playerBox = attemptMove(dx, dy);
+    playerBox = attemptMove(player, dx, dy);
   }
 
   followCamera();
@@ -91,40 +91,56 @@ function updateAnimation({ direction, running = false }: UpdateAnimationOptions 
 }
 
 /**
- * Builds the player's attempted box at `(dx, dy)`, blocks it against
- * `GAME_STATE.boundaries` (static) and `GAME_STATE.obstacles` (live sprites
- * — checked by their current `collisionBox` every call, so a moving NPC
- * keeps blocking correctly wherever it actually is), and commits the move
- * if it's clear.
+ * Builds `sprite`'s attempted box at `(dx, dy)`, blocks it against
+ * `GAME_STATE.boundaries` (static), `GAME_STATE.obstacles` (live sprites —
+ * checked by their current `collisionBox` every call, so a moving NPC
+ * keeps blocking correctly wherever it actually is), and `extraObstacles`
+ * (anything to also treat as solid that isn't in `GAME_STATE.obstacles` —
+ * e.g. a follower avoiding the sprite it's following, which isn't itself
+ * an obstacle to the player), and commits the move if it's clear.
  *
- * Both are shared fields, rebuilt fresh by each scene's own `enter()`
- * (`GAME_STATE.boundaries` via `createBoundaries` in `zone.ts`) before
- * gameplay starts there.
+ * `GAME_STATE.boundaries`/`.obstacles` are shared fields, rebuilt fresh by
+ * each scene's own `enter()` (`GAME_STATE.boundaries` via `createBoundaries`
+ * in `zone.ts`) before gameplay starts there — this function itself has no
+ * per-sprite state of its own, so any sprite can call it.
  */
-function attemptMove(dx: number, dy: number): Rect {
-  const player = GAME_STATE.player;
-  const collisionBox = player.collisionBox;
-  const playerBox: Rect = {
+export function attemptMove(
+  sprite: Sprite,
+  dx: number,
+  dy: number,
+  extraObstacles: Sprite[] = [],
+): Rect {
+  const collisionBox = sprite.collisionBox;
+  const box: Rect = {
     width: collisionBox.width,
     height: collisionBox.height,
     position: {
-      // the player is visually fixed, so test with inversed delta
+      // the sprite is visually fixed, so test with inversed delta
       x: collisionBox.position.x + dx,
       y: collisionBox.position.y + dy,
     },
   };
 
+  // o !== sprite: a sprite is never an obstacle to its own movement. Never
+  // mattered for the player (never in GAME_STATE.obstacles), but matters
+  // now that attemptMove is shared — an NPC can be both the thing moving
+  // AND something else's obstacle (e.g. followSprite moving an NPC that's
+  // also set as GAME_STATE.obstacles so the player can't walk through it).
+  // Without this, that sprite's own not-yet-moved box always overlaps its
+  // own attempted (barely-shifted) one, reading as permanently blocked.
   const blocked =
-    GAME_STATE.boundaries.some((b) => isColliding(playerBox, b)) ||
-    GAME_STATE.obstacles.some((o) => isColliding(playerBox, o.collisionBox));
+    GAME_STATE.boundaries.some((b) => isColliding(box, b)) ||
+    GAME_STATE.obstacles.some((o) => o !== sprite && isColliding(box, o.collisionBox)) ||
+    extraObstacles.some((o) => o !== sprite && isColliding(box, o.collisionBox));
+
   if (!blocked) {
-    player.position = {
-      x: player.position.x + dx,
-      y: player.position.y + dy,
+    sprite.position = {
+      x: sprite.position.x + dx,
+      y: sprite.position.y + dy,
     };
   }
 
-  return playerBox;
+  return box;
 }
 
 /** Re-centers the camera on `GAME_STATE.cameraTarget` (or the player, if that's `null`) — a no-op while `GAME_STATE.cameraFollow` is `false`, e.g. after `setCameraToTile`, so the manual placement isn't immediately overwritten next frame. */

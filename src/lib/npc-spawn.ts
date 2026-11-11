@@ -45,3 +45,22 @@ export function createNpcSpawner(npcs: PlayerSprite[], interactables: Interactab
     },
   };
 }
+
+/**
+ * Places `companion` at `tile` and marks it present in this scene: added
+ * to `GAME_STATE.obstacles` (can't walk through it) and to `interactables`
+ * (can be talked to). Unlike `respawnNPC`, works without a
+ * `createNpcSpawner` instance — not every scene has one set up — so call
+ * this from any scene's own `enter()`, wherever the player's own spawn
+ * tile is decided, to place a permanent companion (e.g. jp) right where
+ * the player enters.
+ */
+export function spawnCompanion(
+  companion: PlayerSprite,
+  tile: [number, number],
+  interactables: Interactable[],
+): void {
+  placeAtTile({ sprite: companion, tile });
+  addOnce(GAME_STATE.obstacles, companion);
+  addOnce(interactables, companion);
+}

@@ -20,6 +20,7 @@ import {
   checkTriggerZones,
   createBoundaries,
   createTriggerZones,
+  isInsideZone,
   type TriggerHandlers,
 } from "@/features/zone";
 import { addOnce, remove } from "@/lib/array";
@@ -37,6 +38,7 @@ import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { createCompanion } from "@/lib/companion";
 import { birthdayConfetti } from "@/lib/confetti";
 import { beginCutscene } from "@/lib/cutscene";
 import { drift } from "@/lib/drift";
@@ -58,7 +60,12 @@ import { createNpcSpawner } from "@/lib/npc-spawn";
 import { placeAtTile } from "@/lib/positioning";
 import { BIRTHDAY_POSTCARD_SRC } from "@/lib/postcard-sticker";
 import { preload } from "@/lib/preload";
-import { questIncreaseProgress, questSetProgress, questSetStatus } from "@/lib/quests";
+import {
+  isQuestResolved,
+  questIncreaseProgress,
+  questSetProgress,
+  questSetStatus,
+} from "@/lib/quests";
 import { createReadDispatch } from "@/lib/read-message";
 import { walk } from "@/lib/walk";
 import { IMGS_AANG_MOMO_IDLE } from "@/sprites/aang-momo";
@@ -660,12 +667,6 @@ const HUAZELEI_INTERACTABLE: Interactable = huazelei;
 const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 let paperWindAnimating = false;
 
-// Incremented/decremented by the "sand" trigger below, not a plain boolean —
-// several same-named "sand" rectangles approximate one irregular beach
-// shape (see triggers/overworld.ts), so this is the count of how many of
-// them the player is currently inside, with ">0" meaning "on sand" overall.
-let sandZoneCount = 0;
-
 let tracingPaper2ShineHandle: EffectHandle | undefined;
 let coreMsgBottleShineHandle: EffectHandle | undefined;
 let jpShineHandle: EffectHandle | undefined;
@@ -727,14 +728,11 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   sound_park: { onEnter: () => soundPark() },
   sound_park_exit: { onEnter: () => soundPark(false) },
   sound_teashop: { onEnter: () => soundTeashop() },
-  sand: {
-    onEnter: () => sandZoneCount++,
-    onLeave: () => sandZoneCount--,
-  },
 };
 
 const quests = GAME_STATE.quests;
 const questMain = quests.get("invitation_postcard")!;
+const jpCompanion = createCompanion(jp, { followDistance: 1 });
 const questCatchSheets = quests.get("catch_sheets")!;
 const questRunningShoes = quests.get("running_shoes")!;
 const questMessageBottle = quests.get("message_in_bottle")!;
@@ -1007,7 +1005,6 @@ export const overworldScene: Scene = {
       if (!nearTeashop) audioPlayMusic("overworld", { seek: 0, fade: 2, volume: VOLUME_MAIN_BG });
     });
 
-    sandZoneCount = 0; // fresh trigger-zone instances below all start un-entered — stay in sync regardless of leftover state from a previous visit
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(overworldScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
@@ -1033,7 +1030,7 @@ export const overworldScene: Scene = {
     // torn down by closingRemarks()). Not during: initMainEvent() (called
     // from initQuests(), below) layers BOUNDARIES_MAIN_EVENT on top instead
     // for that window, and nothing here must also be active then.
-    if (questDaoMingKeys.status !== "resolved" || questMain.status === "resolved") {
+    if (questDaoMingKeys.status !== "resolved" || isQuestResolved(questMain)) {
       BOUNDARIES_PARK_NORMAL.forEach((b) => addOnce(GAME_STATE.boundaries, b));
     }
     GAME_STATE.triggerZones = createTriggerZones(TRIGGER_OVERWORLD);
@@ -1066,6 +1063,13 @@ export const overworldScene: Scene = {
       spawnMamaAtOverworld();
     }
 
+    // New companion
+    if (isQuestResolved(questMain)) {
+      addOnce(INTERACTABLES, jp);
+      respawnNPC(jp, [spawnTile[0] - 1, spawnTile[1]]);
+      jp.face("s");
+    }
+
     initQuests();
     // DECORS may have just changed inside initQuests() (e.g. a quest-gated
     // prop toggling on/off this same visit) — filtering OBSTACLE_DECORS
@@ -1079,7 +1083,9 @@ export const overworldScene: Scene = {
 
   update(dt) {
     DECORS.filter(isInViewport).forEach((sprite) => sprite.update(dt));
-    NPCS.filter(isInViewport).forEach((n) => n.update(dt));
+    NPCS.filter(isInViewport)
+      .filter((npc) => npc !== jp) // handled by followSprite
+      .forEach((n) => n.update(dt));
 
     if (paperWindAnimating) paperWind1.update(dt);
     // if (GAME_STATE.sceneElapsed === 0) audioPlayMusic("map");
@@ -1087,8 +1093,12 @@ export const overworldScene: Scene = {
     const playerBox = movePlayer(dt);
     checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
 
+    const jpActive = isQuestResolved(questMain);
+    jpCompanion.follow(dt, jpActive);
+    if (jpActive) trackFootstep(jp, isInsideZone("sand", jp.collisionBox, GAME_STATE.triggerZones));
+
     updateFootprints(dt);
-    trackFootstep(player, sandZoneCount > 0);
+    trackFootstep(player, isInsideZone("sand", playerBox, GAME_STATE.triggerZones));
     updateInteraction(INTERACTABLES, interactions);
   },
 
@@ -1121,7 +1131,7 @@ export const overworldScene: Scene = {
 function initQuests() {
   // Main event's already been torn down once, by closingRemarks() itself,
   // right as it happened — nothing left to do on any later re-entry.
-  if (questMain.status === "resolved") return;
+  if (isQuestResolved(questMain)) return;
 
   // Season 1:
   initQuestsDaomingsi();
@@ -1316,6 +1326,9 @@ function interactions(target: Sprite | undefined) {
   });
 
   switch (target) {
+    case jp:
+      interactJp();
+      break;
     case GAME_STATE.papa:
       interactPapa();
       break;
@@ -1379,6 +1392,15 @@ function interactions(target: Sprite | undefined) {
     }
     return;
   }
+}
+
+function interactJp() {
+  DIALOGUE.effect(() => {
+    beginCutscene();
+    playExclamation(jp, { glyph: "😎", hold: 3 });
+  }, 0.00001);
+  DIALOGUE.queue({ text: `JP: Leeeet's gooo Love! Saan tayo?`, color: "blue" });
+  DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
 }
 
 function interactPapa() {
@@ -2365,7 +2387,7 @@ function cutsceneMarket() {
 }
 
 function cutsceneMidAisle() {
-  if (GAME_STATE.sequence.mid_aisle_cutscene && questMain.status !== "resolved")
+  if (GAME_STATE.sequence.mid_aisle_cutscene && !isQuestResolved(questMain))
     player.moveSpeed = MAIN_EVENT_PLAYER_MOVESPEED;
   if (
     questDaoMingKeys.status !== "resolved" ||
@@ -3054,6 +3076,7 @@ function closingRemarks() {
         audioStopAmbience(undefined, 5);
         gsap.delayedCall(overworldScene.fadeOut! + 0.5, () => iris.stop());
         GAME_STATE.player.moveSpeed = 200; // restore
+        GAME_STATE.jp.moveSpeed = 200; // restore
         GAME_STATE.allowRunning = true; // restore
         GAME_STATE.sceneName = "home";
         // reset npcs
@@ -3068,7 +3091,7 @@ function closingRemarks() {
 
 /** One-time teardown of everything spawned only for the main event — called once, directly by closingRemarks(), not re-run on every later re-entry. */
 function cleanupMainEvent() {
-  if (questMain.status !== "resolved") return;
+  if (!isQuestResolved(questMain)) return;
   const cleanupNpcs = [...f4, ...AISLE_GUARDS, ...PARK_EVENT_GUARDS];
   cleanupNpcs.forEach((npc) => despawnNPC(npc));
   respawnNPC(GAME_STATE.papa, [63, 39]);
@@ -3160,6 +3183,7 @@ function initMainEvent() {
   addOnce(GAME_STATE.obstacles, chestEmpty);
   BOUNDARIES_MAIN_EVENT.forEach((b) => addOnce(GAME_STATE.boundaries, b));
 
+  jp.moveSpeed = 50;
   huazelei.moveSpeed = 50;
   daomingsi.moveSpeed = 50;
   meizuo.moveSpeed = 50;
@@ -3285,7 +3309,7 @@ function f4Speaker(speaker: "daomingsi" | "huazelei" | "meizuo" | "ximen", messa
 }
 
 function restrictRun(restricted = true) {
-  if (questMain.status === "resolved") return;
+  if (isQuestResolved(questMain)) return;
   if (questDaoMingKeys.status !== "resolved") return;
 
   if (restricted) {
@@ -3300,7 +3324,7 @@ function restrictRun(restricted = true) {
 }
 
 function restrictMidAisleExit() {
-  if (!GAME_STATE.sequence.mid_aisle_cutscene || questMain.status === "resolved") return;
+  if (!GAME_STATE.sequence.mid_aisle_cutscene || isQuestResolved(questMain)) return;
 
   DIALOGUE.effect(beginCutscene, 0.00000000000001);
 

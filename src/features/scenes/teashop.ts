@@ -11,11 +11,13 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
+import { addOnce } from "@/lib/array";
 import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
 import { drawSpriteClipped } from "@/lib/canvas/sprite-clip";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
+import { createCompanion } from "@/lib/companion";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
@@ -23,6 +25,7 @@ import { createNpcSpawner } from "@/lib/npc-spawn";
 import { createTalkDispatch } from "@/lib/npc-talk";
 import { placeAtTile } from "@/lib/positioning";
 import { preload } from "@/lib/preload";
+import { isQuestResolved } from "@/lib/quests";
 import { IMGS_ADULT_MALE_1_IDLE } from "@/sprites/adult-male-1";
 import { IMGS_BEACH_OUTFIT_FEMALE_2_IDLE } from "@/sprites/beach-outfit-female-2";
 import { IMGS_BEACH_OUTFIT_MALE_1_IDLE } from "@/sprites/beach-outfit-male-1";
@@ -77,6 +80,8 @@ const INTERACTABLES: Interactable[] = [
 const { respawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 const { respawnNPC: respawnNPCFG } = createNpcSpawner(NPCS_DINING, INTERACTABLES_DINING);
 
+const jpCompanion = createCompanion(GAME_STATE.jp, { followDistance: 1 });
+
 respawnNPC(npcExampleMale, [11, 5]);
 respawnNPC(npcExampleFemale, [12, 5]);
 npcExampleMale.face("w");
@@ -123,6 +128,13 @@ export const teashopScene: Scene = {
       spriteSize: GAME_STATE.player.boxSize,
     });
 
+    // New companion
+    if (isQuestResolved("invitation_postcard")) {
+      addOnce(INTERACTABLES, GAME_STATE.jp);
+      respawnNPC(GAME_STATE.jp, [spawnLocation[0] - 1, spawnLocation[1]]);
+      GAME_STATE.jp.face("w");
+    }
+
     GAME_STATE.obstacles = [...NPCS];
     GAME_STATE.player.face("w");
     GAME_STATE.movementLocked = false;
@@ -134,6 +146,8 @@ export const teashopScene: Scene = {
 
     const playerBox = movePlayer(dt);
     checkTriggerZones(playerBox, GAME_STATE.triggerZones, TRIGGER_HANDLERS);
+
+    jpCompanion.follow(dt, isQuestResolved("invitation_postcard"));
 
     updateInteraction(INTERACTABLES, interactions);
   },

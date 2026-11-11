@@ -40,9 +40,18 @@ export interface ExclamationBubbleOptions {
  * a glyph (or an image, via `icon`) that pops in above `target`'s head,
  * holds briefly, then fades out and removes itself. Pure DOM/CSS, same
  * spirit as the other effects in this folder: no canvas drawing, no scene
- * wiring — the sprite's on-screen position is read once at the moment this
- * is called (fine for a cue this brief) via the same canvas-rect trick
- * `iris-reveal.ts` uses.
+ * wiring.
+ *
+ * Unlike most effects here, `target`'s on-screen position is re-read every
+ * frame via `gsap.ticker` (same adaptation `shine.ts` uses for its own
+ * infinite lifetime), not once at creation — this one's lifetime is short
+ * (~1.25s total) but not necessarily *stationary*: `target` can keep
+ * walking right through it (e.g. a followed companion the player can talk
+ * to mid-stride), and the "read once" shortcut only holds when the target
+ * won't have moved meaningfully before this removes itself. No handle to
+ * keep/`.stop()` though, unlike `shine.ts` — this one's lifetime is
+ * already bounded by its own timeline, so the ticker cleans itself up in
+ * that timeline's own `onComplete`.
  *
  * @example playExclamation(GAME_STATE.mama);
  * @example playExclamation(GAME_STATE.mama, { hold: 1, fill: "#ffe066" });
@@ -68,15 +77,8 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
     return;
   }
 
-  const canvasRect = document.getElementById("treasure")?.getBoundingClientRect();
-  const local = toScreen(target.position); // position within the canvas's own coordinate space
-  const anchorX = (canvasRect?.left ?? 0) + local.x + target.boxSize.width / 2;
-  const anchorY = (canvasRect?.top ?? 0) + local.y - margin;
-
   const el = document.createElement("div");
   el.className = "game-effect-overlay font-game";
-  el.style.left = `${anchorX}px`;
-  el.style.top = `${anchorY}px`;
   el.style.width = `${size}px`;
   el.style.height = `${size}px`;
   el.style.display = "flex";
@@ -119,6 +121,15 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
     el.appendChild(span);
   }
 
+  const reposition = () => {
+    const canvasRect = document.getElementById("treasure")?.getBoundingClientRect();
+    const local = toScreen(target.position); // position within the canvas's own coordinate space
+    el.style.left = `${(canvasRect?.left ?? 0) + local.x + target.boxSize.width / 2}px`;
+    el.style.top = `${(canvasRect?.top ?? 0) + local.y - margin}px`;
+  };
+  reposition(); // set before the first paint, same as before — no flash at the wrong spot
+  gsap.ticker.add(reposition);
+
   document.body.appendChild(el);
 
   const state = { scale: 0, opacity: 1 };
@@ -131,6 +142,7 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
   gsap
     .timeline({
       onComplete: () => {
+        gsap.ticker.remove(reposition);
         el.remove();
         onComplete?.();
       },
