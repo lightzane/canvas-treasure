@@ -882,8 +882,8 @@ const npcFloristFemale1 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMAL
 // Then call that function once in module-level and at the end of the event (never in scene.enter)
 function spawnOverworldNpcs() {
   // 2 people near house
-  respawnNPC(npcAdultFemale4, [66.55, 48]);
-  respawnNPC(npcAdultMale2, [66.5, 49.5]);
+  respawnNPC(npcAdultFemale4, [66.55, 48 + 3]);
+  respawnNPC(npcAdultMale2, [66.5, 49.5 + 3]);
   // 2 people south of house (yellow roof)
   respawnNPC(npcAdultMale3, [55, 61]);
   respawnNPC(npcTeenGirl1, [54.15, 62]);
@@ -905,7 +905,6 @@ function spawnOverworldNpcs() {
   respawnNPC(npcTeenGirl2, [61.75, 91]);
   // 4 people on the beach blocking path to the avatar
   respawnNPC(npcBeachFemale1, [11.25, 55.5]);
-  respawnNPC(npcBeachMale2, [9.25, 57.5]);
   respawnNPC(npcBeachFemale2, [10.25, 57.5]);
 
   npcAdultFemale4.face("s");
@@ -940,6 +939,7 @@ function spawnOverworldNpcs() {
   npcSokka.face("d");
   npcToph.face("a");
 
+  respawnNPC(npcBeachMale2, [9.25, 57.5]);
   respawnNPC(npcBeachMale1, [6.5, 55]);
   npcBeachMale1.face("a");
 
@@ -999,6 +999,12 @@ function spawnHeartGardenNpcs() {
 // already-spawned sprite (respawnNPC above already handled it — this just
 // wires up its line + interactable registration); an object entry is a
 // brand-new NPC, spawned/obstacled/interactable here too.
+// Override before createNpcMessages() registers their tuple entries below —
+// its own addOnce(interactables, sprite) call would otherwise win with the
+// facePlayer:true default, since a bare sprite is added either way.
+addOnce(INTERACTABLES, { sprite: npcBeachFemale1, facePlayer: false });
+addOnce(INTERACTABLES, { sprite: npcBeachFemale2, facePlayer: false });
+
 const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
   [
     npcAdultFemale4,
@@ -1017,6 +1023,78 @@ const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
     npcAdultMale2,
     "m",
     "Ang tao, kahit gaano mapag-isa, maaaring hindi niya lang nahahanap pa ang taong gusto niya kasama sa buhay na comfortable siya.",
+  ],
+  [
+    npcAdultMale3,
+    "m",
+    "Mahilig ako mag-exercise upang mapanatiling malakas at malusog at ating mga katawan!",
+  ],
+  [
+    npcTeenGirl1,
+    "f",
+    "Matatawag ko rin na responsable si Ama sapagkat siya ay nananatiling malakas at malusog!",
+  ],
+  [
+    npcAdultMale4,
+    "m",
+    `Gumagamit ako ng GARDEN SHEARS para malinis tingnan ang mga bakod na halaman.`,
+    () => DIALOGUE.queue(`Kapag hindi gin-trim, makikita mo parang gubat sa kabilang bahay.`),
+  ],
+  [npcAdultMale4, "m", "Ang sarap mabuhay dito at simple lamang ang mabuhay!"],
+  [
+    npcAdultFemale2,
+    "f",
+    "d",
+    "Oy mars, nabalitaan ko, pagkatapos daw ng event mamaya, yung F4 pupunta sa beach!",
+  ],
+  [npcAdultFemale3, "f", "a", "Ako naman nabalitaan ko na namataan daw ang Avatar sa beach!"],
+  [npcAdultFemale1, "f", "a", "Ang sarap tingnan ng beach lalo na kung tahimik ang alon ng tubig."],
+  [
+    npcAdultFemale5,
+    "f",
+    "s",
+    "Nagtatanim ako dahil sapat na ito sa kabuhayan namin at stress-free!",
+  ],
+  [
+    npcTeenGirl3,
+    "f",
+    "a",
+    "Tama si inay na simple lang ang mamuhay, at meron rin ako napuulot na maganda lesson sa mga messages in a bottle sa beach!",
+  ],
+  [
+    npcTeenBoy2,
+    "m",
+    "d",
+    `
+    Si mama mahilig mag window shopping, 
+    at literal na nandito lang kami ganito
+    kalayo ang tingin sa market.
+    Pero sa totoo lang, inaabangan niya sila MEIZUO at XIMEN.
+    `,
+  ],
+  {
+    idleSprites: IMGS_ADULT_FEMALE_1_IDLE,
+    tile: [98.5, 67.25],
+    face: "s",
+    gender: "f",
+    direction: "s",
+    message: `Nagwiwindow shopping lang kami ng anak ko sa market.`,
+  },
+  [
+    npcTeenGirl2,
+    "f",
+    "s",
+    "Idol ko si lolo at lola na magkasama pa rin hanggang ngayon at nagbobonding everyday!",
+  ],
+  [
+    npcBeachFemale1,
+    "f",
+    "Super sarap dito magpahinga at humiga! Maganda na pwesto ko ayaw ko na kumilos pa muna.",
+  ],
+  [
+    npcBeachFemale2,
+    "f",
+    "Ang gusto ko sa buhay ay makasama ng ganitong moment palagi ang mahal ko.w",
   ],
   {
     idleSprites: IMGS_ELDER_MAN_IDLE,
