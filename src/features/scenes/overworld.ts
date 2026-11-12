@@ -649,20 +649,15 @@ const npcFloristHeart = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMALE_
 const npcElderManHeart = new PlayerSprite({ sprites: { idle: IMGS_ELDER_MAN_IDLE } });
 const npcElderWomanHeart = new PlayerSprite({ sprites: { idle: IMGS_ELDER_WOMAN_IDLE } });
 
-// TODO: this cutscene
-// function someCutscene() {
-//   beginCutscene();
-//   jpFollowPaused = true;
-//   walk(player, [x1, y1]);
-//   walk(jp, [x2, y2], {
-//     onComplete: () => {
-//       // ...rest of the cutscene...
-//       gsap.delayedCall(someDelay, () => {
-//         jpFollowPaused = false; // following resumes right where jp was left standing
-//       });
-//     },
-//   });
-// }
+/**
+ * Pauses jp's companion-follow for a scripted walk() — folded directly into
+ * jpActive (see update()), so the NPCS-exclusion-filter and
+ * jpCompanion.follow() keep reading that one single source of truth instead
+ * of each needing their own check. Set true right before walk()-ing jp
+ * somewhere specific; false once follow should resume from wherever jp was
+ * left standing.
+ */
+let jpFollowPaused = false;
 
 const wildBushInteractablesCfgs: Partial<Interactable> = {
   label: "Interact",
@@ -717,6 +712,7 @@ const HUAZELEI_INTERACTABLE: Interactable = huazelei;
 const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
 let paperWindAnimating = false;
 
+let fxCherryBlossomsHandle: EffectHandle | undefined;
 let tracingPaper2ShineHandle: EffectHandle | undefined;
 let coreMsgBottleShineHandle: EffectHandle | undefined;
 let jpShineHandle: EffectHandle | undefined;
@@ -980,8 +976,10 @@ function spawnHeartGardenNpcs() {
   npcFloristHeart.face("s");
 
   const atCenter = !isFlowerGardenAvailable;
-  respawnNPC(npcElderWomanHeart, atCenter ? [40.25, 24] : [41, 19]);
-  respawnNPC(npcElderManHeart, atCenter ? [40.85, 24] : [40, 19]);
+  // respawnNPC(npcElderWomanHeart, atCenter ? [40.25, 24] : [41, 19]);
+  // respawnNPC(npcElderManHeart, atCenter ? [40.85, 24] : [40, 19]);
+  respawnNPC(npcElderWomanHeart, atCenter ? [40.25, 24] : [44.25, 31.7]);
+  respawnNPC(npcElderManHeart, atCenter ? [40.85, 24] : [44.85, 31.7]);
   npcElderManHeart.face(atCenter ? "a" : "s");
   npcElderWomanHeart.face(atCenter ? "d" : "s");
 
@@ -1203,7 +1201,7 @@ export const overworldScene: Scene = {
   update(dt) {
     DECORS.filter(isInViewport).forEach((sprite) => sprite.update(dt));
 
-    const jpActive = isQuestResolved(questMain);
+    const jpActive = isQuestResolved(questMain) && !jpFollowPaused;
     // jp is only excluded here once jpActive — otherwise followSprite()
     // never runs (it's a no-op while inactive), so nothing would ever call
     // jp.update(dt) at all: any scripted walk() on jp before questMain
@@ -1279,6 +1277,11 @@ function initMainQuests() {
 // future one (unlike initMainQuests' own contents) doesn't need to care
 // about, or get bailed out by, questMain's own resolved/not-resolved state.
 function initSideQuests() {
+  // Resets here only — not inside spawnHeartGardenNpcs() itself, since
+  // interactFloristHeart() also calls that one directly, right after
+  // setting isFlowerGardenAvailable = true to step the couple aside
+  // immediately. A reset inside the shared function would undo that same call.
+  isFlowerGardenAvailable = false;
   spawnHeartGardenNpcs();
 }
 
@@ -3210,13 +3213,13 @@ function cutsceneMainQuestReveal() {
     playImagePreview(PHOTO_TREASURE, {
       hold: 5,
       onComplete() {
-        playImagePreview(PHOTO_TREASURE_CLOSEUP, { hold: 10, onComplete: closingRemarks });
+        playImagePreview(PHOTO_TREASURE_CLOSEUP, { hold: 10, onComplete: cutsceneClosingRemarks });
       },
     });
   };
 }
 
-function closingRemarks() {
+function cutsceneClosingRemarks() {
   DIALOGUE.effect(() => {
     playExclamation(player, { icon: ICON_RED_HEART, hold: 2 });
     playExclamation(jp, { icon: ICON_RED_HEART, hold: 2 });
@@ -3320,12 +3323,87 @@ function interactFloristHeart() {
   if (!isQuestResolved(questMain)) return;
 
   DIALOGUE.queue(`FLORIST: Sandali... kasama mo pala ang mahal mo ngayon?`);
+  DIALOGUE.effect(() => gsap.delayedCall(0.5, () => playExclamation(jp)));
   DIALOGUE.queue(
     `FLORIST: Ang sweet niyo! Bakit hindi niyo puntahan ang flower garden? Doon pa rin kami nagtatanim ng pinakamagandang bulaklak.`,
   );
 
   isFlowerGardenAvailable = true;
   spawnHeartGardenNpcs(); // right away — don't wait for the next scene re-entry to move the elder couple
+
+  jpFollowPaused = true;
+  const scoutWalk = walk(jp, [46, 46], {
+    onComplete() {
+      jp.face("a");
+    },
+  });
+
+  walk(player, [45.25, 46], { onComplete: () => player.face("w") });
+
+  // beginCutscene() isn't needed here — talkCommonF (via npcMessagesInteractions)
+  // already locked movement before this function even ran.
+  DIALOGUE.onComplete = () => {
+    GAME_STATE.movementLocked = true;
+    scoutWalk?.stop(); // in case jp's still mid-scout-walk once the florist's lines wrap up first
+    DIALOGUE.effect(() => {
+      playExclamation(jp);
+      playAttentionBounce(jp);
+      player.face("d");
+    });
+    DIALOGUE.show({
+      text: "JP: Alam ko kung saan iyan...",
+      color: "blue",
+    });
+    DIALOGUE.effect(() => walk(player, [45.5, 46]));
+    DIALOGUE.queue(`I'll lead the way love love!`);
+    DIALOGUE.effect(() => {
+      playExclamation(player, { icon: ICON_RED_HEART, hold: 8 });
+      gsap.delayedCall(5, () => {
+        fxCherryBlossomsHandle = playCherryBlossoms({ duration: 60 * 60 * 24 * 2 });
+      });
+      gsap.delayedCall(6.5, () => playExclamation(player));
+
+      // side-by-side -> up -> turn left, onto their final spots
+      walk(
+        player,
+        [
+          [47.5, 46],
+          [47.5, 24],
+          [40, 24],
+        ],
+        { onComplete: onArrive },
+      );
+      walk(
+        jp,
+        [
+          [48, 45.85],
+          [48, 24],
+          [41, 24],
+        ],
+        { onComplete: onArrive },
+      );
+
+      let arrived = 0;
+      function onArrive() {
+        beginCutscene();
+        if (++arrived < 2) return;
+
+        faceDirection(player, jp);
+        faceDirection(jp, player);
+
+        jpFollowPaused = false; // resumes right where jp was left standing
+        sideCutsceneFlowerGarden();
+      }
+
+      // Same reasoning as cutsceneFlowerGarden() used to have — this effect
+      // is the only thing queued, so right after it fires, DIALOGUE's own
+      // queue-empty pullPending() would force-unlock movement well before
+      // either walk() actually finishes. Re-lock immediately, same tick.
+      DIALOGUE.onComplete = () => {
+        GAME_STATE.movementLocked = true;
+      };
+    }, 0.00001);
+  };
 }
 
 function interactGoldenWed(target: Sprite | undefined) {
@@ -3713,4 +3791,16 @@ function mainEventGuestExpressions(glyphInput?: string, color?: string) {
       });
     });
   });
+}
+
+// ==============================================
+// Cutscenes not part of Main Quests...
+// ==============================================
+function sideCutsceneFlowerGarden() {
+  DIALOGUE.show({ text: "JP: Love Love...", color: "blue" });
+  DIALOGUE.onComplete = () => {
+    hudSetBagIconVisible(true);
+    jpFollowPaused = false;
+    fxCherryBlossomsHandle?.stop();
+  };
 }

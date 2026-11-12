@@ -21,7 +21,8 @@ export type TriggerName =
   | "cutscene_running_shoes"
   | "cutscene_mid_aisle"
   | "cutscene_mid_aisle_lei"
-  | "cutscene_mid_aisle_jp";
+  | "cutscene_mid_aisle_jp"
+  | "cutscene_flower_garden";
 
 // prettier-ignore
 export const TRIGGER_OVERWORLD = scaleTiledObjects([
@@ -57,7 +58,7 @@ export const TRIGGER_OVERWORLD = scaleTiledObjects([
   { name: "sand", x: 1628.05, y: 2617.35, width: 278.273, height: 350.564 },
   { name: "sand", x: 1756.26, y: 2439.45, width: 150.271, height: 186.935 },
   { name: "sand", x: 1632.33, y: 2443.58, width: 128.066, height: 88.3036 },
-  { name: "sound_fountain", x: 2508.44, y: 616.643, width: 544.845, height: 329.469 },
+  { name: "sound_fountain", x: 2447.64972644377, y: 588.527498480243, width: 682.382993920973, height: 357.584501519757 },
   { name: "sound_fountain", x: 2815.1, y: 2333.38, width: 351.895, height: 321.229 },
   { name: "sound_fountain", x: 2465.13605141945, y: 1528.62203716941, width: 314.711798976188, height: 328.376962830593 },
   { name: "sound_fountain", x: 3259.04081162364, y: 1528.69148503529, width: 317.071216986411, height: 328.376962830593 },
@@ -90,4 +91,5 @@ export const TRIGGER_OVERWORLD = scaleTiledObjects([
   { name: "cutscene_mid_aisle", x: 2975.87, y: 1611.21, width: 96, height: 33 },
   { name: "cutscene_mid_aisle_lei", x: 2975.87, y: 1529.21, width: 96, height: 33 },
   { name: "cutscene_mid_aisle_jp", x: 2975.87, y: 1503.21, width: 96, height: 33 },
+  { name: "cutscene_flower_garden", x: 1232.56424227205, y: 720.450779104853, width: 160, height: 160 },
 ]);

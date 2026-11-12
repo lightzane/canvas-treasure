@@ -90,15 +90,33 @@ export function walk(
     const dx = target.x - from.x;
     const dy = target.y - from.y;
     const distance = Math.hypot(dx, dy);
+    // A real copy, not an alias — `from` IS `npc.position` for the first
+    // leg, and onUpdate below writes to npc.position every tick. Aliasing
+    // start to the same object it's writing into would make each tick's
+    // "starting point" silently drift to the previous tick's result,
+    // compounding the delta instead of staying relative to the true start.
+    const start = { x: from.x, y: from.y };
 
-    timeline.to(npc.position, {
-      x: target.x,
-      y: target.y,
+    // Tweens a plain 0->1 progress value, not npc.position directly — if
+    // npc.position gets reassigned to a new object mid-walk (e.g.
+    // attemptMove's own `sprite.position = {...}`, not a mutation), a direct
+    // `timeline.to(npc.position, {...})` would keep animating that old,
+    // now-orphaned object forever: gsap still reaches its own onComplete
+    // right on schedule, but nothing ever visibly moves again. onUpdate
+    // re-reads npc.position fresh every tick instead, so it keeps writing
+    // to whichever object is actually live.
+    const progress = { t: 0 };
+    timeline.to(progress, {
+      t: 1,
       duration: distance / npc.moveSpeed,
       ease: "none", // constant speed, matching normal movement — not an eased cutscene glide
       onStart: () => {
         npc.face(directionTo(dx, dy));
         if (animated) npc.play("walk");
+      },
+      onUpdate: () => {
+        npc.position.x = start.x + dx * progress.t;
+        npc.position.y = start.y + dy * progress.t;
       },
     });
 
