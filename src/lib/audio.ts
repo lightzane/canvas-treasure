@@ -73,6 +73,7 @@ export type MusicKey =
   | "sky_manta"
   | "a_guitar_rock"
   | "jazz"
+  | "house_huazelei"
   | "amb_beach"
   | "amb_shopping_crowd"
   | "amb_water_flowing"
@@ -191,6 +192,7 @@ const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   sky_manta: "sky-manta.mp3",
   a_guitar_rock: "mixkit-ko-1068.mp3",
   jazz: "jazz.mp3",
+  house_huazelei: "最特別的存在.mp3",
   amb_beach: "ambience/mixkit-small-waves-harbor-rocks-1208.wav",
   amb_shopping_crowd: "ambience/mixkit-shopping-center-crowd-377.wav",
   amb_water_flowing: "ambience/mixkit-water-flowing-ambience-loop-3126.wav",

@@ -8,6 +8,7 @@ export type TriggerName =
   | "enter_flowershop"
   | "enter_mansion"
   | "enter_home"
+  | "enter_house_huazelei"
   | "enter_teashop"
   | "sand"
   | "sound_fountain"
@@ -33,6 +34,7 @@ export const TRIGGER_OVERWORLD = scaleTiledObjects([
   { name: "enter_flowershop", x: 1204.81, y: 1315.27, width: 33, height: 40.5487 },
   { name: "enter_mansion", x: 2764.5, y: 474.5, width: 38, height: 47.5 },
   { name: "enter_home", x: 1884, y: 1290.23, width: 33, height: 40.5487 },
+  { name: "enter_house_huazelei", x: 1860.14097276662, y: 799.074882238658, width: 33, height: 54.182429847643 },
   { name: "enter_teashop", x: 4015.83718209946, y: 1895.43012513395, width: 33, height: 40.5487 },
   { name: "sand", x: 331.451, y: 2351.79, width: 450.325, height: 453.89 },
   { name: "sand", x: 782.496, y: 2381.73, width: 226.631, height: 423.771 },

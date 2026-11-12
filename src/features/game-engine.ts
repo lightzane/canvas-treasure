@@ -4,6 +4,7 @@ import { GAME_STATE } from "@/features/game-state";
 import type { Scene, SceneEvent, SceneName } from "@/features/scene";
 import { flowershopScene } from "@/features/scenes/flowershop";
 import { homeScene } from "@/features/scenes/home";
+import { houseHuazeleiScene } from "@/features/scenes/house-huazelei";
 import { mansionScene } from "@/features/scenes/mansion";
 import { overworldScene } from "@/features/scenes/overworld";
 import { teashopScene } from "@/features/scenes/teashop";
@@ -18,6 +19,7 @@ const SCENES: Record<SceneName, Scene> = {
   overworld: overworldScene,
   flowershop: flowershopScene,
   teashop: teashopScene,
+  house_huazelei: houseHuazeleiScene,
 };
 
 // Caps how much game time a single frame can advance. Without this, any stall

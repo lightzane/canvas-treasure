@@ -108,9 +108,9 @@ COL_B.forEach((npc) => npc.face("a"));
 
 // ---- Decor / furniture ----
 
-const IMG_BEIGE_CHAIR_WEST = img("others/beige-chair-west.png");
-const IMG_BEIGE_CHAIR_EAST = img("others/beige-chair-east.png");
-const IMG_BEIGE_SOFA_SOUTH = img("others/beige-sofa-south.png");
+const IMG_BEIGE_CHAIR_WEST = img("others/chair-beige-west.png");
+const IMG_BEIGE_CHAIR_EAST = img("others/chair-beige-east.png");
+const IMG_BEIGE_SOFA_SOUTH = img("others/sofa-beige-south.png");
 const IMG_TABLE_FLOWER_BOOK_COFFEE = img("others/table-flower-book-coffee.png");
 const IMG_TABLE_FLOWER_BOOK = img("others/table-flower-book.png");
 

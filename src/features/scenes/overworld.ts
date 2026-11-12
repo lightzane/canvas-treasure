@@ -760,6 +760,12 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
       exitMap();
     },
   },
+  enter_house_huazelei: {
+    onEnter: () => {
+      GAME_STATE.sceneName = "house_huazelei";
+      exitMap();
+    },
+  },
   cutscene_running_shoes: { onEnter: cutsceneRunningShoes },
   cutscene_mid_aisle: { onEnter: () => cutsceneMidAisle() },
   cutscene_mid_aisle_lei: { onEnter: () => cutsceneMidAisleLei() },
