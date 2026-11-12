@@ -28,3 +28,21 @@ export function beginCutscene() {
   DIALOGUE.hideBox();
   DIALOGUE.clearPortrait();
 }
+
+/**
+ * Sets `DIALOGUE.onComplete` — `cb` if given, otherwise just restores the
+ * bag icon `beginCutscene` hid. Deliberately doesn't also reset
+ * `GAME_STATE.movementLocked` — `dialogue.ts`'s own `pullPending()` already
+ * does that unconditionally, right before calling `onComplete`, specifically
+ * so `onComplete` is free to re-lock for its own purposes without fighting
+ * that. Adding it here too would just be a second place that looks
+ * load-bearing but isn't.
+ *
+ * @example
+ * DIALOGUE.effect(beginCutscene, 0.00001);
+ * DIALOGUE.queue(`NPC: ...`);
+ * endCutscene(() => spawnNextThing());
+ */
+export function endCutscene(cb?: () => void) {
+  DIALOGUE.onComplete = cb ?? (() => hudSetBagIconVisible(true));
+}

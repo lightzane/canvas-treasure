@@ -1,5 +1,5 @@
 import type { Direction } from "@/features/controller";
-import type { Position } from "@/features/sprite";
+import { Sprite, type Position } from "@/features/sprite";
 import type { PlayerSprite } from "@/features/sprite-player";
 import { isSingleLeg, legTarget, type WalkLeg } from "@/lib/walk-math";
 import gsap from "gsap";
@@ -27,6 +27,24 @@ export interface WalkHandle {
 
 function directionTo(dx: number, dy: number): Direction {
   return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "d" : "a") : dy > 0 ? "s" : "w";
+}
+
+/**
+ * Turns `npc` to face toward `target` right now — another sprite, or a raw
+ * world position — same "whichever axis has the bigger gap wins" math
+ * `walk()` already uses to face the direction of travel. One-shot: reads
+ * `target`'s position once and doesn't track it moving afterward — call it
+ * again if `target` relocates. For "face whoever just interacted with you",
+ * `InteractableConfig.facePlayer` already does this automatically; reach for
+ * this instead when you need the same result from a scripted cutscene,
+ * outside of a player-driven interact.
+ *
+ * @example
+ * faceDirection(npcElderManHeart, GAME_STATE.player);
+ */
+export function faceDirection(npc: PlayerSprite, target: Sprite | Position) {
+  const { x, y } = target instanceof Sprite ? target.position : target;
+  npc.face(directionTo(x - npc.position.x, y - npc.position.y));
 }
 
 /**

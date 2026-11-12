@@ -67,7 +67,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "invitation_postcard", // main quest OR last quest
     {
       description: "Find out what's this treasure is about.",
-      status: "active",
+      status: "resolved",
     },
   ],
   [

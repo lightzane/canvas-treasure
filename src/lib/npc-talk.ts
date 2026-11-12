@@ -94,3 +94,58 @@ export function createTalkDispatch(target: Sprite | undefined) {
 
   return { talkCommonM, talkCommonF };
 }
+
+/** "m"/"f" derive the usual blue/red convention; anything else is used directly as the color — a named CSS color or hex string, for a cast with their own distinct colors (e.g. overworld.ts's DIALOGUE_COLOR_DAOMINGSI). `string & {}` (not plain `string`) keeps "m"/"f" showing up as autocomplete suggestions — a plain `string` union member would otherwise swallow the whole type down to bare `string`, losing them. */
+type SpeakerColor = "m" | "f" | (string & {});
+
+export interface GroupConversation<Alias extends string> {
+  /**
+   * Shows `message` in `alias`'s own registered color/portrait — `.show()`
+   * (starts a fresh conversation) if nothing's currently active, `.queue()`
+   * (appends) otherwise, so the first `talk()` of any cutscene never needs
+   * its own separate `DIALOGUE.show()` call. `portrait` overrides just this
+   * one line — omit it to keep reusing whatever `alias` was registered with.
+   */
+  talk(alias: Alias, message: string, portrait?: string | null): void;
+}
+
+/**
+ * A scripted, multi-speaker conversation — registers each speaker's own
+ * color/portrait once, then `talk(alias, message)` dispatches by alias
+ * instead of a hand-written switch. Generalizes overworld.ts's own
+ * `f4Speaker`, which does exactly this but hardcoded to one specific cast.
+ *
+ * @example
+ * const { talk } = createGroupConversation([
+ *   ["daomingsi", "m", PORTRAIT_DAOMINGSI],
+ *   ["huazelei", DIALOGUE_COLOR_HUAZELEI, PORTRAIT_HUAZELEI],
+ * ]);
+ * talk("daomingsi", "DAO MING SI: ..."); // starts fresh via .show()
+ * DIALOGUE.effect(() => playExclamation(huazelei));
+ * talk("huazelei", "HUA ZE LEI: ..."); // appends via .queue()
+ * endCutscene(() => spawnMazeChest());
+ */
+export function createGroupConversation<
+  const Entries extends readonly (readonly [
+    alias: string,
+    color: SpeakerColor,
+    portrait?: string | null,
+  ])[],
+>(entries: Entries): GroupConversation<Entries[number][0]> {
+  const speakers = new Map(
+    entries.map(([alias, color, portrait]) => [
+      alias,
+      { color: color === "m" ? "blue" : color === "f" ? "red" : color, portrait },
+    ]),
+  );
+
+  function talk(alias: string, message: string, portrait?: string | null) {
+    const speaker = speakers.get(alias);
+    if (!speaker) return;
+    const input = { text: message, color: speaker.color, portrait: portrait ?? speaker.portrait };
+    if (DIALOGUE.isActive) DIALOGUE.queue(input);
+    else DIALOGUE.show(input);
+  }
+
+  return { talk };
+}

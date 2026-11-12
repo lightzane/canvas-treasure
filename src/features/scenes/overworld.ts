@@ -12,6 +12,7 @@ import {
   removeInteractable,
   updateInteraction,
   type Interactable,
+  type InteractableConfig,
 } from "@/features/interact";
 import type { Scene } from "@/features/scene";
 import { Sprite } from "@/features/sprite";
@@ -40,7 +41,7 @@ import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewpo
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { createCompanion } from "@/lib/companion";
 import { birthdayConfetti } from "@/lib/confetti";
-import { beginCutscene } from "@/lib/cutscene";
+import { beginCutscene, endCutscene } from "@/lib/cutscene";
 import { drift } from "@/lib/drift";
 import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playCherryBlossoms } from "@/lib/effects/cherry-blossoms";
@@ -58,6 +59,7 @@ import { movePlayer, panCameraToTile, setCameraToTile } from "@/lib/map-movement
 import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { createNpcMessages, npcMessagesInteractions } from "@/lib/npc-messages";
 import { createNpcSpawner } from "@/lib/npc-spawn";
+import { createGroupConversation } from "@/lib/npc-talk";
 import { placeAtTile } from "@/lib/positioning";
 import { BIRTHDAY_POSTCARD_SRC } from "@/lib/postcard-sticker";
 import { preload } from "@/lib/preload";
@@ -68,7 +70,7 @@ import {
   questSetStatus,
 } from "@/lib/quests";
 import { createReadDispatch } from "@/lib/read-message";
-import { walk } from "@/lib/walk";
+import { faceDirection, walk } from "@/lib/walk";
 import { IMGS_AANG_MOMO_IDLE } from "@/sprites/aang-momo";
 import { IMGS_ADULT_FEMALE_1_IDLE } from "@/sprites/adult-female-1";
 import { IMGS_ADULT_FEMALE_2_IDLE } from "@/sprites/adult-female-2";
@@ -221,11 +223,7 @@ const SIGNPOST_CFGS: ReadableCfg[] = [
   { tile: [110, 76], message: "Market East Entrance" },
   { tile: [92, 87], message: "Market South Entrance" },
   { tile: [46, 25], message: "Flower Garden — Planted with love, shaped like it too" },
-  {
-    tile: [39, 46],
-    message: "Flowershop — Every bloom in town? You can thank us for that!",
-    // TODO: Add npc saying this line: "The heart behind every garden in town!"
-  },
+  { tile: [39, 46], message: "Flowershop — Every bloom in town? You can thank us for that!" },
 ];
 
 const SIGNPOSTS = createReadables(
@@ -645,6 +643,27 @@ const MARKET_EVENT_GIRLS = [
   ...MARKET_EVENT_GIRLS_E,
 ];
 
+/** When `false` — The 2 golden jubilarian couple is standing in middle of flower garden. */
+let isFlowerGardenAvailable = false;
+const npcFloristHeart = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMALE_IDLE } });
+const npcElderManHeart = new PlayerSprite({ sprites: { idle: IMGS_ELDER_MAN_IDLE } });
+const npcElderWomanHeart = new PlayerSprite({ sprites: { idle: IMGS_ELDER_WOMAN_IDLE } });
+
+// TODO: this cutscene
+// function someCutscene() {
+//   beginCutscene();
+//   jpFollowPaused = true;
+//   walk(player, [x1, y1]);
+//   walk(jp, [x2, y2], {
+//     onComplete: () => {
+//       // ...rest of the cutscene...
+//       gsap.delayedCall(someDelay, () => {
+//         jpFollowPaused = false; // following resumes right where jp was left standing
+//       });
+//     },
+//   });
+// }
+
 const wildBushInteractablesCfgs: Partial<Interactable> = {
   label: "Interact",
   labelOffset: { y: -16 },
@@ -666,6 +685,21 @@ const msgBottleInteractablesCfgs: Partial<Interactable> = {
   labelOffset: { y: 16 },
 };
 
+// Named (not inline) specifically so spawnHeartGardenNpcs() can mutate
+// .facePlayer on these same objects later — INTERACTABLES holds this exact
+// reference, so the change takes effect immediately, no re-registration
+// needed. false while the couple stands together at the garden's center
+// (shouldn't break their own pose for the player); true once they've
+// stepped aside to [40,19]/[41,19] and are just chatting individually.
+const ELDER_MAN_HEART_INTERACTABLE: InteractableConfig = {
+  sprite: npcElderManHeart,
+  facePlayer: false,
+};
+const ELDER_WOMAN_HEART_INTERACTABLE: InteractableConfig = {
+  sprite: npcElderWomanHeart,
+  facePlayer: false,
+};
+
 const INTERACTABLES: Interactable[] = [
   GAME_STATE.papa,
   { sprite: wildBushPaper, ...wildBushInteractablesCfgs },
@@ -675,6 +709,9 @@ const INTERACTABLES: Interactable[] = [
   { sprite: wildBushBeach2, ...wildBushInteractablesCfgs },
   ...SIGNPOSTS.map(({ sprite }) => ({ sprite, ...signpostInteractablesCfgs })),
   ...MSG_BOTTLES.map(({ sprite }) => ({ sprite, ...msgBottleInteractablesCfgs })),
+  // npcElderWomanHeart is NOT here — see spawnHeartGardenNpcs(), which
+  // adds/removes her depending on isFlowerGardenAvailable.
+  ELDER_MAN_HEART_INTERACTABLE,
 ];
 const HUAZELEI_INTERACTABLE: Interactable = huazelei;
 const { respawnNPC, despawnNPC } = createNpcSpawner(NPCS, INTERACTABLES);
@@ -931,6 +968,35 @@ function spawnOverworldNpcs() {
 
 spawnOverworldNpcs();
 
+// A rare, story-relevant side event — kept idempotent and re-derived every
+// call rather than placed once, so calling it from initSideQuests() (every
+// enter(), not re-entrant spawnOverworldNpcs(), see its own doc) keeps the
+// elder couple positioned correctly across scene re-entries, and
+// interactFloristHeart() can call it again immediately once
+// isFlowerGardenAvailable flips, without waiting for the next scene
+// transition.
+function spawnHeartGardenNpcs() {
+  respawnNPC(npcFloristHeart, [45, 45]);
+  npcFloristHeart.face("s");
+
+  const atCenter = !isFlowerGardenAvailable;
+  respawnNPC(npcElderWomanHeart, atCenter ? [40.25, 24] : [41, 19]);
+  respawnNPC(npcElderManHeart, atCenter ? [40.85, 24] : [40, 19]);
+  npcElderManHeart.face(atCenter ? "a" : "s");
+  npcElderWomanHeart.face(atCenter ? "d" : "s");
+
+  // Facing each other while at center is deliberate (see their own .face()
+  // calls above) — facePlayer would undo that the moment either is talked
+  // to. Once stepped aside, there's no pose left to protect.
+  ELDER_MAN_HEART_INTERACTABLE.facePlayer = !atCenter;
+  ELDER_WOMAN_HEART_INTERACTABLE.facePlayer = !atCenter;
+
+  // Only the man is talked to while they're together at center (he speaks
+  // for both); once stepped aside, both are their own separate conversation.
+  if (atCenter) remove(INTERACTABLES, ELDER_WOMAN_HEART_INTERACTABLE);
+  else addOnce(INTERACTABLES, ELDER_WOMAN_HEART_INTERACTABLE);
+}
+
 // createNpcMessages/npcMessagesInteractions: a tuple entry is an existing,
 // already-spawned sprite (respawnNPC above already handled it — this just
 // wires up its line + interactable registration); an object entry is a
@@ -961,6 +1027,13 @@ const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
     gender: "m",
     message: `Kailangan panatilihin malinis ang kapaligiran.`,
   },
+  [
+    npcFloristHeart,
+    "f",
+    "s",
+    "FLORIST: Hi! Tuloy lang po kayo sa flowershop namin — The heart behind every garden in town!",
+    interactFloristHeart,
+  ],
 ]);
 
 const MAIN_EVENT_GUESTS_LEFT_SIDE = [
@@ -1073,7 +1146,7 @@ export const overworldScene: Scene = {
     // Normal park boundaries — before questDaoMingKeys resolves (main event
     // not unlocked yet) and after questMain resolves (main event already
     // torn down by closingRemarks()). Not during: initMainEvent() (called
-    // from initQuests(), below) layers BOUNDARIES_MAIN_EVENT on top instead
+    // from initMainQuests(), below) layers BOUNDARIES_MAIN_EVENT on top instead
     // for that window, and nothing here must also be active then.
     if (questDaoMingKeys.status !== "resolved" || isQuestResolved(questMain)) {
       BOUNDARIES_PARK_NORMAL.forEach((b) => addOnce(GAME_STATE.boundaries, b));
@@ -1115,10 +1188,11 @@ export const overworldScene: Scene = {
       jp.face("s");
     }
 
-    initQuests();
-    // DECORS may have just changed inside initQuests() (e.g. a quest-gated
-    // prop toggling on/off this same visit) — filtering OBSTACLE_DECORS
-    // against DECORS here, after initQuests() has run, means a prop that
+    initMainQuests();
+    initSideQuests();
+    // DECORS may have just changed inside initMainQuests()/initSideQuests()
+    // (e.g. a quest-gated prop toggling on/off this same visit) — filtering
+    // OBSTACLE_DECORS against DECORS here, after both have run, means a prop that
     // just appeared/disappeared this visit obstructs (or stops) right away
     // instead of only taking effect from the next re-entry.
     OBSTACLE_DECORS.filter((d) => DECORS.includes(d)).forEach((d) =>
@@ -1184,7 +1258,7 @@ export const overworldScene: Scene = {
   },
 };
 
-function initQuests() {
+function initMainQuests() {
   // Main event's already been torn down once, by closingRemarks() itself,
   // right as it happened — nothing left to do on any later re-entry.
   if (isQuestResolved(questMain)) return;
@@ -1199,6 +1273,13 @@ function initQuests() {
   initMarketEvent();
   initMainEventGuards();
   initMainEvent();
+}
+
+// Side events outside questMain's own timeline — grouped separately so a
+// future one (unlike initMainQuests' own contents) doesn't need to care
+// about, or get bailed out by, questMain's own resolved/not-resolved state.
+function initSideQuests() {
+  spawnHeartGardenNpcs();
 }
 
 function initQuestsDaomingsi() {
@@ -1430,6 +1511,10 @@ function interactions(target: Sprite | undefined) {
       break;
     case meizuo:
       interactMeizuo();
+      break;
+    case npcElderManHeart:
+    case npcElderWomanHeart:
+      interactGoldenWed(target);
       break;
   }
 
@@ -1935,7 +2020,7 @@ function readCoreMsgBottle() {
  * is active, gone for good once it resolves. Unlike coreMsgBottle (spawn
  * once, never removed), this needs an explicit despawn branch too, since
  * it must disappear on resolution, not just stop re-appearing — re-checked
- * every initQuests() call so a resolve mid-visit still takes it down on the
+ * every initMainQuests() call so a resolve mid-visit still takes it down on the
  * very next entry.
  */
 function initBulletinBoard() {
@@ -3229,6 +3314,135 @@ function interactXimen() {
   DIALOGUE.onComplete = () => {
     if (questDaoMingKeys.status !== "resolved") scheduleFaceDirection(ximen, "s");
   };
+}
+
+function interactFloristHeart() {
+  if (!isQuestResolved(questMain)) return;
+
+  DIALOGUE.queue(`FLORIST: Sandali... kasama mo pala ang mahal mo ngayon?`);
+  DIALOGUE.queue(
+    `FLORIST: Ang sweet niyo! Bakit hindi niyo puntahan ang flower garden? Doon pa rin kami nagtatanim ng pinakamagandang bulaklak.`,
+  );
+
+  isFlowerGardenAvailable = true;
+  spawnHeartGardenNpcs(); // right away — don't wait for the next scene re-entry to move the elder couple
+}
+
+function interactGoldenWed(target: Sprite | undefined) {
+  // Still together at the garden's center — only the husband is
+  // interactable (see ELDER_MAN_HEART_INTERACTABLE), but talking to him
+  // plays both of their voices as one scripted exchange.
+  if (!isFlowerGardenAvailable) {
+    beginCutscene();
+
+    const { talk } = createGroupConversation([
+      ["husband", "m"],
+      ["wife", "f"],
+    ]);
+
+    DIALOGUE.effect(() => playExclamation(npcElderManHeart), 0.5);
+    talk(
+      "husband",
+      `GOLDWED HUSBAND: Limampung taon na kaming kasal ng asawa ko. Ang sikreto? Patuloy lang magmahal, kahit anong pagsubok ang dumating.`,
+    );
+    DIALOGUE.effect(() => playExclamation(npcElderWomanHeart), 0.5);
+    talk(
+      "wife",
+      "GOLDWED WIFE: Hindi laging madali, pero kung piniling magkasama araw-araw, lalago lang ang pagmamahalan niyo.",
+    );
+    DIALOGUE.effect(() => playExclamation(npcElderManHeart), 0.5);
+    talk("husband", `Hindi kami naghahanap ng kayamanan sa mundo...`);
+    talk("husband", `...pero ginawa kaming GOLDEN JUBILARIANS ng panahon.`);
+    DIALOGUE.effect(() => {
+      playExclamation(npcElderWomanHeart);
+      faceDirection(npcElderWomanHeart, player);
+      playAttentionBounce(npcElderWomanHeart);
+    }, 0.5);
+    talk("wife", `Kumukupas ang kinang ng ginto anak...`);
+    talk("wife", `...kaya ikaw ay pumili ng tao na kasamang mas nagpapayaman sa "PAGKATAO" mo.`);
+    DIALOGUE.effect(() => playExclamation(npcElderManHeart), 0.5);
+    talk("husband", `At hindi kasi kinakalawang ang ginto...`);
+    talk("husband", `...kaya GOLDEN JUBILARIANS ang tawag sa mga umabot ng fifty years.`);
+    DIALOGUE.effect(() => {
+      playExclamation(npcElderWomanHeart);
+      faceDirection(npcElderWomanHeart, player);
+      playAttentionBounce(npcElderWomanHeart);
+    }, 0.5);
+    talk("wife", `Mas kumikinang ang relasyon habang...`);
+    talk("wife", `...maraming bagyo ang nilalampasan nang magkasama.`);
+    DIALOGUE.effect(() => {
+      playExclamation(npcElderManHeart, { glyph: "💯" });
+      playAttentionBounce(npcElderManHeart);
+      faceDirection(npcElderManHeart, player);
+      faceDirection(npcElderWomanHeart, npcElderManHeart);
+    }, 0.5);
+    talk("husband", `Bilang GOLDEN JUBILARIANS...`);
+    talk(
+      "husband",
+      `...halos lahat ng bagay ay pinagkasunduan na namin simula noong kinasal kami.`,
+    );
+    DIALOGUE.effect(() => {
+      playExclamation(npcElderWomanHeart, { glyph: "😏" });
+      faceDirection(npcElderWomanHeart, player);
+    }, 0.5);
+    talk(
+      "wife",
+      `Halos lahat, mahal, maliban kung sino talaga ang nanalo sa unang laro natin ng sungka!`,
+    );
+    DIALOGUE.effect(() => {
+      beginCutscene();
+      playExclamation(npcElderManHeart);
+      playAttentionBounce(npcElderManHeart);
+      faceDirection(npcElderManHeart, npcElderWomanHeart);
+    }, 1.5);
+    DIALOGUE.effect(() => {
+      let delay = 0;
+      for (let i = 1; i <= 5; i++) {
+        if (i !== 5)
+          gsap.delayedCall((delay += 0.3), () => npcElderManHeart.face(i % 2 !== 0 ? "s" : "a"));
+        else gsap.delayedCall((delay += 0.5), () => npcElderManHeart.face("s"));
+      }
+    }, 2.5);
+    DIALOGUE.effect(() => {
+      playExclamation(npcElderManHeart, { glyph: "🤣" });
+      playAttentionBounce(npcElderManHeart, {
+        hops: 5,
+        onComplete() {
+          playExclamation(npcElderManHeart, { glyph: "🤣", delay: 0.3 });
+          playAttentionBounce(npcElderManHeart, { hops: 5, delay: 0.5 });
+        },
+      });
+    });
+    talk("husband", `HAHAHAHAHAHAHAHAHAHA!`);
+    endCutscene(() => {
+      hudSetBagIconVisible(true);
+      scheduleFaceDirection(npcElderWomanHeart, "d");
+      scheduleFaceDirection(npcElderManHeart, "a");
+    });
+    return;
+  }
+
+  // Stepped aside — both are individually interactable now, each with
+  // their own separate line instead of the shared exchange above. Still
+  // createGroupConversation (not talkCommonM/F) — its talk() checks
+  // DIALOGUE.isActive itself, so the 2nd line queues instead of stomping
+  // the 1st before it's ever shown.
+  beginCutscene();
+
+  const { talk } = createGroupConversation([
+    ["husband", "m"],
+    ["wife", "f"],
+  ]);
+
+  if (target === npcElderManHeart) {
+    talk("husband", "GOLDENWED HUSBAND: Hindi kasi kinakalawang ang ginto...");
+    talk("husband", "kaya Golden Jubilarians ang tawag sa mga umabot ng fifty years.");
+  } else if (target === npcElderWomanHeart) {
+    talk("wife", "GOLDENWED WIFE: Mas kumikinang ang relasyon...");
+    talk("wife", "habang mas maraming bagyo ang nilalampasan nang magkasama.");
+  }
+
+  endCutscene();
 }
 
 function initMainEventGuards() {
