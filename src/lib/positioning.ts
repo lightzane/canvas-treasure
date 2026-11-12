@@ -174,12 +174,20 @@ interface PlaceAtTileParams {
  *
  * @example
  * placeAtTile(teaset1, [2, 7]);
+ * placeAtTile(signpost, [60, 46], { spriteSize: signpost.boxSize, anchor: "bottom" }); // tile = where it's planted
  * placeAtTile({ sprite: GAME_STATE.player, tile: spawnLocation, spriteSize: GAME_STATE.player.boxSize });
- * placeAtTile({ sprite: signpost, tile: [60, 46], spriteSize: signpost.boxSize, anchor: "bottom" }); // tile = where it's planted
  */
-export function placeAtTile(sprite: Sprite, tile: [number, number]): void;
+export function placeAtTile(
+  sprite: Sprite,
+  tile: [number, number],
+  options?: Omit<PlaceAtTileParams, "sprite" | "tile">,
+): void;
 export function placeAtTile(params: PlaceAtTileParams): void;
-export function placeAtTile(spriteOrParams: Sprite | PlaceAtTileParams, tile?: [number, number]) {
+export function placeAtTile(
+  spriteOrParams: Sprite | PlaceAtTileParams,
+  tile?: [number, number],
+  options?: Omit<PlaceAtTileParams, "sprite" | "tile">,
+) {
   const {
     sprite,
     tile: at,
@@ -187,7 +195,7 @@ export function placeAtTile(spriteOrParams: Sprite | PlaceAtTileParams, tile?: [
     spriteSize,
     anchor,
   }: PlaceAtTileParams = tile !== undefined
-    ? { sprite: spriteOrParams as Sprite, tile }
+    ? { sprite: spriteOrParams as Sprite, tile, ...options }
     : (spriteOrParams as PlaceAtTileParams);
 
   const place = () => {

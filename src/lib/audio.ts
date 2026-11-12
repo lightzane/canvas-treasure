@@ -74,6 +74,7 @@ export type MusicKey =
   | "a_guitar_rock"
   | "jazz"
   | "house_huazelei"
+  | "house_daomingsi"
   | "amb_beach"
   | "amb_shopping_crowd"
   | "amb_water_flowing"
@@ -180,7 +181,7 @@ const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   home: "classical-verdanturf.mp3",
   overworld_event: "piano-littleroot-town.mp3",
   overworld: "classical-littleroot-town.mp3",
-  mansion: "我是真的真的很爱你.mp3",
+  mansion: "我是真的真的很爱你-piano-intrumental.mp3",
   market: "sm.mp3",
   flowershop: "classical-pallet-town.mp3",
   maze: "pokemon-route1-acoustic.mp3",
@@ -192,6 +193,7 @@ const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   sky_manta: "sky-manta.mp3",
   a_guitar_rock: "mixkit-ko-1068.mp3",
   jazz: "jazz.mp3",
+  house_daomingsi: "我是真的真的很愛妳.mp3",
   house_huazelei: "最特別的存在.mp3",
   amb_beach: "ambience/mixkit-small-waves-harbor-rocks-1208.wav",
   amb_shopping_crowd: "ambience/mixkit-shopping-center-crowd-377.wav",

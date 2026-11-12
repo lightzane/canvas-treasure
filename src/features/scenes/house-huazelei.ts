@@ -1,5 +1,5 @@
 import { COLLISION_HOUSE_HUAZELEI } from "@/constants/collisions/house_huazelei";
-import { TILE_SIZE } from "@/constants/game-settings";
+import { TILE_SIZE, ZOOM_LEVEL } from "@/constants/game-settings";
 import { TRIGGER_HOUSE_HUAZELEI, type TriggerName } from "@/constants/triggers/house_huazelei";
 import { GAME_STATE } from "@/features/game-state";
 import { drawInteractPrompt, updateInteraction, type Interactable } from "@/features/interact";
@@ -41,7 +41,7 @@ function createChair(src: string): Sprite {
   return new Sprite({
     src,
     scale: 2,
-    boxSize: { width: TILE_SIZE, height: TILE_SIZE },
+    boxSize: { width: 64 * ZOOM_LEVEL, height: 43 * ZOOM_LEVEL },
     collisionBox: { height: 56 },
   });
 }
@@ -51,6 +51,7 @@ const chairEast1 = createChair(IMG_BLUE_CHAIR_EAST);
 const sofa = new Sprite({
   src: IMG_BLUE_SOFA_SOUTH,
   scale: 2,
+  boxSize: { width: TILE_SIZE * 4, height: TILE_SIZE * 2 },
   collisionBox: { height: 56 },
 });
 
@@ -154,7 +155,7 @@ function exitZone() {
   hudSetBagIconVisible(false);
   audioStopMusic(houseHuazeleiScene.fadeOut);
   GAME_STATE.movementLocked = true; // for the scene transition — released by overworld's own enter()
-  GAME_STATE.spawnLocation = [58.5, 28]; // rough placeholder, just south of enter_house_huazelei's own tile — adjust to taste
+  GAME_STATE.spawnLocation = [58.15, 26.5];
   GAME_STATE.sceneName = "overworld";
 }
 

@@ -1,5 +1,5 @@
 import { COLLISION_MANSION } from "@/constants/collisions/mansion";
-import { TILE_SIZE, ZOOM_LEVEL } from "@/constants/game-settings";
+import { ZOOM_LEVEL } from "@/constants/game-settings";
 import { TRIGGER_MANSION, type TriggerName } from "@/constants/triggers/mansion";
 import type { Direction } from "@/features/controller";
 import { GAME_STATE } from "@/features/game-state";
@@ -118,7 +118,7 @@ function createChair(src: string): Sprite {
   return new Sprite({
     src,
     scale: 2,
-    boxSize: { width: TILE_SIZE, height: TILE_SIZE },
+    boxSize: { width: 64 * ZOOM_LEVEL, height: 43 * ZOOM_LEVEL },
     collisionBox: { height: 56 },
   });
 }
@@ -130,7 +130,7 @@ const chairEast2 = createChair(IMG_BEIGE_CHAIR_EAST);
 const sofa = new Sprite({
   src: IMG_BEIGE_SOFA_SOUTH,
   scale: 2,
-  boxSize: { width: TILE_SIZE * 4, height: TILE_SIZE * 2 },
+  boxSize: { width: 32 * 4 * ZOOM_LEVEL, height: 32 * 2 * ZOOM_LEVEL },
   collisionBox: { height: 56 },
 });
 const table1 = new Sprite({
@@ -170,11 +170,11 @@ const FURNITURES: Sprite[] = [
 ];
 const DECORS: Sprite[] = [...FURNITURES];
 
-placeAtTile(chairEast1, [1.5, 17.5]);
-placeAtTile(chairWest1, [7.5, 17.5]);
-placeAtTile(chairEast2, [15.5, 17.5]);
-placeAtTile(chairWest2, [21.5, 17.5]);
-placeAtTile(sofa, [3.5, 15]);
+placeAtTile(chairEast1, [1.5, 17.5], { spriteSize: chairEast1.boxSize });
+placeAtTile(chairWest1, [7.5, 17.5], { spriteSize: chairEast1.boxSize });
+placeAtTile(chairEast2, [15.5, 17.5], { spriteSize: chairEast1.boxSize });
+placeAtTile(chairWest2, [21.5, 17.5], { spriteSize: chairEast1.boxSize });
+placeAtTile(sofa, [4.5, 15.5], { spriteSize: sofa.boxSize });
 placeAtTile(table1, [4.25, 17.45]);
 placeAtTile(table2, [17.22, 17.4]);
 placeAtTile(table3, [19.22, 17.4]);
@@ -201,9 +201,15 @@ export const mansionScene: Scene = {
   ),
 
   enter() {
-    gsap.delayedCall(mansionScene.fadeIn! + 0.5, () =>
-      audioPlayMusic("mansion", { seek: 63, fade: 2, volume: 0.7 }),
-    );
+    if (GAME_STATE.sequence.meet_daomingsi) {
+      gsap.delayedCall(mansionScene.fadeIn! + 0.5, () =>
+        audioPlayMusic("house_daomingsi", { seek: 63, fade: 2, volume: 0.7 }),
+      );
+    } else {
+      gsap.delayedCall(mansionScene.fadeIn! + 0.5, () =>
+        audioPlayMusic("mansion", { seek: 63, fade: 2, volume: 0.7 }),
+      );
+    }
 
     if (!GAME_STATE.bagIconVisible)
       gsap.delayedCall(mansionScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
@@ -289,11 +295,15 @@ function interactions(target: Sprite | undefined) {
 
     let message = "BUTLER LIU: Binibining CHE! Wala po dito si Young Master...";
 
-    if (GAME_STATE.quests.get("daoming_keys")!.status === "resolved") {
+    if (isQuestResolved("daoming_keys") && !isQuestResolved("invitation_postcard")) {
       message = `
         BUTLER LIU: Binibining CHE! Nahanap na po ang keys.
         Nasa park na po si Young Master.
       `;
+    }
+
+    if (isQuestResolved("invitation_postcard")) {
+      message = `BUTLER LIU: Binibining CHE at ginoong JP! Kung inyong mararapatin, tuloy lang po kayo at welcome kayo dito. Ngunit wala po dito sa Young Master.`;
     }
 
     DIALOGUE.show({

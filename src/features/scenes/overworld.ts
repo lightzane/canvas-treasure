@@ -761,10 +761,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
     },
   },
   enter_house_huazelei: {
-    onEnter: () => {
-      GAME_STATE.sceneName = "house_huazelei";
-      exitMap();
-    },
+    onEnter: attemptEnterHouseHuazelei,
   },
   cutscene_running_shoes: { onEnter: cutsceneRunningShoes },
   cutscene_mid_aisle: { onEnter: () => cutsceneMidAisle() },
@@ -3892,6 +3889,23 @@ function mainEventGuestExpressions(glyphInput?: string, color?: string) {
       });
     });
   });
+}
+
+function attemptEnterHouseHuazelei() {
+  if (!GAME_STATE.sequence.meet_huazelei || !isQuestResolved("meet_huazelei")) {
+    walk(player, [58.15, 26.5]);
+    DIALOGUE.effect(beginCutscene, 0.00001);
+    DIALOGUE.queue({
+      text: `Naka-lock ang door tapos meron nakasulat na note: "Out preparing for an event..."`,
+      portrait: null,
+      color: "black",
+    });
+    DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
+    return;
+  }
+
+  GAME_STATE.sceneName = "house_huazelei";
+  exitMap();
 }
 
 // ==============================================
