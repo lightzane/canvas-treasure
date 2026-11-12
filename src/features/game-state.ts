@@ -143,8 +143,8 @@ export const GAME_STATE = {
     market_cutscene: true,
     mid_aisle_cutscene: true,
     mid_aisle_lei_cutscene: true,
-    mid_aisle_jp_cutscene: false,
-    closing_remarks: false,
+    mid_aisle_jp_cutscene: true,
+    closing_remarks: true,
   },
   quests: QUESTS,
   /**

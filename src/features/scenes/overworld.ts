@@ -27,6 +27,7 @@ import {
 import { addOnce, remove } from "@/lib/array";
 import {
   audioIsMusicActive,
+  audioPauseAmbience,
   audioPauseMusic,
   audioPlayAmbience,
   audioPlayMusic,
@@ -774,6 +775,7 @@ const TRIGGER_HANDLERS: TriggerHandlers<TriggerName> = {
   sound_park: { onEnter: () => soundPark() },
   sound_park_exit: { onEnter: () => soundPark(false) },
   sound_teashop: { onEnter: () => soundTeashop() },
+  sound_flower_garden: { onEnter: () => soundFlowerGarden(), onLeave: () => soundMain() },
 };
 
 const quests = GAME_STATE.quests;
@@ -1262,6 +1264,15 @@ export const overworldScene: Scene = {
       addOnce(INTERACTABLES, jp);
       respawnNPC(jp, [spawnTile[0] - 1, spawnTile[1]]);
       jp.face("s");
+    }
+
+    // F4 on the beach (after event)
+    if (isQuestResolved(questMain)) {
+      respawnNPC(ximen, [6.25, 42]);
+      respawnNPC(meizuo, [6.5, 43]);
+      respawnNPC(daomingsi, [6, 44]);
+      respawnNPC(huazelei, [6.5, 45]);
+      f4.forEach((f) => f.face("a"));
     }
 
     initMainQuests();
@@ -3808,7 +3819,8 @@ function spawnJp() {
 
 function soundMain() {
   audioPlayMusic("overworld", { fade: 2, volume: VOLUME_MAIN_BG });
-  audioStopAmbience(undefined, 5);
+  // audioStopAmbience(undefined, 5);
+  audioPauseAmbience(undefined, 5);
 }
 
 function soundMarket() {
@@ -3849,6 +3861,11 @@ function soundGardenMaze(fade = 2) {
 function soundTeashop() {
   audioStopMusic(1);
   audioPlayAmbience("amb_birds_singing", { fade: 2, volume: 0.3 });
+}
+
+function soundFlowerGarden() {
+  audioPlayAmbience("amb_birds_singing", { fade: 2, volume: 0.3 });
+  audioPlayAmbience("amb_birds_forest", { fade: 2, volume: 0.3 });
 }
 
 function mainEventGuestExpressions(glyphInput?: string, color?: string) {
