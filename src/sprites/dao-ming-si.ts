@@ -1,6 +1,7 @@
 import type { Direction } from "@/features/controller";
 import type { AnimationSource } from "@/features/sprite-player";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 
 const IMG_PATH = "characters/f4/dao-ming-si";
 const IMG_WALK_DOWN = img(`${IMG_PATH}/walk/south.png`);
@@ -28,4 +29,8 @@ export const IMGS_DAOMINGSI_IDLE: Record<Direction, AnimationSource> = {
 
 export const PORTRAIT_DAOMINGSI = img("portraits/daomingsi.jpg");
 export const PORTRAIT_DAOMINGSI_INTIMIDATE = img("portraits/daomingsi-intimidate.jpg");
+// Eagerly warms the shared image cache — see hua-ze-lei.ts's own PORTRAIT_
+// loadImage() call for why.
+loadImage(PORTRAIT_DAOMINGSI);
+loadImage(PORTRAIT_DAOMINGSI_INTIMIDATE);
 export const DIALOGUE_COLOR_DAOMINGSI = "red";

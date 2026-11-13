@@ -32,6 +32,7 @@ import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toa
 import { playShine } from "@/lib/effects/shine";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 import { movePlayer } from "@/lib/map-movement";
 import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { placeAtTile } from "@/lib/positioning";
@@ -53,6 +54,12 @@ const IMG_FRAME_PHOTO = img("treasure/frame-photo.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const PHOTO_SKY = img("others/photo-sky.png");
 const PHOTO_COUPLE = img("treasure/couple-photo.jpg");
+// Eagerly warms the shared image cache (load-image.ts) so playImagePreview()
+// doesn't pop its backdrop up over a blank/still-loading image the first
+// time either of these shows — same gap and fix as hua-ze-lei.ts's own
+// PORTRAIT_HUAZELEI loadImage() call.
+loadImage(PHOTO_SKY);
+loadImage(PHOTO_COUPLE);
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });

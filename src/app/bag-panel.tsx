@@ -6,6 +6,7 @@ import { GAME_STATE } from "@/features/game-state";
 import { audioPlaySound } from "@/lib/audio";
 import { bagHasItem, type ItemName } from "@/lib/bag";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 import { startPostcardConfetti, stopPostcardConfetti } from "@/lib/postcard-confetti";
 import { useEffect, useRef, useState } from "react";
 
@@ -53,6 +54,14 @@ const ITEM_ICON: Partial<Record<ItemName, ItemIcon>> = {
   shears: { src: img("others/garden-shears.png"), scale: 0.8 },
   treasure_map: { src: img("others/message-bottle-v.png"), scale: 0.8 },
 };
+// Eagerly warms the shared image cache (load-image.ts) for every bag icon
+// above, in one place that covers the whole map — including any future
+// item added to it, without having to remember to add it here too. See
+// hua-ze-lei.ts's own PORTRAIT_HUAZELEI loadImage() call for why this
+// matters: these render the instant the bag opens, so an unwarmed one
+// would show blank/broken in the grid for however long its first-ever
+// fetch takes, in production only.
+Object.values(ITEM_ICON).forEach((icon) => loadImage(icon.src));
 
 export function BagPanel({ onClose }: { onClose: () => void }) {
   // Purely local UI state — nothing on the canvas side needs to know these

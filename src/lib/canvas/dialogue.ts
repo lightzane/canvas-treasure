@@ -2,6 +2,7 @@ import { CANVAS_HEIGHT, CANVAS_WIDTH, GAME_FONT_FAMILY } from "@/constants/game-
 import { GAME_STATE } from "@/features/game-state";
 import { audioPlaySound } from "@/lib/audio";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 import gsap from "gsap";
 
 const MAX_LINES_PER_PAGE = 2;
@@ -388,14 +389,46 @@ class Dialogue {
       return;
     }
 
+    const requested = this.portrait;
+
     // Same canvas-rect-plus-local-coordinate trick as the effects/ folder's
     // DOM overlays (e.g. exclamation-bubble.ts) — the canvas renders 1:1
     // with its CSS size, so no extra scale factor is needed.
     const canvasRect = document.getElementById("treasure")?.getBoundingClientRect();
-    el.src = this.portrait;
     el.style.left = `${(canvasRect?.left ?? 0) + PORTRAIT_LEFT}px`;
     el.style.top = `${(canvasRect?.top ?? 0) + PORTRAIT_TOP}px`;
-    el.style.display = "block";
+
+    // Routes through the same shared cache every other sprite image uses
+    // (load-image.ts) instead of setting el.src directly — every known
+    // portrait is already warmed at module load (see e.g. hua-ze-lei.ts's
+    // own loadImage(PORTRAIT_HUAZELEI) call), so `cached.complete` is true
+    // here in practice. The not-yet-complete branch below is a safety net
+    // for any portrait that someday isn't: this SAME <img> element is
+    // reused for every NPC, never recreated, so setting el.src to a
+    // still-loading image would otherwise just keep showing whoever's
+    // portrait was decoded last — a real production bug once seen (Liu's
+    // portrait lingering for a second or two before Hua Ze Lei's
+    // appeared), only invisible locally because dev/repeat testing already
+    // had it browser-cached. Hiding until `load` trades that wrong-face
+    // flash for a brief, honest blank instead.
+    const cached = loadImage(requested);
+
+    if (cached.complete) {
+      el.src = requested;
+      el.style.display = "block";
+      return;
+    }
+
+    el.style.display = "none";
+    cached.addEventListener(
+      "load",
+      () => {
+        if (this.portrait !== requested) return; // superseded before this one finished loading
+        el.src = requested;
+        el.style.display = "block";
+      },
+      { once: true },
+    );
   }
 
   private ensureLockIconEl(): HTMLImageElement {

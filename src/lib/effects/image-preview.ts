@@ -1,5 +1,6 @@
 import { GAME_FONT_FAMILY } from "@/constants/game-settings";
 import type { EffectHandle } from "@/lib/effects/handle";
+import { loadImage } from "@/lib/load-image";
 import {
   BIRTHDAY_POSTCARD_SRC,
   BIRTHDAY_STICKER_CLASSNAME,
@@ -63,9 +64,32 @@ export function playImagePreview(src: string, options: ImagePreviewOptions = {})
 
   let pending: gsap.core.Tween | null = null;
   let stopInner: (() => void) | null = null;
+  let cancelled = false;
 
   const start = () => {
-    stopInner = runPreview(src, options);
+    const cached = loadImage(src);
+
+    if (cached.complete) {
+      stopInner = runPreview(src, options);
+      return;
+    }
+
+    const onReady = () => {
+      if (cancelled) return;
+      stopInner = runPreview(src, options);
+    };
+
+    // Not yet decoded — every known preview image is warmed ahead of time
+    // at module load now (e.g. home.ts's own loadImage(PHOTO_SKY) call), so
+    // this is a safety net for one that someday isn't: waits for the real
+    // image instead of popping the backdrop up over a blank one for
+    // however long the fetch takes, same reasoning as dialogue.ts's own
+    // portrait fix for the identical underlying gap. Falls through on
+    // `error` too (a genuinely missing/broken asset) rather than silently
+    // never showing anything — same end result (a broken-image icon) as
+    // before this fix existed.
+    cached.addEventListener("load", onReady, { once: true });
+    cached.addEventListener("error", onReady, { once: true });
   };
 
   if (delay > 0) pending = gsap.delayedCall(delay, start);
@@ -73,6 +97,7 @@ export function playImagePreview(src: string, options: ImagePreviewOptions = {})
 
   return {
     stop: () => {
+      cancelled = true;
       pending?.kill();
       stopInner?.();
     },

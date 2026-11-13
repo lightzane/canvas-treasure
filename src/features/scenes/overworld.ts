@@ -56,6 +56,7 @@ import { playShine } from "@/lib/effects/shine";
 import { drawFootprints, trackFootstep, updateFootprints } from "@/lib/footprints";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 import { movePlayer, panCameraToTile, setCameraToTile } from "@/lib/map-movement";
 import { cancelScheduledFace, scheduleFaceDirection } from "@/lib/npc-auto";
 import { createNpcMessages, npcMessagesInteractions } from "@/lib/npc-messages";
@@ -111,6 +112,13 @@ const VOLUME_MAIN_BG = 0.5;
 const PHOTO_TREASURE = img("treasure/treasure-full.png");
 const PHOTO_TREASURE_CLOSEUP = img("treasure/treasure-full-closeup.png");
 const PHOTO_TREASURE_MAP = img("others/treasure-map.jpg");
+// Eagerly warms the shared image cache (load-image.ts) so playImagePreview()
+// doesn't pop its backdrop up over a blank/still-loading image the first
+// time any of these shows — same gap and fix as hua-ze-lei.ts's own
+// PORTRAIT_HUAZELEI loadImage() call.
+loadImage(PHOTO_TREASURE);
+loadImage(PHOTO_TREASURE_CLOSEUP);
+loadImage(PHOTO_TREASURE_MAP);
 
 const IMG_MAP_BG = img("maps/overworld.png");
 const IMG_MAP_FG = img("maps/overworld-fg.png");

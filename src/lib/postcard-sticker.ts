@@ -1,5 +1,6 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from "@/constants/game-settings";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 import { cn } from "cn";
 
 /**
@@ -11,6 +12,11 @@ import { cn } from "cn";
  */
 export const BIRTHDAY_POSTCARD_SRC = img("treasure/cheryl_birthday_postcard.jpg");
 export const BIRTHDAY_STICKER_SRC = img("others/sky-sticker-birthday.png");
+// Eagerly warms the shared image cache (load-image.ts) — see
+// hua-ze-lei.ts's own PORTRAIT_HUAZELEI loadImage() call for why. Benefits
+// both consumers named above (ImageViewer and playImagePreview).
+loadImage(BIRTHDAY_POSTCARD_SRC);
+loadImage(BIRTHDAY_STICKER_SRC);
 
 /**
  * Both popups that can show the postcard reserve the same 32px of padding

@@ -4,6 +4,7 @@ import { audioPlayMusic, audioPlaySound } from "@/lib/audio";
 import { bagIncItem } from "@/lib/bag";
 import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 import { questSetStatus } from "@/lib/quests";
 import gsap from "gsap";
 import { LucideFlipHorizontal2, LucideFlipVertical2, LucideRotateCw } from "lucide-react";
@@ -12,6 +13,10 @@ import { useEffect, useRef, useState } from "react";
 export const PAGE_SOUND_VOLUME = 0.3;
 const LAYER_SRCS = [img("puzzle/tp1.png"), img("puzzle/tp2.png"), img("puzzle/tp3.png")];
 const REVEAL_SRC = img("treasure/cheryl_birthday_postcard_sketch.jpg");
+// Eagerly warms the shared image cache (load-image.ts) — see
+// hua-ze-lei.ts's own PORTRAIT_HUAZELEI loadImage() call for why. REVEAL_SRC
+// especially: it's the Heart Photo payoff, the whole point of this puzzle.
+[...LAYER_SRCS, REVEAL_SRC].forEach(loadImage);
 
 /**
  * Backdrop for every tracing-paper PNG (transparent, scattered pages) —

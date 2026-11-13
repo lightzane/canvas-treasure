@@ -1,6 +1,7 @@
 import type { Direction } from "@/features/controller";
 import type { AnimationSource } from "@/features/sprite-player";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 
 const IMG_PATH = "characters/f4/xi-men";
 const IMG_WALK_DOWN = img(`${IMG_PATH}/walk/south.png`);
@@ -27,4 +28,7 @@ export const IMGS_XIMEN_IDLE: Record<Direction, AnimationSource> = {
 };
 
 export const PORTRAIT_XIMEN = img("portraits/ximen.jpg");
+// Eagerly warms the shared image cache — see hua-ze-lei.ts's own PORTRAIT_
+// loadImage() call for why.
+loadImage(PORTRAIT_XIMEN);
 export const DIALOGUE_COLOR_XIMEN = "darkorange";

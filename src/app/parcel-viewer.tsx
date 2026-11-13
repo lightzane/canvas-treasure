@@ -1,5 +1,6 @@
 import { GAME_STATE } from "@/features/game-state";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 import { useState } from "react";
 
 // Real photos, not pixel art — no [image-rendering:pixelated] on these two.
@@ -7,6 +8,16 @@ const PARCEL_PHOTO_EMPTY = img("treasure/chest-empty.png");
 const PARCEL_PHOTO_CLOSEUP = img("treasure/chest-empty-closeup.png");
 const PARCEL_PHOTO_REVEALED = img("treasure/treasure-full.png");
 const PARCEL_PHOTO_REVEALED_CLOSEUP = img("treasure/treasure-full-closeup.png");
+// Eagerly warms the shared image cache (load-image.ts) — see
+// hua-ze-lei.ts's own PORTRAIT_HUAZELEI loadImage() call for why. The
+// REVEALED pair is already warmed via overworld.ts's own PHOTO_TREASURE*
+// consts (same URLs); loadImage() just no-ops on an already-cached one.
+[
+  PARCEL_PHOTO_EMPTY,
+  PARCEL_PHOTO_CLOSEUP,
+  PARCEL_PHOTO_REVEALED,
+  PARCEL_PHOTO_REVEALED_CLOSEUP,
+].forEach(loadImage);
 
 /** A centered modal (unlike JournalPanel's docked window) — a backdrop click also closes it. `zoomed` resets for free on close since this only mounts while open; no manual reset needed. */
 export function ParcelViewer({ onClose }: { onClose: () => void }) {
