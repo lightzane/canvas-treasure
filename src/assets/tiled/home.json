@@ -436,7 +436,7 @@
          "name":"removables",
          "opacity":1,
          "type":"group",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -1015,13 +1015,13 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":63.5,
-                 "x":225,
-                 "y":215.5
+                 "width":114.561799093295,
+                 "x":196.367215461704,
+                 "y":255.5
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }],

@@ -124,7 +124,7 @@ export const homeScene: Scene = {
 
   enter() {
     if (GAME_STATE.sequence.intro) audioPlayMusic("home", { seek: 0, volume: BG_MUSIC_VOLUME });
-
+    GAME_STATE.player.moveSpeed = 200;
     if (bagHasItem("parcel") && !GAME_STATE.bagIconVisible && !GAME_STATE.sequence.closing_remarks)
       gsap.delayedCall(homeScene.fadeIn! + 0.5, () => hudSetBagIconVisible(true));
 
@@ -412,6 +412,8 @@ function mamaParcelConversation() {
 
   GAME_STATE.movementLocked = true; // covers the pre-dialogue beat below; DIALOGUE.show() keeps it locked once the conversation itself starts
   GAME_STATE.mama.face("s");
+
+  walk(GAME_STATE.player, { direction: "w", steps: 0.8 });
 
   playAttentionBounce(GAME_STATE.mama);
   playExclamation(GAME_STATE.mama);

@@ -315,7 +315,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <group id="11" name="removables" visible="0">
+ <group id="11" name="removables">
   <layer id="12" name="items" width="16" height="27">
    <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -535,8 +535,8 @@
   <object id="37" x="333.249" y="423.018" width="0.423442"/>
   <object id="40" x="115.558" y="736.089" width="85.4814" height="125.848"/>
  </objectgroup>
- <objectgroup color="#fffb00" id="21" name="trigger_zones" visible="0">
+ <objectgroup color="#fffb00" id="21" name="trigger_zones">
   <object id="38" name="exit" x="463.98" y="599.284" width="33" height="71.7662"/>
-  <object id="39" name="story_mama_parcel" x="225" y="215.5" width="63.5" height="34.2987"/>
+  <object id="39" name="story_mama_parcel" x="196.367" y="255.5" width="114.562" height="34.2987"/>
  </objectgroup>
 </map>

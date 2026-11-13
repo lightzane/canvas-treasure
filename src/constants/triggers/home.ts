@@ -6,5 +6,5 @@ export type TriggerName = "exit" | "story_mama_parcel";
 // prettier-ignore
 export const TRIGGER_HOME = scaleTiledObjects([
   { name: "exit", x: 463.979781109944, y: 599.284078795327, width: 33, height: 71.766164468 },
-  { name: "story_mama_parcel", x: 225, y: 215.5, width: 63.5, height: 34.2987243090007 },
+  { name: "story_mama_parcel", x: 196.367215461704, y: 255.5, width: 114.561799093295, height: 34.2987243090007 },
 ]);
