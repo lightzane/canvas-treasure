@@ -4779,6 +4779,9 @@ function sideCutsceneFlowerGarden() {
 
   talk(`Araw-araw ko pinagdadasal tayong dalawa.`);
 
+  talk(`Let's keep doing things na magkasama tayo and keep loving
+    each other — a timeless treasure, a gold that never rusts.`);
+
   talk(`Ikaw CheryLoves ko ang aking kayamanan. Magpakailanman.`);
 
   DIALOGUE.effect(() => {
