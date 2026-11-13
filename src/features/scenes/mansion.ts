@@ -450,7 +450,7 @@ function keysFoundConversation() {
     questSetStatus(questDaomingKeys, "resolved");
     playQuestToast(questDaomingKeys);
     playQuestCompleteBanner("Completed!");
-  }, 5);
+  }, 2.5);
 
   DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
 }

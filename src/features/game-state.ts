@@ -125,7 +125,7 @@ export const GAME_STATE = {
    * (e.g. on a direct game boot, with no prior scene to have set one).
    */
   spawnLocation: undefined as [number, number] | undefined,
-  sceneName: "house_huazelei" as SceneName,
+  sceneName: "overworld" as SceneName,
   /**
    * One-shot story-progress flags; doubles as the seed for a future save-game system (see GDD's "Sequence of Events").
    * `true` = complete.
@@ -135,16 +135,16 @@ export const GAME_STATE = {
     intro: true,
     mama_parcel: true,
     meet_daomingsi: true,
-    meet_huazelei: true,
-    chasing_sheet_2: true,
-    retrieving_sheet_2: true,
+    meet_huazelei: false,
+    chasing_sheet_2: false,
+    retrieving_sheet_2: false,
     mama_running_shoes: true,
     mama_starts_bottle: true,
     market_cutscene: true,
-    mid_aisle_cutscene: true,
-    mid_aisle_lei_cutscene: true,
-    mid_aisle_jp_cutscene: true,
-    closing_remarks: true,
+    mid_aisle_cutscene: false,
+    mid_aisle_lei_cutscene: false,
+    mid_aisle_jp_cutscene: false,
+    closing_remarks: false,
   },
   quests: QUESTS,
   /**

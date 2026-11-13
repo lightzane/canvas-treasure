@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="186" nextobjectid="913">
+<map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="140" height="100" tilewidth="32" tileheight="32" infinite="0" nextlayerid="186" nextobjectid="915">
  <editorsettings>
   <export target="overworld.json" format="json"/>
  </editorsettings>
@@ -1157,7 +1157,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <group id="42" name="event" visible="0">
+ <group id="42" name="event">
   <layer id="41" name="event_floor" width="140" height="100">
    <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1995,7 +1995,7 @@
    <object id="60" x="3069" y="1409.7" width="52" height="446.652"/>
   </objectgroup>
  </group>
- <group id="55" name="non_event">
+ <group id="55" name="non_event" visible="0">
   <layer id="54" name="benches" width="140" height="100">
    <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14538,7 +14538,7 @@
   <object id="487" x="3797.14" y="277.611" width="62.8554" height="22.0742"/>
   <object id="488" x="3796.39" y="278.36" width="23.1966" height="150.778"/>
   <object id="489" x="3508.68" y="373.017" width="291.829" height="21.326"/>
-  <object id="490" x="3443.95" y="439.614" width="148.908" height="20.5777"/>
+  <object id="490" x="3445.46" y="439.614" width="147.405" height="20.5777"/>
   <object id="491" x="3445.45" y="215.504" width="20.9518" height="239.823"/>
   <object id="492" x="3380.72" y="276.489" width="20.2035" height="84.5555"/>
   <object id="493" x="3317.49" y="276.863" width="83.4331" height="19.8294"/>
@@ -14925,9 +14925,10 @@
   <object id="898" x="1135.91" y="697.328" width="31.3431" height="29.787"/>
   <object id="899" x="1296.4" y="665.985" width="31.3431" height="29.787"/>
   <object id="900" x="1455.79" y="696.883" width="31.3431" height="29.787"/>
-  <object id="912" x="1891" y="943.454" width="26.9266" height="9.54361"/>
+  <object id="912" x="1902.59" y="943.454" width="15.3379" height="9.54361"/>
+  <object id="913" x="2582.12" y="1662.68" width="84.4232" height="61.7057"/>
  </objectgroup>
- <group id="162" name="trigger_zones">
+ <group id="162" name="trigger_zones" visible="0">
   <objectgroup color="#ff40ff" id="167" name="restrict">
    <object id="52" name="allow_run" x="2976.01" y="1856.37" width="96" height="33"/>
    <object id="53" name="disallow_run" x="2976.01" y="1822.37" width="96" height="33"/>

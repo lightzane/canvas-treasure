@@ -2163,7 +2163,7 @@
          "name":"event",
          "opacity":1,
          "type":"group",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -2488,7 +2488,7 @@
          "name":"non_event",
          "opacity":1,
          "type":"group",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -19562,8 +19562,8 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":148.907512720742,
-                 "x":3443.95390601616,
+                 "width":147.405300818612,
+                 "x":3445.45611791829,
                  "y":439.613888057468
                 }, 
                 {
@@ -24209,9 +24209,21 @@
                  "rotation":0,
                  "type":"",
                  "visible":true,
-                 "width":26.926616449095,
-                 "x":1890.99832986809,
+                 "width":15.3379460785984,
+                 "x":1902.58700023859,
                  "y":943.4541054569
+                }, 
+                {
+                 "height":61.705654816725,
+                 "id":913,
+                 "name":"",
+                 "opacity":1,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":84.4231595751212,
+                 "x":2582.12070976853,
+                 "y":1662.67575366857
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -25161,7 +25173,7 @@
          "name":"trigger_zones",
          "opacity":1,
          "type":"group",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -25191,7 +25203,7 @@
          "y":0
         }],
  "nextlayerid":186,
- "nextobjectid":913,
+ "nextobjectid":915,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

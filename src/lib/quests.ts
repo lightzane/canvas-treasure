@@ -67,7 +67,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "invitation_postcard", // main quest OR last quest
     {
       description: "Find out what's this treasure is about.",
-      status: "resolved",
+      status: "active",
     },
   ],
   [
@@ -77,16 +77,16 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
       status: "resolved",
     },
   ],
-  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
+  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "active" }],
   ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "resolved" }],
   ["meet_ximen", { description: "Find and meet XI MEN", status: "resolved" }],
   [
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 3,
+      qty: 0,
       totalQty: 3,
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [
@@ -114,14 +114,14 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "resolved",
+      status: "active",
     },
   ],
   [
     "sketch_unity",
     {
       description: "Find out what is Hua Ze Lei's sketch is about.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
 ]);

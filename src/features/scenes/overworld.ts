@@ -864,11 +864,11 @@ const npcAdultMale2 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE
 const npcAdultMale3 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
 const npcAdultMale4 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
 const npcAdultMale5 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
-const npcAdultFemale1 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE}, ...npcCfg, scale: 1.05 }) // prettier-ignore
-const npcAdultFemale2 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_2_IDLE}, ...npcCfg, scale: 1.05 }) // prettier-ignore
-const npcAdultFemale3 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE}, ...npcCfg, scale: 1.05 }) // prettier-ignore
-const npcAdultFemale4 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_2_IDLE}, ...npcCfg, scale: 1.05 }) // prettier-ignore
-const npcAdultFemale5 = new PlayerSprite({sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE}, ...npcCfg, scale: 1.05 }) // prettier-ignore
+const npcAdultFemale1 = new PlayerSprite({ sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
+const npcAdultFemale2 = new PlayerSprite({ sprites: {idle: IMGS_ADULT_FEMALE_2_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
+const npcAdultFemale3 = new PlayerSprite({ sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
+const npcAdultFemale4 = new PlayerSprite({ sprites: {idle: IMGS_ADULT_FEMALE_2_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
+const npcAdultFemale5 = new PlayerSprite({ sprites: {idle: IMGS_ADULT_FEMALE_1_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
 const npcTeenBoy2 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg, scale: 0.98 }); // prettier-ignore
 const npcTeenBoy3 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg, scale: 0.98 }); // prettier-ignore
 const npcTeenBoy1 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg, scale: 0.98 }); // prettier-ignore
@@ -883,6 +883,56 @@ const npcBeachFemale1 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FE
 const npcBeachFemale2 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE }, ...npcCfg }); // prettier-ignore
 const npcFloristMale1 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_MALE_IDLE }, ...npcCfg }); // prettier-ignore
 const npcFloristFemale1 = new PlayerSprite({ sprites: { idle: IMGS_FLORIST_FEMALE_IDLE }, ...npcCfg }); // prettier-ignore
+
+// NPCs at the park
+const npcParkBeachFemale1 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkElderWoman1 = new PlayerSprite({ sprites: {idle: IMGS_ELDER_WOMAN_IDLE}, ...npcCfg}) // prettier-ignore
+const npcParkTeenBoy1 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg, scale: 0.98 }); // prettier-ignore
+const npcParkAdultMale1 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
+const npcParkBeachMale1 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_2_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkAdultMale2 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
+const npcParkBeachFemale2 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkBeachFemale3 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkTeenGirl1 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE }, ...npcCfg });
+const npcParkElderMan1 = new PlayerSprite({ sprites: {idle: IMGS_ELDER_MAN_IDLE}, ...npcCfg }) // prettier-ignore
+const npcParkTeenBoy2 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE}, ...npcCfg }) // prettier-ignore
+const npcParkAdultMale3 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_2_IDLE }, ...npcCfg, scale: 1.02 }); // prettier-ignore
+const npcParkAdultMale4 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_MALE_1_IDLE }, ...npcCfg, scale: 1.05 }); // prettier-ignore
+const npcParkBeachMale2 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_1_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkBeachMale3 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_2_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkElderMan2 = new PlayerSprite({ sprites: { idle: IMGS_ELDER_MAN_IDLE}, ...npcCfg }) // prettier-ignore
+const npcParkAdultFemale4 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_FEMALE_2_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
+const npcParkAdultFemale5 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_FEMALE_1_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
+const npcParkBeachMale4 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_2_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkBeachFemale5 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkTeenBoy3 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE}, ...npcCfg }) // prettier-ignore
+const npcParkTeenGirl2 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE}, ...npcCfg }) // prettier-ignore
+const npcParkBeachMale5 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_1_IDLE }, ...npcCfg }); // prettier-ignore
+
+const OVERWORLD_NPCS_AT_THE_PARK = [
+  npcParkBeachFemale1,
+  npcParkElderWoman1,
+  npcParkTeenBoy1,
+  npcParkAdultMale1,
+  npcParkBeachMale1,
+  npcParkAdultMale2,
+  npcParkBeachFemale2,
+  npcParkBeachFemale3,
+  npcParkTeenGirl1,
+  npcParkElderMan1,
+  npcParkTeenBoy2,
+  npcParkAdultMale3,
+  npcParkAdultMale4,
+  npcParkBeachMale2,
+  npcParkBeachMale3,
+  npcParkAdultFemale4,
+  npcParkAdultFemale5,
+  npcParkBeachMale4,
+  npcParkBeachFemale5,
+  npcParkTeenBoy3,
+  npcParkTeenGirl2,
+  npcParkBeachMale5,
+];
 
 // Then call that function once in module-level and at the end of the event (never in scene.enter)
 function spawnOverworldNpcs() {
@@ -967,7 +1017,85 @@ function spawnOverworldNpcs() {
   npcTeenBoy3.face("d");
 }
 
+function spawnOverworldParkNpcs() {
+  // 2 sitting at bench top-left
+  respawnNPC(npcParkBeachFemale1, [80.35, 38.7]);
+  respawnNPC(npcParkElderWoman1, [81.15, 38.7]);
+  npcParkBeachFemale1.face("s");
+  npcParkElderWoman1.face("s");
+
+  // 2 near table-bench at bottom
+  respawnNPC(npcParkTeenBoy1, [88, 54]);
+  respawnNPC(npcParkAdultMale1, [89, 54]);
+  npcParkTeenBoy1.face("d");
+  npcParkAdultMale1.face("a");
+
+  // 2 near fountain at bottom-left under a tree
+  respawnNPC(npcParkBeachMale1, [85, 50]);
+  respawnNPC(npcParkAdultMale2, [85.5, 49.5]);
+  npcParkBeachMale1.face("d");
+  npcParkAdultMale2.face("s");
+
+  // 1 near pink tree
+  respawnNPC(npcParkBeachFemale2, [85.8, 34]);
+  npcParkBeachFemale2.face("a");
+
+  // 2 near the west entrance under a tree
+  respawnNPC(npcParkBeachFemale3, [85, 45]);
+  respawnNPC(npcParkTeenGirl1, [85.5, 45.5]);
+  npcParkBeachFemale3.face("d");
+  npcParkTeenGirl1.face("w");
+
+  // 2 sitting at bench top-right
+  respawnNPC(npcParkTeenBoy2, [107.35, 38.7]);
+  respawnNPC(npcParkElderMan1, [108.15, 38.7]);
+  npcParkTeenBoy2.face("s");
+  npcParkElderMan1.face("s");
+
+  // 2 at top-right corner
+  respawnNPC(npcParkAdultMale3, [108, 35.85]);
+  respawnNPC(npcParkAdultMale4, [109.5, 37]);
+  npcParkAdultMale3.face("s");
+  npcParkAdultMale4.face("a");
+
+  // 3 persons near intersection of park midway
+  respawnNPC(npcParkBeachMale2, [101, 41.15]);
+  respawnNPC(npcParkBeachMale3, [99.75, 41.25]);
+  respawnNPC(npcParkElderMan2, [100.25, 40]);
+  npcParkBeachMale2.face("w");
+  npcParkBeachMale3.face("w");
+  npcParkElderMan2.face("s");
+
+  // 2 sitting at bottom-left near the fountain
+  respawnNPC(npcParkAdultFemale4, [106.35, 54.7]);
+  respawnNPC(npcParkAdultFemale5, [107.15, 54.7]);
+  npcParkAdultFemale4.face("s");
+  npcParkAdultFemale5.face("s");
+
+  // 2 middle-left bench near fountain
+  respawnNPC(npcParkBeachMale4, [103.5, 50]);
+  respawnNPC(npcParkBeachFemale5, [103.5, 50.5]);
+  npcParkBeachMale4.face("a");
+  npcParkBeachFemale5.face("a");
+
+  // 1 bottom-left fountain's left
+  respawnNPC(npcParkTeenBoy3, [78.5, 52]);
+  npcParkTeenBoy3.face("d");
+
+  // 1 bottom-left fountain's bottom
+  respawnNPC(npcParkTeenGirl2, [81, 55]);
+  npcParkTeenGirl2.face("w");
+
+  // 1 near east entrance
+  respawnNPC(npcParkBeachMale5, [109, 49]);
+  npcParkBeachMale5.face("s");
+}
+
+function spawnOverworldMarketNpcs() {}
+
 spawnOverworldNpcs();
+spawnOverworldParkNpcs();
+spawnOverworldMarketNpcs();
 
 // A rare, story-relevant side event — kept idempotent and re-derived every
 // call rather than placed once, so calling it from initSideQuests() (every
@@ -1009,6 +1137,12 @@ function spawnHeartGardenNpcs() {
 // facePlayer:true default, since a bare sprite is added either way.
 addOnce(INTERACTABLES, { sprite: npcBeachFemale1, facePlayer: false });
 addOnce(INTERACTABLES, { sprite: npcBeachFemale2, facePlayer: false });
+addOnce(INTERACTABLES, { sprite: npcParkBeachFemale1, facePlayer: false });
+addOnce(INTERACTABLES, { sprite: npcParkElderWoman1, facePlayer: false });
+addOnce(INTERACTABLES, { sprite: npcParkElderMan1, facePlayer: false });
+addOnce(INTERACTABLES, { sprite: npcParkTeenBoy2, facePlayer: false });
+addOnce(INTERACTABLES, { sprite: npcParkAdultFemale4, facePlayer: false });
+addOnce(INTERACTABLES, { sprite: npcParkAdultFemale5, facePlayer: false });
 
 const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
   [
@@ -1115,6 +1249,107 @@ const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
     "FLORIST: Hi! Tuloy lang po kayo sa flowershop namin — The heart behind every garden in town!",
     interactFloristHeart,
   ],
+  [npcParkBeachFemale1, "f", "Lagi ko nakikita si HUA ZE LEI dito napunta sa park."],
+  [
+    npcParkElderWoman1,
+    "f",
+    "Ito'ng anak ko nagmana sa akin...",
+    () => DIALOGUE.queue("Fan rin ni HUA ZE LEI! Oh di ba bongga?"),
+  ],
+  [
+    npcParkTeenBoy1,
+    "m",
+    "d",
+    "Sabi ni PAPA ko mag volunteer daw kami mag prepare dito tuwing meron event.",
+  ],
+  [npcParkAdultMale1, "m", "a", "Mahilig kami tumulong mag prep dito sa park tuwing meron event."],
+  [
+    npcParkBeachMale1,
+    "m",
+    "Masarap rin tumambay dito sa park na para bang nasa beach ka rin at naririnig ang tubig sa fountain!",
+  ],
+  [
+    npcParkAdultMale2,
+    "m",
+    "Masarap rin tumambay dito sa park at naririnig ang mga huni ng ibon, so relaxing!",
+  ],
+  [
+    npcParkBeachFemale2,
+    "f",
+    "Lagi ko nakikita dito si HUA ZE LEI sa park lalo sa tabi nitong pink na Cherry Blossom tree.",
+  ],
+  [npcParkBeachFemale3, "f", "d", "Everyday kami napunta dito sa park para mag exercise!"],
+  [
+    npcParkTeenGirl1,
+    "f",
+    "w",
+    "Mas masaya kung masigla ang katawan, at masarap maglakad lakad sa relaxing na lugar na ito.",
+  ],
+  [
+    npcParkTeenBoy2,
+    "m",
+    "Lagi ako pinapasyal ni lolo dito sa park upang makita na kahit nasa labas ka, malinis pa rin ang kapaligiran kapag meron disiplina.",
+  ],
+  [
+    npcParkElderMan1,
+    "m",
+    "Pinapasyal ko lagi dito ang apo ko at maturuan na panatilihing malinis ang kapaligiran at maayos rin ang ibabalik ng kalikasan. Remember, cleanliness is next to godliness.",
+  ],
+  [
+    npcParkAdultMale3,
+    "m",
+    "Naka-antabay kami dito palagi para tumulong sa mga kaganapan sa park para lumakas at ma-exercise.",
+  ],
+  [
+    npcParkAdultMale4,
+    "m",
+    "Ako nag-volunteer sa mga kaganapan at preps sa park para makakain ako ng free foods!",
+  ],
+  [
+    npcParkBeachMale2,
+    "m",
+    "w",
+    "Sinisipag kami tumulong sa preprations tuwing meron event dito dahil meron free foods.",
+  ],
+  [
+    npcParkBeachMale3,
+    "m",
+    "w",
+    "Masarap mamuhay sa lugar na ito lalo na kung meron disiplina lahat ng tao.",
+  ],
+  [
+    npcParkElderMan2,
+    "m",
+    "s",
+    "Nangunguna palagi disiplina dito. Malinis palagi ang park marami man kaganapan, sapagkat ang mga tao ay nagtatapon sa tamang basurahan.",
+  ],
+  [
+    npcParkAdultFemale4,
+    "f",
+    "Kaya pala marami natambay malapit sa fountain na park, para lang nasa beach dahil sa tunog ng tubig.",
+  ],
+  [npcParkAdultFemale5, "f", "Masarap ang simoy ng hangin dito dahil malinis rin ang kapaligiran!"],
+  [
+    npcParkBeachMale4,
+    "m",
+    "Kapag malayo sa beach ito ang alternative relaxation, sa park malapit sa fountain!",
+  ],
+  [
+    npcParkBeachFemale5,
+    "f",
+    "Ang sarap marinig ng tubig sa fountain dito sa park, akala mo nasa beach ka.",
+  ],
+  [npcParkTeenBoy3, "m", "d", "Masarap pagmasdan ang tubig sa fountain, para ako ginhypnotized."],
+  [
+    npcParkTeenGirl2,
+    "f",
+    "Dito masarap mag stretching tapos jogging papunta sa beach. Naaalala ko nakita ko dati ang F4 natakbo sa beach! I'm a fan, ikaw ba? MEI ZUO ang bias ko!",
+  ],
+  [
+    npcParkBeachMale5,
+    "m",
+    "Magaling ang gumawa nitong game, kaya responsable ang mga tao dito at meron disiplina. Kaya palagi rin malinis ang tubig sa fountain!",
+  ],
 ]);
 
 const MAIN_EVENT_GUESTS_LEFT_SIDE = [
@@ -1125,6 +1360,16 @@ const MAIN_EVENT_GUESTS_LEFT_SIDE = [
   npcBeachMale2,
   npcAdultFemale4,
   npcBeachFemale1,
+  npcParkBeachFemale1,
+  npcParkElderWoman1,
+  npcParkTeenBoy1,
+  npcParkAdultMale1,
+  npcParkBeachMale1,
+  npcParkAdultMale2,
+  npcParkBeachFemale2,
+  npcParkBeachFemale3,
+  npcParkTeenGirl1,
+  npcParkTeenBoy3,
 ];
 
 const MAIN_EVENT_GUESTS_RIGHT_SIDE = [
@@ -1134,11 +1379,23 @@ const MAIN_EVENT_GUESTS_RIGHT_SIDE = [
   npcBeachFemale2,
   npcAdultFemale3,
   npcBeachMale1,
+  npcParkTeenBoy2,
+  npcParkElderMan1,
+  npcParkAdultMale3,
+  npcParkAdultMale4,
+  npcParkBeachMale2,
+  npcParkBeachMale3,
+  npcParkElderMan2,
+  npcParkAdultFemale4,
+  npcParkAdultFemale5,
+  npcParkTeenGirl2,
+  npcParkBeachMale5,
 ];
 
 const OVERWORLD_NPCS_ATTENDING_MAIN_EVENT = [
   ...MAIN_EVENT_GUESTS_LEFT_SIDE,
   ...MAIN_EVENT_GUESTS_RIGHT_SIDE,
+  ...OVERWORLD_NPCS_AT_THE_PARK,
 
   // Not seated (Left side)
   npcFloristMale1,
@@ -1861,6 +2118,17 @@ function interactPaperMulti() {
   });
 
   walk(player, [82, 43]);
+
+  // Allow npcs nearby to react
+  [npcParkBeachFemale3, npcParkTeenGirl1].forEach((npc) => {
+    const currentFace = npc.facing;
+    gsap.delayedCall(Math.random(), () => {
+      npc.face("a");
+      playAttentionBounce(npc);
+      playExclamation(npc);
+      gsap.delayedCall(3.5 + Math.random(), () => npc.face(currentFace));
+    });
+  });
 
   audioPlaySound("quick_air_woosh");
   drift(paperWind1, {
@@ -3340,6 +3608,7 @@ function cutsceneClosingRemarks() {
         GAME_STATE.sceneName = "home";
         // reset npcs
         spawnOverworldNpcs();
+        spawnOverworldParkNpcs();
         despawnNPC(npcIroh);
         despawnNPC(npcZuko);
         cleanupMainEvent(); // f4 + both guard formations, papa back to his free-roam spot
@@ -3622,7 +3891,7 @@ function initMainEventGuards() {
   PARK_EVENT_GUARDS_INTERACTABLES.forEach((entry) => addOnce(INTERACTABLES, entry));
   AISLE_GUARDS.forEach((npc) => addOnce(INTERACTABLES, npc));
 
-  if (questDaoMingKeys.status !== "resolved") {
+  if (!isQuestResolved(questDaoMingKeys)) {
     placeAtTile({ sprite: AISLE_GUARDS_ROW_A[0], tile: [92.5, 58] });
     placeAtTile({ sprite: AISLE_GUARDS_ROW_A[1], tile: [93.5, 57.5] });
     placeAtTile({ sprite: AISLE_GUARDS_ROW_B[0], tile: [94.5, 57.5] });
@@ -3631,6 +3900,9 @@ function initMainEventGuards() {
       respawnNPC(npc);
       npc.face("s");
     });
+
+    // Remove overworld park npcs
+    OVERWORLD_NPCS_AT_THE_PARK.forEach(despawnNPC);
   }
 }
 
@@ -3754,6 +4026,33 @@ function initMainEvent() {
   respawnNPC(npcTeenBoy3, [103.75, 41.5]);
   npcTeenGirl3.face("a");
   npcTeenBoy3.face("a");
+
+  // NPCs at the Park that will attend the event
+  respawnNPC(npcParkBeachFemale1, [90, 52]);
+  respawnNPC(npcParkElderWoman1, [91, 52]);
+  respawnNPC(npcParkTeenBoy1, [88, 54]);
+  respawnNPC(npcParkAdultMale1, [89, 54]);
+  respawnNPC(npcParkBeachMale1, [85, 50]);
+  respawnNPC(npcParkAdultMale2, [85.5, 49.5]);
+  respawnNPC(npcParkBeachFemale2, [88.5, 50.5]);
+  respawnNPC(npcParkBeachFemale3, [86, 52]);
+  respawnNPC(npcParkTeenGirl1, [86.5, 52.5]);
+  respawnNPC(npcParkTeenBoy2, [98, 52]);
+  respawnNPC(npcParkElderMan1, [98.85, 52]);
+  respawnNPC(npcParkAdultMale3, [103, 49.5]);
+  respawnNPC(npcParkAdultMale4, [103.5, 50.5]);
+  respawnNPC(npcParkBeachMale2, [101, 51]);
+  respawnNPC(npcParkBeachMale3, [102, 51]);
+  respawnNPC(npcParkElderMan2, [101, 49.35]);
+  respawnNPC(npcParkAdultFemale4, [102, 53]);
+  respawnNPC(npcParkAdultFemale5, [100, 55]);
+  respawnNPC(npcParkBeachMale4, [103.5, 40.25]);
+  respawnNPC(npcParkBeachFemale5, [103, 40]);
+  npcParkAdultFemale4.face("a");
+  npcParkAdultFemale5.face("a");
+  respawnNPC(npcParkTeenBoy3, [88, 46]);
+  respawnNPC(npcParkTeenGirl2, [102, 46]);
+  respawnNPC(npcParkBeachMale5, [100.75, 46.95]);
 
   // Other NPC guests (needs cleanup after event)
   respawnNPC(npcIroh, [97.25, 45.75]);
@@ -3900,6 +4199,7 @@ function attemptEnterHouseHuazelei() {
       portrait: null,
       color: "black",
     });
+    DIALOGUE.queue(`Balik na lang ako mamaya baka hindi na naka-lock.`);
     DIALOGUE.onComplete = () => hudSetBagIconVisible(true);
     return;
   }
