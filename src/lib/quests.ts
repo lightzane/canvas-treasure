@@ -67,26 +67,26 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "invitation_postcard", // main quest OR last quest
     {
       description: "Find out what's this treasure is about.",
-      status: "resolved",
+      status: "active",
     },
   ],
   [
     "daoming_keys",
     {
       description: "Help DAO MING SI find his missing keys.",
-      status: "resolved",
+      status: "active",
     },
   ],
-  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "active" }],
-  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "resolved" }],
-  ["meet_ximen", { description: "Find and meet XI MEN", status: "resolved" }],
+  ["meet_huazelei", { description: "Find and meet HUA ZE LEI", status: "resolved" }],
+  ["meet_meizuo", { description: "Find and meet MEI ZUO", status: "active" }],
+  ["meet_ximen", { description: "Find and meet XI MEN", status: "active" }],
   [
     "catch_sheets",
     {
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
-      qty: 0,
+      qty: 2,
       totalQty: 3,
-      status: "resolved",
+      status: "active",
     },
   ],
   [
@@ -114,7 +114,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "resolved",
+      status: "inactive",
     },
   ],
   [

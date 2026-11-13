@@ -905,9 +905,16 @@ const npcParkAdultFemale4 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_FEMAL
 const npcParkAdultFemale5 = new PlayerSprite({ sprites: { idle: IMGS_ADULT_FEMALE_1_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
 const npcParkBeachMale4 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_2_IDLE }, ...npcCfg }); // prettier-ignore
 const npcParkBeachFemale5 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE }, ...npcCfg }); // prettier-ignore
-const npcParkTeenBoy3 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE}, ...npcCfg }) // prettier-ignore
-const npcParkTeenGirl2 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE}, ...npcCfg }) // prettier-ignore
+const npcParkTeenBoy3 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg }) // prettier-ignore
+const npcParkTeenGirl2 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE }, ...npcCfg }) // prettier-ignore
 const npcParkBeachMale5 = new PlayerSprite({ sprites: { idle: IMGS_BEACH_OUTFIT_MALE_1_IDLE }, ...npcCfg }); // prettier-ignore
+const npcParkElderMan3 = new PlayerSprite({ sprites: { idle: IMGS_ELDER_MAN_IDLE }, ...npcCfg }) // prettier-ignore
+const npcParkElderWoman2 = new PlayerSprite({ sprites: { idle: IMGS_ELDER_WOMAN_IDLE }, ...npcCfg }) // prettier-ignore
+const npcParkTeenBoy4 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg }) // prettier-ignore
+const npcParkTeenGirl3 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE }, ...npcCfg, scale: 0.98 }) // prettier-ignore
+const npcParkElderMan4 = new PlayerSprite({ sprites: { idle: IMGS_ELDER_MAN_IDLE }, ...npcCfg, scale: 1.05 }) // prettier-ignore
+const npcParkTeenGirl4 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_GIRL_IDLE }, ...npcCfg, scale: 0.98 }) // prettier-ignore
+const npcParkTeenBoy5 = new PlayerSprite({ sprites: { idle: IMGS_TEENAGE_BOY_IDLE }, ...npcCfg }) // prettier-ignore
 
 const OVERWORLD_NPCS_AT_THE_PARK = [
   npcParkBeachFemale1,
@@ -932,6 +939,13 @@ const OVERWORLD_NPCS_AT_THE_PARK = [
   npcParkTeenBoy3,
   npcParkTeenGirl2,
   npcParkBeachMale5,
+  npcParkElderMan3,
+  npcParkElderWoman2,
+  npcParkTeenBoy4,
+  npcParkTeenGirl3,
+  npcParkElderMan4,
+  npcParkTeenGirl4,
+  npcParkTeenBoy5,
 ];
 
 // Then call that function once in module-level and at the end of the event (never in scene.enter)
@@ -1089,6 +1103,27 @@ function spawnOverworldParkNpcs() {
   // 1 near east entrance
   respawnNPC(npcParkBeachMale5, [109, 49]);
   npcParkBeachMale5.face("s");
+
+  // 2 having conversation at the 10 o'clock of park's intersection
+  respawnNPC(npcParkTeenGirl3, [88.25, 38.1]);
+  respawnNPC(npcParkElderMan4, [89, 38]);
+  npcParkTeenGirl3.face("d");
+  npcParkElderMan4.face("a");
+
+  // ==================================================================
+  // Below this line are NPCs that won't be attending the main event
+
+  // # middle-left on clean stone platform
+  respawnNPC(npcParkElderMan3, [92.5, 46]); // near trash middle
+  respawnNPC(npcParkTeenBoy4, [87.5, 49]); // near tree left
+  npcParkTeenBoy4.face("a");
+
+  // # middle-right on clean stone platform
+  respawnNPC(npcParkElderWoman2, [99.5, 50]);
+  respawnNPC(npcParkTeenGirl4, [96.5, 48]);
+  respawnNPC(npcParkTeenBoy5, [97.5, 48]);
+  npcParkTeenGirl4.face("d");
+  npcParkTeenBoy5.face("a");
 }
 
 function spawnOverworldMarketNpcs() {}
@@ -1349,6 +1384,57 @@ const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
     npcParkBeachMale5,
     "m",
     "Magaling ang gumawa nitong game, kaya responsable ang mga tao dito at meron disiplina. Kaya palagi rin malinis ang tubig sa fountain!",
+  ],
+  [
+    npcParkElderMan3,
+    "m",
+    `Nakapunta ka na ba sa IROH's TEASHOP? Meron daw dito yun dinadayo ng mga tao dahil sa sikat nitong JASMINE TEA.`,
+  ],
+  [
+    npcParkElderWoman2,
+    "f",
+    `
+    Alam mo nung mas bata pa ako, ay napakalinis ng park na ito.
+    Pero ngayon nagka-edad na ako, makikita ko na malinis pa rin ang park na ito.
+    Mahusay at responsable talaga ang taong gumawa nitong game na ito.
+    `,
+  ],
+  [
+    npcParkTeenBoy4,
+    "m",
+    "a",
+    `Nung una nalungkot ako dahil hindi ako magaling magdrawing kahit hilig ko ito.
+     Mapangit drawing ko dahil hindi ako magaling magdrawing ng mga perfect shapes.
+     Pero nung na-realize ko, walang perfect shapes ang mga puno, kaya ito
+     ngayon ang naging style ko sa pagdrawing, at sabi nila, parang tunay daw
+     ako magdrawing ng mga puno.
+    `,
+  ],
+  [
+    npcParkTeenGirl3,
+    "f",
+    "d",
+    "Wala ka sa Lolo ko, malakas pa rin dahil sa exercise and tamang pagkain!",
+  ],
+  [
+    npcParkElderMan4,
+    "m",
+    "a",
+    `Ang responsableng magulang sa mga anak at apo ay 
+    pinanatili rin malusog ang ating mga pangangatawan.
+    Manatiling aktibo sa physical na gawain!`,
+  ],
+  [
+    npcParkTeenGirl4,
+    "f",
+    "d",
+    "Marami sa kanila mahilig mag-exercise, pero kami sports ang alternative.",
+  ],
+  [
+    npcParkTeenBoy5,
+    "m",
+    "a",
+    "Boring mag-exercise, maglalaro na lang kami ng kapatid ko ng sports!",
   ],
 ]);
 
