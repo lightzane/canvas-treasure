@@ -13,14 +13,16 @@ import {
   createTriggerZones,
   type TriggerHandlers,
 } from "@/features/zone";
+import { addOnce } from "@/lib/array";
 import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
 import { bagHasItem, bagIncItem } from "@/lib/bag";
-import { addOnce } from "@/lib/array";
 import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { createCompanion } from "@/lib/companion";
+import { beginCutscene, endCutscene } from "@/lib/cutscene";
+import { playAttentionBounce } from "@/lib/effects/attention-bounce";
 import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { hudSetBagIconVisible } from "@/lib/hud";
@@ -39,6 +41,7 @@ import gsap from "gsap";
 const IMG_MAP_BG = img("maps/flowershop.png");
 const IMG_MAP_FG = img("maps/flowershop-fg.png");
 const ICON_SHEARS = img("others/garden-shears.png");
+const ICON_RED_HEART = img("others/red-heart.png");
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
@@ -191,6 +194,27 @@ function interactions(target: Sprite | undefined) {
     case npcStaffF3:
       mainQuestGardenShears();
       break;
+  }
+
+  const jp = GAME_STATE.jp;
+  if (target === jp) {
+    DIALOGUE.effect(() => {
+      beginCutscene();
+      playExclamation(jp, { glyph: "🥰" });
+      playAttentionBounce(jp);
+      playExclamation(GAME_STATE.player, { icon: ICON_RED_HEART, hold: 3, delay: 3.5 });
+    }, 0.00001);
+    DIALOGUE.queue({
+      text: `
+        JP Love Love: Naaalala mo ba nung unang beses pa lang
+        tayo na nagkita sa personal ay binigyan na kita agad
+        ng flowers na nasa loob ng glass dome?
+      `,
+      color: "blue",
+      portrait: null,
+    });
+    endCutscene();
+    return;
   }
 }
 

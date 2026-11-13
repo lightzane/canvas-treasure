@@ -67,7 +67,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "invitation_postcard", // main quest OR last quest
     {
       description: "Find out what's this treasure is about.",
-      status: "active",
+      status: "resolved",
     },
   ],
   [
@@ -86,7 +86,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
       description: "Catch HUA ZE LEI's sheets of tracing paper.",
       qty: 0,
       totalQty: 3,
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [
@@ -114,7 +114,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "active",
+      status: "resolved",
     },
   ],
   [

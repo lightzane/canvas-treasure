@@ -1950,6 +1950,21 @@ function interactMama() {
       color: "blue",
     });
     DIALOGUE.effect(() => schedulePapaFaceMama());
+  } else if (isQuestResolved("invitation_postcard")) {
+    DIALOGUE.effect(() => {
+      playExclamation(GAME_STATE.mama, { glyph: "😍" });
+      playExclamation(jp, { glyph: "😅", delay: 3 });
+      playAttentionBounce(jp, { delay: 3 });
+    }, 0.00001);
+    DIALOGUE.queue({
+      text: `MAMA: Abaw! Congratulations CHING! Nahanap mo rin ang treasure mo na si JP!`,
+      color: "red",
+    });
+    DIALOGUE.effect(() => playExclamation(GAME_STATE.papa), 0.3);
+    DIALOGUE.queue({
+      text: `PAPA: Congrats CHING!`,
+      color: "blue",
+    });
   }
 
   // No hints

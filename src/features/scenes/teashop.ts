@@ -13,11 +13,15 @@ import {
 } from "@/features/zone";
 import { addOnce } from "@/lib/array";
 import { audioPlayMusic, audioStopMusic } from "@/lib/audio";
+import { DIALOGUE } from "@/lib/canvas/dialogue";
 import { drawSpriteClipped } from "@/lib/canvas/sprite-clip";
 import { isInViewport } from "@/lib/canvas/viewport";
 import { drawViewportClamped, prepareViewportClamped } from "@/lib/canvas/viewport-clamp";
 import { drawYSorted } from "@/lib/canvas/y-sort";
 import { createCompanion } from "@/lib/companion";
+import { beginCutscene, endCutscene } from "@/lib/cutscene";
+import { playAttentionBounce } from "@/lib/effects/attention-bounce";
+import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
 import { movePlayer } from "@/lib/map-movement";
@@ -194,4 +198,24 @@ function interactions(target: Sprite | undefined) {
   talkCommonF(npcCustomerF3, "d", `DAO MING FAN: Mas gwapo si DAO MING SI kaysa kay HUA ZE LEI!`);
   talkCommonM(npcCustomerM4, "a", `ZAI ZAI FAN: Mas gwapo si HUA ZE LEI kaysa kay DAO MING SI!`);
   talkCommonM(npcCustomerM3, `ZUKO FAN: Sa wakas si ZUKO rin ang nakapag serve ng hot tea ko!`);
+
+  const jp = GAME_STATE.jp;
+  if (target === jp) {
+    DIALOGUE.effect(() => {
+      beginCutscene();
+      playExclamation(jp, { glyph: "🥰" });
+      playAttentionBounce(jp);
+    }, 0.00001);
+    DIALOGUE.queue({
+      text: `
+          JP Love Love: Super love ko yung moment na nanunuod tayo 
+          dalawa together ng Avatar: Legend of Aang habang nainom
+          ng Jasmine Milk Tea.
+        `,
+      color: "blue",
+      portrait: null,
+    });
+    endCutscene();
+    return;
+  }
 }
