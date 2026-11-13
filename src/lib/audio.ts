@@ -75,6 +75,7 @@ export type MusicKey =
   | "jazz"
   | "house_huazelei"
   | "house_daomingsi"
+  | "meteor_rain"
   | "amb_beach"
   | "amb_shopping_crowd"
   | "amb_water_flowing"
@@ -195,6 +196,7 @@ const MUSIC_REGISTRY: Record<MusicKey, MusicEntry> = {
   jazz: "jazz.mp3",
   house_daomingsi: "我是真的真的很愛妳.mp3",
   house_huazelei: "最特別的存在.mp3",
+  meteor_rain: "流星雨.mp3",
   amb_beach: "ambience/mixkit-small-waves-harbor-rocks-1208.wav",
   amb_shopping_crowd: "ambience/mixkit-shopping-center-crowd-377.wav",
   amb_water_flowing: "ambience/mixkit-water-flowing-ambience-loop-3126.wav",

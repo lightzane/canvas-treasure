@@ -1928,7 +1928,7 @@ export const overworldScene: Scene = {
     // a later, unrelated entry (e.g. a straight game boot into overworld).
     // spriteSize pins this to the player's stable boxSize — see the same
     // comment in home.ts, or spriteSize's own doc in positioning.ts.
-    const spawnTile = GAME_STATE.spawnLocation ?? [95, 73]; // [58.9, 42];
+    const spawnTile = GAME_STATE.spawnLocation ?? [58.9, 42];
     placeAtTile({
       sprite: player,
       tile: spawnTile,
@@ -3224,7 +3224,7 @@ function cutsceneMarket() {
     walk(player, [101.5, 75], {
       onComplete: () => {
         player.face("w");
-        meizuo.face("w");
+        meizuo.face("s");
         ximen.face("s");
         playExclamation(meizuo);
         playExclamation(ximen);
@@ -4636,9 +4636,9 @@ function soundTeashop() {
   audioPlayAmbience("amb_birds_singing", { fade: 2, volume: 0.3 });
 }
 
-function soundFlowerGarden() {
-  audioPlayAmbience("amb_birds_singing", { fade: 2, volume: 0.3 });
-  audioPlayAmbience("amb_birds_forest", { fade: 2, volume: 0.3 });
+function soundFlowerGarden(volume = 0.3) {
+  audioPlayAmbience("amb_birds_singing", { fade: 2, volume });
+  audioPlayAmbience("amb_birds_forest", { fade: 2, volume });
 }
 
 function mainEventGuestExpressions(glyphInput?: string, color?: string) {
@@ -4683,10 +4683,119 @@ function attemptEnterHouseHuazelei() {
 // Cutscenes not part of Main Quests...
 // ==============================================
 function sideCutsceneFlowerGarden() {
-  DIALOGUE.show({ text: "JP: Love Love...", color: "blue" });
+  audioStopMusic(1);
+  soundFlowerGarden(0.1);
+  let birthdayConfettiHandle: (() => boolean) | undefined;
+
+  const textColor = "blue";
+  const { talk: _talk } = createGroupConversation([["jp", textColor]]);
+  const talk = (msg: string) => _talk("jp", msg);
+
+  DIALOGUE.effect(() => {
+    DIALOGUE.lock();
+    gsap.delayedCall(2, () => DIALOGUE.unlock());
+  }, 0.00001);
+
+  talk(`JP: Love Love...`);
+
+  DIALOGUE.effect(() => {
+    beginCutscene();
+    playExclamation(player, { icon: ICON_RED_HEART, hold: 5, delay: 0.5 });
+    playAttentionBounce(player, { delay: 0.5 });
+  }, 2);
+
+  DIALOGUE.effect(() => {
+    audioPlayAmbience("meteor_rain", { fade: 2, seek: 0, volume: 0.5 });
+  });
+
+  const today = new Date();
+  const month = today.getMonth(); // 0-indexed
+  const day = today.getDate();
+
+  // ---- Birthday (Nov 18-20: advance / on-day / belated) ----
+  if (month === 10 && day >= 18 && day <= 20) {
+    let greeting = "Happy Birthday ulit sa iyo Love Love ko!";
+    if (day === 18) greeting = "Advance Happy Birthday sa iyo Love Love ko!";
+    else if (day === 20) greeting = "Belated Happy Birthday sa iyo Love Love ko!";
+
+    talk(greeting);
+    talk(`At nagpapasalamat muli ako sa iyo
+      dahil sa first birthday na ipinaramdam mo sa akin.
+      Ito ay buong buhay ko na dadalhin!`);
+  }
+
+  // May 10, 2026 — getMonth() is 0-indexed
+  const daysSince = Math.floor(
+    (today.getTime() - new Date(2026, 4, 10).getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  // ---- Anniversary (May 9-11: advance / on-day / belated) ----
+  if (month === 4 && day >= 9 && day <= 11) {
+    let greeting = "Happy Anniversary sa atin Love Love ko!";
+    if (day === 9) greeting = "Advance Happy Anniversary sa atin Love Love ko!";
+    else if (day === 11) greeting = "Belated Happy Anniversary sa atin Love Love ko!";
+
+    talk(greeting);
+  }
+
+  talk(`${daysSince} days na "Tayo" (and more) since MAY 10, 2026 —
+      at patuloy pa rin akong nagmamahal sa iyo at 
+      nagpapasalamat kada araw!`);
+
+  talk(`Ikaw ang pinaka masayang dumating sa buhay ko.`);
+
+  talk(`Hindi man handwritten ang naibigay ko sa iyo na kasulatan,
+    ay sana magustuhan at ma-appreciate mo ito ginawa ko sa iyo.`);
+
+  talk(`Pwede mo ito ulit-ulitin at umaasa ako na ulit-ulit rin nito
+    maipapadama sa iyo ang pag-ibig ko na dala nitong digital gift
+    ko sa iyo.`);
+
+  talk(`Sana nagustuhan mo ito at maging masaya dahil nilagay ko dito
+    ang puso ko habang ginagawa ko ito para sa iyo.`);
+
+  talk(`Muli ko sa iyo ipapaalala na kahit kailanman, ay hindi
+    ako nagsisisi sa iyo simula nung naging tayo.`);
+
+  talk(`Nagpapasalamat rin ako at tunay mo na pinapadama sa akin
+    ang iyong pagmamahal at binibigyan natin ng peace of mind
+    ang isa't isa.`);
+
+  talk(`Araw-araw ko pinagdadasal tayong dalawa.`);
+
+  talk(`Ikaw CheryLoves ko ang aking kayamanan. Magpakailanman.`);
+
+  DIALOGUE.effect(() => {
+    playExclamation(player, { icon: ICON_RED_HEART });
+    playExclamation(jp, { icon: ICON_RED_HEART });
+    playAttentionBounce(jp);
+  });
+
+  talk(`JP: I LOVE YOU ALWAYS AND MORE!`);
+
+  DIALOGUE.effect(() => {
+    birthdayConfettiHandle = birthdayConfetti(20);
+    audioStopAmbience("meteor_rain", 5);
+    audioPlayMusic("f4", { volume: 0.5, seek: 1 * 60 + 35 }); // starts at chorus
+    playImagePreview(PHOTO_TREASURE, {
+      hold: 5,
+      onComplete() {
+        playImagePreview(PHOTO_TREASURE_CLOSEUP, {
+          onComplete: () => {
+            birthdayConfettiHandle?.();
+            GAME_STATE.movementLocked = false;
+            hudSetBagIconVisible(true);
+            jpFollowPaused = false;
+            fxCherryBlossomsHandle?.stop();
+            soundMain();
+            gsap.delayedCall(1, () => soundFlowerGarden());
+          },
+        });
+      },
+    });
+  });
+
   DIALOGUE.onComplete = () => {
-    hudSetBagIconVisible(true);
-    jpFollowPaused = false;
-    fxCherryBlossomsHandle?.stop();
+    beginCutscene();
   };
 }
