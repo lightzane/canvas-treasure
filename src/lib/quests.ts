@@ -114,7 +114,7 @@ export const QUESTS: Map<QuestId, QuestEntry> = new Map([
     "maze_chest",
     {
       description: "Find the treasure chest.",
-      status: "inactive",
+      status: "resolved",
     },
   ],
   [

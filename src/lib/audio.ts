@@ -273,6 +273,23 @@ const musicVolume = new Map<MusicKey, number>();
  */
 const musicSoundId = new Map<MusicKey, number>();
 
+/**
+ * The pending setTimeout (if any) for each ambience key's deferred
+ * pause()/stop() — the one audioPauseAmbience()/audioStopAmbience()
+ * schedules after starting a fade-out, to actually pause/stop the sound
+ * once that fade would reach 0. Lets audioPlayAmbience() cancel it when
+ * the same key is asked to play again before it fires: the Howl is still
+ * genuinely playing at that point — a fade-out only ramps volume down, it
+ * doesn't pause/stop anything on its own — so audioPlayAmbience() instead
+ * redirects that same sound id's fade back up to the new target. Without
+ * this, re-entering a zone (e.g. beach) shortly after leaving it would hit
+ * audioPlayAmbience()'s own "stop a still-playing id before replaying it"
+ * guard (meant for a *fully finished* previous instance), hard-cutting the
+ * mid-fade-out audio and restarting a brand new instance from volume 0 —
+ * audible as a stutter instead of one continuous dip-and-recover.
+ */
+const ambienceFadeOutTimeout = new Map<MusicKey, ReturnType<typeof setTimeout>>();
+
 /** Fades a clip's volume to 0 across its full duration, masking an artifact at the very end of the recording. */
 function fadeToSilence(howl: Howl, id: number): void {
   howl.fade(howl.volume(id) as number, 0, howl.duration(id) * 1000, id);
@@ -628,12 +645,24 @@ export function audioPlayAmbience(keys: MusicKey | MusicKey[], options?: PlayMus
   for (const key of Array.isArray(keys) ? keys : [keys]) {
     const entry = MUSIC_REGISTRY[key];
     const howl = getMusicHowl(key, options);
+    const existingId = musicSoundId.get(key);
+
+    // Cancel any pause()/stop() fade-out still in flight for this key (from
+    // a just-before audioPauseAmbience()/audioStopAmbience() call) — from
+    // here on, this call decides that id's fate one way or another, so that
+    // deferred callback must never fire later: it closed over this same id
+    // and would pause/stop it out from under whatever happens below.
+    const pendingStop = ambienceFadeOutTimeout.get(key);
+    if (pendingStop !== undefined) {
+      clearTimeout(pendingStop);
+      ambienceFadeOutTimeout.delete(key);
+    }
 
     if (activeAmbience.has(key) && howl.playing() && options?.seek === undefined) {
       // Same layer, still playing — nothing to start, just maybe a volume
       // change on it (same idea as audioPlayMusic()'s alreadyActive branch).
       if (options?.volume === undefined) continue;
-      const activeId = musicSoundId.get(key);
+      const activeId = existingId;
       const currentVolume = musicVolume.get(key) ?? (howl.volume() as number);
       musicVolume.set(key, options.volume);
       if (fadeMs <= 0) {
@@ -643,11 +672,33 @@ export function audioPlayAmbience(keys: MusicKey | MusicKey[], options?: PlayMus
       continue;
     }
 
+    if (existingId !== undefined && howl.playing(existingId) && options?.seek === undefined) {
+      // Not in activeAmbience (a pause()/stop() call already removed it
+      // there), but Howler still reports this id playing — caught
+      // mid-fade-out, before the deferred pause/stop cancelled above would
+      // have fired. Redirect that SAME id's fade back up to the target,
+      // from wherever it currently sits, instead of falling through to the
+      // stop-and-replay path below: that path's own howl.stop(existingId)
+      // would cut this fade-out off instantly (Howler's stop() halts
+      // playback and resets position), then start a brand new instance
+      // from volume 0 — audible as a stutter (briefly silent, then fading
+      // back in from scratch) exactly when re-entering a zone (e.g. beach)
+      // shortly after leaving it, before its ambience had finished fading
+      // out.
+      activeAmbience.add(key);
+      const targetVolume =
+        options?.volume ?? musicVolume.get(key) ?? (howl.volume(existingId) as number);
+      musicVolume.set(key, targetVolume);
+      if (fadeMs <= 0) howl.volume(targetVolume, existingId);
+      else howl.fade(howl.volume(existingId) as number, targetVolume, fadeMs, existingId);
+      continue;
+    }
+
     activeAmbience.add(key);
 
     // Reachable with an EXISTING instance of this exact key still playing —
     // an explicit `seek` (like soundPark()'s own call always passes) skips
-    // the already-playing shortcut above on purpose, same as
+    // both already-playing shortcuts above on purpose, same as
     // audioPlayMusic()'s own seek handling. audioPlayMusic() stays safe
     // doing that because its swap logic already fades out whatever was
     // previously active, even re-triggering the same key — this branch had
@@ -657,7 +708,6 @@ export function audioPlayAmbience(keys: MusicKey | MusicKey[], options?: PlayMus
     // ever remembers the LATEST id, so those earlier instances became
     // unreachable — never stopped by audioStopAmbience, playing forever.
     // Stopping whatever's already running first closes that gap.
-    const existingId = musicSoundId.get(key);
     if (existingId !== undefined && howl.playing(existingId)) howl.stop(existingId);
 
     // getMusicHowl() never touches a cached howl's volume (only a brand
@@ -705,6 +755,11 @@ export function audioPauseAmbience(keys?: MusicKey | MusicKey[], fade?: number):
     const howl = getCachedMusicHowl(key);
     const id = musicSoundId.get(key);
     activeAmbience.delete(key);
+
+    const pending = ambienceFadeOutTimeout.get(key);
+    if (pending !== undefined) clearTimeout(pending);
+    ambienceFadeOutTimeout.delete(key);
+
     if (!howl) continue;
 
     if (fadeMs <= 0 || !howl.playing()) {
@@ -714,11 +769,15 @@ export function audioPauseAmbience(keys?: MusicKey | MusicKey[], fade?: number):
 
     const prevVolume = musicVolume.get(key) ?? (howl.volume() as number);
     howl.fade(prevVolume, 0, fadeMs, id);
-    setTimeout(() => {
-      howl.pause(id);
-      if (id === undefined) howl.volume(prevVolume);
-      else howl.volume(prevVolume, id);
-    }, fadeMs);
+    ambienceFadeOutTimeout.set(
+      key,
+      setTimeout(() => {
+        ambienceFadeOutTimeout.delete(key);
+        howl.pause(id);
+        if (id === undefined) howl.volume(prevVolume);
+        else howl.volume(prevVolume, id);
+      }, fadeMs),
+    );
   }
 
   return targets;
@@ -741,6 +800,11 @@ export function audioStopAmbience(keys?: MusicKey | MusicKey[], fade?: number): 
     const howl = getCachedMusicHowl(key);
     const id = musicSoundId.get(key);
     activeAmbience.delete(key);
+
+    const pending = ambienceFadeOutTimeout.get(key);
+    if (pending !== undefined) clearTimeout(pending);
+    ambienceFadeOutTimeout.delete(key);
+
     if (!howl) continue;
 
     if (fadeMs <= 0 || !howl.playing()) {
@@ -750,11 +814,15 @@ export function audioStopAmbience(keys?: MusicKey | MusicKey[], fade?: number): 
 
     const prevVolume = musicVolume.get(key) ?? (howl.volume() as number);
     howl.fade(prevVolume, 0, fadeMs, id);
-    setTimeout(() => {
-      howl.stop(id);
-      if (id === undefined) howl.volume(prevVolume);
-      else howl.volume(prevVolume, id);
-    }, fadeMs);
+    ambienceFadeOutTimeout.set(
+      key,
+      setTimeout(() => {
+        ambienceFadeOutTimeout.delete(key);
+        howl.stop(id);
+        if (id === undefined) howl.volume(prevVolume);
+        else howl.volume(prevVolume, id);
+      }, fadeMs),
+    );
   }
 }
 

@@ -2163,7 +2163,7 @@
          "name":"event",
          "opacity":1,
          "type":"group",
-         "visible":true,
+         "visible":false,
          "x":0,
          "y":0
         }, 
@@ -2488,7 +2488,7 @@
          "name":"non_event",
          "opacity":1,
          "type":"group",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -25091,6 +25091,42 @@
                          "width":448.371422392041,
                          "x":1087.16026241799,
                          "y":607.021844135246
+                        }, 
+                        {
+                         "height":353.974850920405,
+                         "id":915,
+                         "name":"beach",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":327.962743583096,
+                         "x":1997.18295035266,
+                         "y":2676.54754053311
+                        }, 
+                        {
+                         "height":33,
+                         "id":916,
+                         "name":"main",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":313.962481462276,
+                         "x":2047.06335351309,
+                         "y":2640.74649014778
+                        }, 
+                        {
+                         "height":353.927923256417,
+                         "id":917,
+                         "name":"main",
+                         "opacity":1,
+                         "rotation":0,
+                         "type":"",
+                         "visible":true,
+                         "width":33,
+                         "x":2327.59226199118,
+                         "y":2676.0070553539
                         }],
                  "opacity":1,
                  "type":"objectgroup",
@@ -25173,7 +25209,7 @@
          "name":"trigger_zones",
          "opacity":1,
          "type":"group",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }, 
@@ -25203,7 +25239,7 @@
          "y":0
         }],
  "nextlayerid":186,
- "nextobjectid":915,
+ "nextobjectid":918,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.12.2",

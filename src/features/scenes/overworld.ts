@@ -1436,6 +1436,376 @@ const NPC_MESSAGES = createNpcMessages(NPCS, INTERACTABLES, [
     "a",
     "Boring mag-exercise, maglalaro na lang kami ng kapatid ko ng sports!",
   ],
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE,
+    gender: "f",
+    tile: [127, 69],
+    face: "s",
+    direction: "s",
+    message: "Abaw, isa ka rin sa mga nakahanap ng TEASHOP ni IROH!",
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_MALE_1_IDLE,
+    gender: "m",
+    tile: [127.5, 69.5],
+    face: "a",
+    direction: "a",
+    message: "Masarap ang JASMINE TEA ni IROH!",
+    onShow: () => DIALOGUE.queue("Pero mas masarap makapiling ang taong mahal mo."),
+  },
+  {
+    idleSprites: IMGS_ELDER_MAN_IDLE,
+    gender: "m",
+    tile: [127.45, 71],
+    face: "a",
+    message: "Mabango at masarap ang JASMINE TEA.",
+  },
+  {
+    idleSprites: IMGS_ELDER_WOMAN_IDLE,
+    gender: "f",
+    tile: [100, 71],
+    face: "w",
+    direction: "w",
+    message:
+      "Nakapunta ka na sa TEASHOP ni IROH? Wala kasi nabibili na JASMINE TEA dito sa market.",
+  },
+  {
+    idleSprites: IMGS_ADULT_MALE_2_IDLE,
+    gender: "m",
+    tile: [103, 71],
+    face: "w",
+    direction: "w",
+    message: "Masarap ang pandesal na mainit at malambot kahit walang palaman!",
+  },
+  {
+    idleSprites: IMGS_TEENAGE_GIRL_IDLE,
+    gender: "f",
+    tile: [89.15, 70.7],
+    face: "s",
+    facePlayer: false,
+    message: "Inaantay namin si mommy bumili dito sa market.",
+  },
+  {
+    idleSprites: IMGS_TEENAGE_BOY_IDLE,
+    gender: "m",
+    tile: [89.8, 70.7],
+    face: "s",
+    facePlayer: false,
+    message: "Si mommy parang si MEI ZUO ang hinahanap kaysa ung pagkain namin.",
+  },
+  {
+    idleSprites: IMGS_FLORIST_MALE_IDLE,
+    gender: "m",
+    tile: [82, 71],
+    face: "s",
+    direction: "s",
+    message:
+      "Hindi biro ang mag-alaga ng mga bulaklak. Pero iba iba rin naman ang naitutulong nito sa atin.",
+  },
+  {
+    idleSprites: IMGS_FLORIST_FEMALE_IDLE,
+    gender: "f",
+    tile: [85, 74],
+    face: "s",
+    direction: "s",
+    message: `For me masaya magtanim at alaga ng mga bulaklak, 
+      at tinutulungan ka rin kumita lalo na kapag may mga
+      taong nagbibigay ng bouquet sa mga occasions!`,
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE,
+    gender: "f",
+    tile: [83, 71],
+    face: "w",
+    direction: "w",
+    message: `Ang hirap pumili ng flowers na magaganda! Magtanim na lang rin kaya ako?`,
+  },
+  {
+    idleSprites: IMGS_FLORIST_FEMALE_IDLE,
+    gender: "f",
+    tile: [77.5, 71],
+    face: "s",
+    direction: "s",
+    message: `Simple lang ang mamuhay. Kami nagtatanim lang, 
+      at ito na rin ang niluluto namin at kain. Once expert ka na,
+      kusang dadami ang tanim mo ng sarili nila, at tuloy-tuloy 
+      lang meron bumibili sa amin dahil kailangan rin nila.
+      Sapat na sa tao ang magkaroon ng pang-araw araw na pagkain.`,
+  },
+  {
+    idleSprites: IMGS_ELDER_MAN_IDLE,
+    gender: "m",
+    tile: [78.5, 71],
+    face: "w",
+    direction: "w",
+    message: `Alam mo anak, kung saan nanggagaling ang stress?
+    Nung nalaman ko na simple lang naman ang mamuhay, tamang
+    foods, shelter, and clothes lamang ay sapat na. Minsan,
+    dahil sa GREED ng isang tao, ay mas gusto niya pa na higit
+    dito, at kapag hindi niya ito nakuha, dito na ang simula ng
+    stress. Ang rinig ko sabi ni LEONARDO DA VINCI, "Simplicity—
+    is the ultimate sophistication." Sa ibang salita, mas lalo
+    lamang pinahihirapan or komplika ng mga tao ang pamumuhay.
+    `,
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE,
+    gender: "f",
+    tile: [79.25, 71],
+    face: "a",
+    direction: "a",
+    message: `Nakakahanga ang lolo ko, ang dami niya wisdom
+    na magigising ka na lang na para bang "Oo nga!", para
+    siyang wisdom ng idol ko na si IROH.
+    `,
+  },
+  {
+    idleSprites: IMGS_ADULT_MALE_2_IDLE,
+    gender: "m",
+    tile: [79, 74],
+    face: "d",
+    message: `Di ko alam pero ang hilig ko sa pandesal na
+    mainit-init at malambot kahit walang anumang palaman!
+    Kaya masarap kainin agad ang bagong luto bago pa ito
+    lumamig at tumigas.`,
+  },
+  {
+    idleSprites: IMGS_FLORIST_FEMALE_IDLE,
+    gender: "f",
+    tile: [87, 71],
+    face: "s",
+    message: `Ang bahay ko kahit munti lamang, ay sari-sari
+    naman ang mga halaman doon. Marami rin gulay tulad ng singkamas
+    at talong, sigarilyas at mani, sitaw, bataw, patani. Kundol, patola,
+    upo't kalabas, at saka mayroon pang labanos mustasa. Oh di ba, sabihin
+    mo sa akin kung napakanta ka sa isip mo? Hahahaha!`,
+  },
+  {
+    idleSprites: IMGS_TEENAGE_BOY_IDLE,
+    gender: "m",
+    tile: [88, 77],
+    face: "d",
+    direction: "d",
+    message: `Ako nagpapaturo ako kay papa ng luto niya dahil
+    nacoconcern ako kung anu mang halo ng ibang tao sa pagkain.`,
+  },
+  {
+    idleSprites: IMGS_ADULT_MALE_2_IDLE,
+    gender: "m",
+    tile: [89, 77],
+    face: "a",
+    direction: "a",
+    message: `Hindi ako marunong magluto dati. Pero ngayon
+    nagtuturo na ako sa mga anak ko para mas makokontrol nila
+    ang tamang pagkain sa araw-araw.`,
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE,
+    gender: "f",
+    tile: [81.15, 75.7],
+    face: "s",
+    facePlayer: false,
+    message: `Inaantay ni Lola sila MEI ZUO at XI MEN kasi ay madalas
+    dito pumupunta, at madalas gusto niya pumila kapag meron libreng kiss.`,
+  },
+  {
+    idleSprites: IMGS_ELDER_WOMAN_IDLE,
+    gender: "f",
+    tile: [81.85, 75.7],
+    face: "s",
+    facePlayer: false,
+    message: `Alam mo ito apo ko, sa akin palagi pinapasa na ako
+    pa daw ang gusto ng kiss galing kay MEI ZUO. Ni ayaw pa niya
+    aminin na siya talaga ang may gusto.`,
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE,
+    gender: "f",
+    tile: [93, 73],
+    face: "d",
+    direction: "d",
+    message: `Alam mo ba, balita ko minsan yung F4 napunta daw sa beach!`,
+  },
+  {
+    idleSprites: IMGS_TEENAGE_GIRL_IDLE,
+    gender: "f",
+    tile: [94, 73],
+    face: "a",
+    direction: "a",
+    message: `Kapag wala sa beach ay minsan nandito lang sila MEI ZUO.`,
+  },
+  {
+    idleSprites: IMGS_ELDER_MAN_IDLE,
+    gender: "m",
+    tile: [93.15, 79.7],
+    face: "s",
+    facePlayer: false,
+    message: `Minsan dito ako sa fountain para masarap pakinggan
+    habang naghihintay ng mga makakalaro ko sa CHESS.`,
+  },
+  {
+    idleSprites: IMGS_ADULT_MALE_2_IDLE,
+    gender: "m",
+    tile: [92.15, 80],
+    face: "d",
+    message: `Hindi ko na kaya talunin si lolo dito sa CHESS
+    napakahusay niya, sadyang nakakatalino rin ito sa planning
+    at mga iba't ibang klase pagbuo ng mga strategy!`,
+  },
+  {
+    idleSprites: IMGS_FLORIST_MALE_IDLE,
+    gender: "m",
+    tile: [85, 81],
+    face: "s",
+    direction: "s",
+    message: `Di biro ang magtanim. Pero sulit naman kapag gamay mo na.`,
+  },
+  {
+    idleSprites: IMGS_ADULT_FEMALE_2_IDLE,
+    gender: "f",
+    tile: [80, 81],
+    face: "w",
+    direction: "w",
+    message: `Hindi ko man kaya ang sili, alam ko meron ito mga benefits
+    kaya hinahalo ko pa rin ito bilang sangkap sa aking mga luto.`,
+  },
+  {
+    idleSprites: IMGS_ELDER_MAN_IDLE,
+    gender: "m",
+    tile: [103, 81],
+    face: "d",
+    direction: "d",
+    message: `Ito matagal ko na asawa, alam mo ba, 
+    kakompetensya ko lang siya dati sa pandesal.`,
+  },
+  {
+    idleSprites: IMGS_ELDER_WOMAN_IDLE,
+    gender: "f",
+    tile: [104, 81],
+    face: "a",
+    direction: "a",
+    message: `Nakilala ko ang asawa ko bilang kakompetensya,
+    at ngayon pinag-isa na namin ang pandesal namin at pinaghalo
+    namin ang aming mga sangkap!`,
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_MALE_1_IDLE,
+    gender: "m",
+    tile: [101, 81],
+    face: "w",
+    direction: "w",
+    message: `Ito ang best pandesal na natikman ko buong buhay ko!`,
+  },
+  {
+    idleSprites: IMGS_ADULT_MALE_2_IDLE,
+    gender: "m",
+    tile: [106, 81],
+    face: "w",
+    direction: "w",
+    message: `Malunggay pandesal para sa almusal!`,
+  },
+  {
+    idleSprites: IMGS_FLORIST_MALE_IDLE,
+    gender: "m",
+    tile: [101.5, 84],
+    face: "w",
+    message: `Dami ko kinikita sa pagbenta ng aking mga bulaklak lalo
+    na kapag valentine's day! Literal na nagtanim lang ako ng pagkabuhayan!`,
+  },
+  {
+    idleSprites: IMGS_FLORIST_MALE_IDLE,
+    gender: "m",
+    tile: [80.5, 84],
+    face: "w",
+    message: `Ang husay ng nakaimbento ng malunggay pandesal!
+    Mag-iisip rin ako ng iba pa. Kalabasa pandesal kaya?`,
+  },
+  {
+    idleSprites: IMGS_ADULT_FEMALE_2_IDLE,
+    gender: "f",
+    tile: [82.5, 80],
+    face: "s",
+    message: `Alam mo ba na mas lalo kumikita ang market
+    na ito dahil malapit lang sa park na madalas meron kaganapan
+    at dito sila kumukuha ng mga sangkap para sa mga lulutin nila.`,
+  },
+  {
+    idleSprites: IMGS_FLORIST_FEMALE_IDLE,
+    gender: "f",
+    tile: [108, 71],
+    face: "s",
+    direction: "s",
+    message: `Madalas dito malapit sa akin nagtatayo sila XI MEN at MEI ZUO
+    ng mga stalls nila.`,
+  },
+  {
+    idleSprites: IMGS_ADULT_FEMALE_1_IDLE,
+    gender: "f",
+    tile: [99.5, 79],
+    face: "s",
+    message: `Sila XI MEN at MEI ZUO ang may pinaka
+    mahabang pila dito sa market!`,
+  },
+  {
+    idleSprites: IMGS_FLORIST_FEMALE_IDLE,
+    gender: "f",
+    tile: [97.5, 82.6],
+    face: "a",
+    direction: "a",
+    message: `Na-inspire rin ako magtayo ng small flower business ko dito
+    dahil sa Flowershop na meron dito ay natulungan nila ang buong kapaligaran
+    na maraming makukulay na bulaklak!`,
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_FEMALE_2_IDLE,
+    gender: "f",
+    tile: [96.5, 82.5],
+    face: "d",
+    direction: "d",
+    message: `Iyung Flowershop dito, sila rin yung gumawa ng Flower Garden na parang
+    hugis puso dito, malapit sa mga cherry tree! Ang ganda dun pumunta.`,
+  },
+  {
+    idleSprites: IMGS_ELDER_MAN_IDLE,
+    gender: "m",
+    tile: [107, 76.5],
+    face: "s",
+    direction: "s",
+    message: `Yung ibang mga mamimili, kapag gusto ng mas tahimik na lugar
+    pumupunta lang sa TEASHOP ni IROH. Malapit lang dito sa market yun!`,
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_FEMALE_1_IDLE,
+    gender: "f",
+    tile: [106.75, 77.85],
+    face: "w",
+    direction: "w",
+    message: `Oo nakapunta na ako sa TEASHOP ni IROH at nakita ko pa nga
+    ang idol ko na si ZUKO! Ang hot niya!`,
+  },
+  {
+    idleSprites: IMGS_BEACH_OUTFIT_MALE_2_IDLE,
+    gender: "m",
+    tile: [108, 77.25],
+    face: "a",
+    direction: "a",
+    message: `Hindi na tea ang sinasabi niya na hot eh.`,
+  },
+  {
+    idleSprites: IMGS_ADULT_FEMALE_1_IDLE,
+    gender: "f",
+    tile: [68, 85],
+    face: "d",
+    message: `Malapit lang ang tabing-dagat dito kaya maririnig mo na ang mga alon.`,
+  },
+  {
+    idleSprites: IMGS_ADULT_MALE_2_IDLE,
+    gender: "m",
+    tile: [68, 86],
+    face: "s",
+    message: `Ang sarap mag relax dito kahit wala kami daan sa beach, 
+    ay naririnig malapit lang naman namin ang malumanay na alon ng tubig sa dagat.`,
+  },
 ]);
 
 const MAIN_EVENT_GUESTS_LEFT_SIDE = [
@@ -1558,7 +1928,7 @@ export const overworldScene: Scene = {
     // a later, unrelated entry (e.g. a straight game boot into overworld).
     // spriteSize pins this to the player's stable boxSize — see the same
     // comment in home.ts, or spriteSize's own doc in positioning.ts.
-    const spawnTile = GAME_STATE.spawnLocation ?? [58.9, 42];
+    const spawnTile = GAME_STATE.spawnLocation ?? [95, 73]; // [58.9, 42];
     placeAtTile({
       sprite: player,
       tile: spawnTile,
