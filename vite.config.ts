@@ -7,7 +7,10 @@ import tailwindcss from "@tailwindcss/vite";
 import { excludeFromBuild, stripHtmlComments } from "./vite.plugins.ts";
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  // Only the gh-pages CI build (pnpm build:pages) serves from a subpath —
+  // local dev/build/preview stay at root.
+  base: mode === "gh-pages" ? "/canvas-treasure/" : "/",
   plugins: [react(), tailwindcss(), excludeFromBuild(["react.svg"]), stripHtmlComments()],
   resolve: {
     alias: {
@@ -26,4 +29,4 @@ export default defineConfig({
   //     usePolling: true,
   //   },
   // },
-});
+}));

@@ -7,6 +7,7 @@
     "dev": "vite --port 8080",
     "build": "tsc -b && vite build",
     "build:file": "tsc -b && vite build --config vite.file.config.ts --mode file",
+    "build:pages": "tsc -b && vite build --mode gh-pages",
     "lint": "oxlint",
     "format": "oxfmt ./src",
     "type-check": "tsc -b --noEmit",
