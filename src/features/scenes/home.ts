@@ -54,12 +54,13 @@ const IMG_FRAME_PHOTO = img("treasure/frame-photo.png");
 const ICON_RED_HEART = img("others/red-heart.png");
 const PHOTO_SKY = img("others/photo-sky.png");
 const PHOTO_COUPLE = img("treasure/couple-photo.jpg");
-// Eagerly warms the shared image cache (load-image.ts) so playImagePreview()
-// doesn't pop its backdrop up over a blank/still-loading image the first
-// time either of these shows — same gap and fix as hua-ze-lei.ts's own
+// Eagerly warms the shared image cache (load-image.ts) so playImagePreview()/
+// playExclamation() don't pop up over a blank/still-loading image the first
+// time any of these shows — same gap and fix as hua-ze-lei.ts's own
 // PORTRAIT_HUAZELEI loadImage() call.
 loadImage(PHOTO_SKY);
 loadImage(PHOTO_COUPLE);
+loadImage(ICON_RED_HEART);
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });

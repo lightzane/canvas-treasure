@@ -1,6 +1,7 @@
 import type { Sprite } from "@/features/sprite";
 import { audioPlaySound } from "@/lib/audio";
 import { toScreen } from "@/lib/canvas/screen";
+import { loadImage } from "@/lib/load-image";
 import gsap from "gsap";
 
 export interface ExclamationBubbleOptions {
@@ -89,16 +90,7 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
   el.style.border = `2px solid ${stroke}`;
   el.style.transformOrigin = "center bottom"; // pops up from the point just above the head
 
-  if (icon) {
-    const img = document.createElement("img");
-    img.src = icon;
-    img.alt = "";
-    img.style.width = "70%";
-    img.style.height = "70%";
-    img.style.objectFit = "contain";
-    img.style.imageRendering = "pixelated"; // stays crisp, not smoothed — every frame, for an animated GIF too
-    el.appendChild(img);
-  } else {
+  function showGlyph() {
     const span = document.createElement("span");
     span.textContent = glyph;
     span.style.display = "inline-block";
@@ -119,6 +111,49 @@ export function playExclamation(target: Sprite, options: ExclamationBubbleOption
     // actually exposes.
     span.style.transform = "translateY(0.1em)";
     el.appendChild(span);
+    return span;
+  }
+
+  function showIcon(src: string) {
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = "";
+    img.style.width = "70%";
+    img.style.height = "70%";
+    img.style.objectFit = "contain";
+    img.style.imageRendering = "pixelated"; // stays crisp, not smoothed — every frame, for an animated GIF too
+    el.appendChild(img);
+  }
+
+  if (icon) {
+    const cached = loadImage(icon);
+
+    if (cached.complete) {
+      showIcon(icon);
+    } else {
+      // Not yet decoded — every known icon is warmed ahead of time at
+      // module load now (e.g. overworld.ts's own loadImage(ICON_UNLOCKED)
+      // call), so this is a safety net for one that someday isn't. Unlike
+      // dialogue.ts's portrait or image-preview.ts's popup, this bubble's
+      // whole lifetime is short and fixed (~1.25s, see this function's own
+      // doc comment) — it never waits for anything, so leaving it blank
+      // here could easily outlast the bubble itself (a real production bug
+      // once seen: the maze chest's "unlocked" icon just showed an empty
+      // bubble, already gone by the time the fetch would've finished).
+      // Falls back to the glyph immediately instead, and upgrades to the
+      // real icon if it loads before this bubble's done.
+      const glyphEl = showGlyph();
+      cached.addEventListener(
+        "load",
+        () => {
+          glyphEl.remove();
+          showIcon(icon);
+        },
+        { once: true },
+      );
+    }
+  } else {
+    showGlyph();
   }
 
   const reposition = () => {

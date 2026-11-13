@@ -147,6 +147,14 @@ const ICON_SHEARS = img("others/garden-shears.png");
 const ICON_PAPERS = img("others/paper-multi-32.png");
 const ICON_PARCEL = img("others/parcel-32.png");
 const ICON_UNLOCKED = img("others/padlock-unlocked-64.png");
+// Eagerly warms the shared image cache (load-image.ts) for every
+// playExclamation() icon above — see hua-ze-lei.ts's own
+// PORTRAIT_HUAZELEI loadImage() call for why. ICON_UNLOCKED specifically:
+// unwarmed, this bubble showed up blank when the maze chest was opened in
+// production (exclamation-bubble.ts now also falls back to the glyph if
+// an icon somehow isn't ready, but warming it here is what avoids that
+// fallback ever being needed for a known icon in the first place).
+[ICON_RED_HEART, ICON_SHEARS, ICON_PAPERS, ICON_PARCEL, ICON_UNLOCKED].forEach(loadImage);
 
 const MAIN_EVENT_PLAYER_MOVESPEED = 100;
 

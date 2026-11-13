@@ -27,6 +27,7 @@ import { playExclamation } from "@/lib/effects/exclamation-bubble";
 import { playQuestCompleteBanner, playQuestToast } from "@/lib/effects/quest-toast";
 import { hudSetBagIconVisible } from "@/lib/hud";
 import { img } from "@/lib/img";
+import { loadImage } from "@/lib/load-image";
 import { movePlayer } from "@/lib/map-movement";
 import { scheduleFaceDirection } from "@/lib/npc-auto";
 import { createNpcSpawner } from "@/lib/npc-spawn";
@@ -42,6 +43,9 @@ const IMG_MAP_BG = img("maps/flowershop.png");
 const IMG_MAP_FG = img("maps/flowershop-fg.png");
 const ICON_SHEARS = img("others/garden-shears.png");
 const ICON_RED_HEART = img("others/red-heart.png");
+// Eagerly warms the shared image cache (load-image.ts) — see
+// hua-ze-lei.ts's own PORTRAIT_HUAZELEI loadImage() call for why.
+[ICON_SHEARS, ICON_RED_HEART].forEach(loadImage);
 
 const background = new Sprite({ src: IMG_MAP_BG });
 const foreground = new Sprite({ src: IMG_MAP_FG });
